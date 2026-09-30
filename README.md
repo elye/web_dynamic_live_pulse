@@ -17,7 +17,8 @@ Open http://localhost:5173. The command starts Vite and the live server together
 
 1. Start in the studio with an editable four-question check-in, or create a session from the template library.
 2. Edit questions, answer choices, and correct quiz answers. Duplicate, reorder, or delete questions and select a slide mood.
-3. Select **Present live**, then share the room code, participant link, or QR code.
+3. Select **Present live** to open the welcome screen. The QR code, room code, and selectable participant URL are always visible beside the live participant roster. Use the copy icon to copy the URL, or select the field to copy it manually.
+  Select **Start questions** when everyone is ready. Participants wait in the welcome lobby until then.
 4. Participants visit `/join`, enter the room code and a display name, and submit one response per question.
 5. Pause or reopen voting, reveal results, and advance questions. Each correct quiz answer earns 1,000 points.
 6. End the session to view the summary and leaderboard. Export aggregated responses to CSV before stopping the server or starting another room.

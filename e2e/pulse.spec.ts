@@ -10,6 +10,74 @@ async function noOverflow(page: Page) {
   ).toBe(true);
 }
 
+async function checkCloudGeometry(page: Page, count: number) {
+  await expect(page.locator(".cloud-word")).toHaveCount(count);
+  const geometry = await page.locator(".word-cloud").evaluate((element) => {
+    const frame = element.getBoundingClientRect();
+    const words = [...element.querySelectorAll(".cloud-word")].map((word) => word.getBoundingClientRect());
+    const left = Math.min(...words.map((word) => word.left));
+    const right = Math.max(...words.map((word) => word.right));
+    const top = Math.min(...words.map((word) => word.top));
+    const bottom = Math.max(...words.map((word) => word.bottom));
+    return {
+      rows: new Set(words.map((word) => Math.round(word.top))).size,
+      inside: left >= frame.left && right <= frame.right && top >= frame.top && bottom <= frame.bottom,
+      horizontalOffset: Math.abs((left + right) / 2 - (frame.left + frame.right) / 2),
+      verticalOffset: Math.abs((top + bottom) / 2 - (frame.top + frame.bottom) / 2),
+      overlaps: words.some((first, index) => words.slice(index + 1).some((second) => first.left < second.right - 1 && first.right > second.left + 1 && first.top < second.bottom - 1 && first.bottom > second.top + 1)),
+    };
+  });
+  expect(geometry.inside).toBe(true);
+  expect(geometry.overlaps).toBe(false);
+  expect(geometry.horizontalOffset).toBeLessThan(25);
+  expect(geometry.verticalOffset).toBeLessThan(25);
+  if (count > 2) expect(geometry.rows).toBeGreaterThan(2);
+}
+
+test("welcome screen keeps QR, copyable URL, and roster visible without a dialog", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.route("**/api/network", (route) => route.fulfill({ json: { address: "192.168.0.3" } }));
+  await page.goto("/");
+  await page.getByRole("button", { name: "Present live", exact: true }).click();
+  const lobby = page.getByRole("region", { name: "Welcome lobby" });
+  const link = lobby.getByRole("textbox", { name: "Participant link", exact: true });
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(link).toHaveValue(/^http:\/\/192\.168\.0\.3:5173\/join\?code=\d{6}$/);
+  const url = await link.inputValue();
+  await expect(lobby.locator(".qr-frame svg")).toBeVisible();
+  await expect(lobby.locator(".lobby-count strong")).toHaveText("0");
+  await lobby.getByRole("button", { name: "Copy participant link", exact: true }).click();
+  await expect(lobby.getByRole("status").filter({ hasText: "Link copied" })).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(url);
+  await link.focus();
+  expect(await link.evaluate((element: HTMLInputElement) => element.value.slice(element.selectionStart!, element.selectionEnd!))).toBe(url);
+  await expect(lobby.getByRole("link", { name: "Open participant view" })).toHaveAttribute("href", `/join?code=${new URL(url).searchParams.get("code")}`);
+  await page.getByRole("button", { name: "Invite audience", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByLabel("Participant link", { exact: true })).toHaveValue(url);
+  expect(await dialog.locator(".qr-frame svg").innerHTML()).toBe(await lobby.locator(".qr-frame svg").innerHTML());
+  await dialog.getByRole("button", { name: "Close dialog", exact: true }).click();
+  for (const width of [1440, 768, 390]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await noOverflow(page);
+    await expect(link).toBeVisible();
+    const bounds = await lobby.locator(".qr-frame svg").boundingBox();
+    expect(bounds!.width).toBeGreaterThanOrEqual(180);
+    const layout = await lobby.evaluate((element) => {
+      const join = element.querySelector(".lobby-join")!.getBoundingClientRect();
+      const roster = element.querySelector(".lobby-roster")!.getBoundingClientRect();
+      return join.right <= roster.left + 1 || join.bottom <= roster.top + 1;
+    });
+    expect(layout).toBe(true);
+    await page.screenshot({ path: `test-results/welcome-sharing-${width}.png`, fullPage: true });
+  }
+  await page.evaluate(() => Object.defineProperty(navigator.clipboard, "writeText", { value: () => Promise.reject(new Error("Clipboard blocked")), configurable: true }));
+  await lobby.getByRole("button", { name: "Copy participant link", exact: true }).click();
+  await expect(lobby.locator(".copy-feedback")).toContainText("Copy the link");
+  await expect(link).toBeFocused();
+  expect(await link.evaluate((element: HTMLInputElement) => element.selectionEnd! - element.selectionStart!)).toBe(url.length);
+});
+
 test("session JSON backup restores a deleted draft from a file or pasted JSON", async ({
   page,
 }) => {
@@ -162,8 +230,9 @@ for (const ended of [false, true]) {
     await page
       .getByRole("button", { name: "Present live", exact: true })
       .click();
+    await page.getByRole("button", { name: "Invite audience", exact: true }).click();
     const code = new URL(
-      await page.getByLabel("Participant link", { exact: true }).inputValue(),
+      await page.getByRole("dialog").getByLabel("Participant link", { exact: true }).inputValue(),
     ).searchParams.get("code")!;
     await page
       .getByRole("button", { name: "Close dialog", exact: true })
@@ -178,7 +247,7 @@ for (const ended of [false, true]) {
         .click();
       await expect(
         participant.getByRole("heading", {
-          name: "How are you feeling in one word?",
+          name: "Welcome, everyone.",
           exact: true,
         }),
       ).toBeVisible();
@@ -353,7 +422,11 @@ test("two audiences answer all types, reconnect, receive reveals, and finish wit
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
   await page.getByRole("button", { name: "Present live", exact: true }).click();
+  await expect(page.locator(".host-lobby").getByRole("heading", { name: "Team check-in", exact: true })).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: "Invite audience", exact: true }).click();
   const link = await page
+    .getByRole("dialog")
     .getByLabel("Participant link", { exact: true })
     .inputValue();
   const code = new URL(link).searchParams.get("code")!;
@@ -379,10 +452,27 @@ test("two audiences answer all types, reconnect, receive reveals, and finish wit
         .click();
       await expect(
         participant.getByRole("heading", {
-          name: "How are you feeling in one word?",
+          name: "Welcome, everyone.",
           exact: true,
         }),
       ).toBeVisible();
+      await expect(participant.locator(".lobby-people")).toContainText(name);
+      await expect(participant.getByRole("button", { name: "Send response", exact: true })).toHaveCount(0);
+    }
+    await expect(page.locator(".lobby-count strong")).toHaveText("2");
+    await expect(page.locator(".lobby-people li")).toHaveText(["AAlex", "SSam"]);
+    await audience.reload();
+    await expect(audience.getByRole("heading", { name: "Welcome, everyone.", exact: true })).toBeVisible();
+    await expect(audience.locator(".lobby-count strong")).toHaveText("2");
+    await noOverflow(audience);
+    await audience.screenshot({ path: "test-results/welcome-mobile.png", fullPage: true });
+    await page.screenshot({ path: "test-results/welcome-desktop.png", fullPage: true });
+    await page.reload();
+    await expect(page.locator(".lobby-count strong")).toHaveText("2");
+    await expect(page.getByRole("button", { name: "Next question", exact: true })).toHaveCount(0);
+    await page.getByRole("button", { name: "Start questions", exact: true }).click();
+    for (const [participant, name] of [[audience, "Alex"], [second, "Sam"]] as const) {
+      await expect(participant.getByRole("heading", { name: "How are you feeling in one word?", exact: true })).toBeVisible();
       await participant
         .getByRole("textbox", { name: /Your word or short phrase/ })
         .fill(name === "Alex" ? "Inspired" : "inspired");
@@ -396,11 +486,9 @@ test("two audiences answer all types, reconnect, receive reveals, and finish wit
         }),
       ).toBeVisible();
     }
-    await expect(page.locator(".word-cloud .word")).toHaveText("inspired");
-    await expect(page.locator(".word-cloud .word")).toHaveAttribute(
-      "title",
-      "2 responses",
-    );
+    await expect(page.locator(".cloud-word")).toContainText("inspired");
+    await expect(page.locator(".cloud-word title")).toHaveText("2 responses");
+    await checkCloudGeometry(page, 1);
     await audience.reload();
     await expect(
       audience.getByRole("heading", { name: "Your voice is in.", exact: true }),
@@ -410,6 +498,7 @@ test("two audiences answer all types, reconnect, receive reveals, and finish wit
       .getByRole("button", { name: "Reveal results", exact: true })
       .click();
     await expect(audience.locator(".word-cloud")).toContainText("inspired");
+    await checkCloudGeometry(audience, 1);
     await page
       .getByRole("button", { name: "Next question", exact: true })
       .last()
@@ -524,6 +613,7 @@ for (const width of [390, 768, 1440]) {
     await page.evaluate(() => document.fonts.ready);
     await noOverflow(page);
     await expect(page.locator(".question-stage")).toBeVisible();
+    await checkCloudGeometry(page, 11);
     if (width === 1440)
       expect(
         await page

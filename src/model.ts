@@ -20,10 +20,12 @@ export type Room = {
   code: string;
   title: string;
   active: number;
+  started: boolean;
   accepting: boolean;
   revealed: boolean;
   ended: boolean;
   participants: number;
+  participantNames: string[];
   questions: Question[];
   leaderboard: { name: string; score: number }[];
 };

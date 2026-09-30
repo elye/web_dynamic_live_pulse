@@ -56,7 +56,8 @@ export function createRoom(title, questions) {
       .slice(0, 100),
     questions: validateQuestions(questions),
     active: 0,
-    accepting: true,
+    started: false,
+    accepting: false,
     revealed: false,
     ended: false,
     participants: new Map(),
@@ -96,7 +97,7 @@ export function submitVote(room, token, questionId, value) {
   if (!room.participants.has(token))
     throw new Error("Join the room before responding.");
   const question = room.questions[room.active];
-  if (room.ended || !room.accepting || question.id !== questionId)
+  if (!room.started || room.ended || !room.accepting || question.id !== questionId)
     throw new Error("This question is no longer accepting responses.");
   const votes = room.votes.get(question.id);
   if (votes.has(token)) throw new Error("Your response is already in.");
@@ -125,7 +126,14 @@ export function controlRoom(room, token, action, index) {
     throw new Error(
       "This session has ended. Start a new session to play again.",
     );
-  if (action === "select") {
+  if (!room.started && !["start", "end"].includes(action))
+    throw new Error("Start the questions before changing or revealing them.");
+  if (action === "start") {
+    if (room.started) throw new Error("The questions have already started.");
+    room.started = true;
+    room.active = 0;
+    room.accepting = true;
+  } else if (action === "select") {
     if (!Number.isInteger(index) || index < 0 || index >= room.questions.length)
       throw new Error("Question not found.");
     room.active = index;
@@ -184,10 +192,12 @@ export function snapshot(room, host = false) {
     code: room.code,
     title: room.title,
     active: room.active,
+    started: room.started,
     accepting: room.accepting,
     revealed: room.revealed,
     ended: room.ended,
     participants: room.participants.size,
+    participantNames: [...room.participants.values()].map((member) => member.name),
     leaderboard,
     questions: room.questions.map((question, index) => ({
       ...question,

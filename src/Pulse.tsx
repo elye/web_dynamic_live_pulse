@@ -57,6 +57,7 @@ import {
 } from "./model";
 import type { Kind, Question, Room, Session } from "./model";
 import { request, useLive } from "./live";
+import WordCloud from "./WordCloud";
 
 const icons: Record<Kind, LucideIcon> = {
   cloud: Cloud,
@@ -186,25 +187,7 @@ function ResultsVisual({
       </div>
     );
   if (question.type === "cloud")
-    return (
-      <div
-        className={`word-cloud ${preview ? "sample-cloud" : ""}`}
-        aria-label="Word cloud results"
-      >
-        {results.slice(0, 60).map((item, index) => (
-          <span
-            key={item.text}
-            className={`word word-${index % 6}`}
-            style={{
-              fontSize: `${Math.min(62, 20 + (item.count / Math.max(...results.map((entry) => entry.count))) * 42)}px`,
-            }}
-            title={`${item.count} ${item.count === 1 ? "response" : "responses"}`}
-          >
-            {item.text}
-          </span>
-        ))}
-      </div>
-    );
+    return <WordCloud results={results} />;
   if (question.type === "text")
     return (
       <div className="text-results">
@@ -309,6 +292,22 @@ function QuestionStage({
       </div>
     </section>
   );
+}
+
+function WelcomeLobby({ room, theme = "mint", host = false, onStart, disabled }: { room: Room; theme?: string; host?: boolean; onStart?: () => void; disabled?: boolean }) {
+  return <section className={`welcome-lobby theme-${theme} ${host ? "host-lobby" : ""}`} aria-label="Welcome lobby">
+    <div className="lobby-intro"><div><span className="eyebrow">{host ? "WELCOME TO THE SESSION" : room.title}</span><h1>{host ? room.title : "Welcome, everyone."}</h1><span className="lobby-waiting"><span className="live-indicator" />{host ? "The room is open" : "You're in"}</span></div>{host && <button className="button primary" disabled={disabled} onClick={onStart}><Play size={17} />Start questions</button>}</div>
+    <div className="lobby-body">
+      {host ? <div className="lobby-join"><h2>Join the session</h2><ShareDetails code={room.code} inline /></div> : <div className="lobby-code"><span>ROOM CODE</span><strong>{room.code.slice(0, 3)} {room.code.slice(3)}</strong></div>}
+      <div className="lobby-roster">
+        <div className="lobby-count" role="status" aria-label="Total participants joined"><Users size={22} /><strong>{room.participants}</strong><span>{room.participants === 1 ? "participant joined" : "participants joined"}</span></div>
+        <div className="lobby-people" aria-label="Joined participants">
+          {room.participantNames.length ? <ul>{room.participantNames.map((name, index) => <li key={index}><span className={`participant-initial color-${index % 4}`} aria-hidden="true">{name.slice(0, 1).toLocaleUpperCase()}</span><span>{name}</span></li>)}</ul> : <div className="lobby-empty"><Users size={32} strokeWidth={1.3} /><p>Waiting for everyone to arrive</p></div>}
+        </div>
+      </div>
+    </div>
+    <div className="lobby-footer"><span className="stage-brand"><Zap size={16} fill="currentColor" />pulse.</span><span>{host ? "Everyone in? Let's begin." : "Waiting for your host to start."}</span></div>
+  </section>;
 }
 
 function QuestionEditor({
@@ -459,9 +458,14 @@ function QuestionEditor({
 }
 
 function ShareModal({ code, onClose }: { code: string; onClose: () => void }) {
+  return <Modal title="Bring everyone together" onClose={onClose}><ShareDetails code={code} /></Modal>;
+}
+
+function ShareDetails({ code, inline = false }: { code: string; inline?: boolean }) {
   const [origin, setOrigin] = useState(window.location.origin);
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState("");
+  const linkInput = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (["localhost", "127.0.0.1"].includes(window.location.hostname))
       fetch("/api/network")
@@ -476,19 +480,22 @@ function ShareModal({ code, onClose }: { code: string; onClose: () => void }) {
   }, []);
   const url = `${origin}/join?code=${code}`;
   async function copy() {
+    setCopyError("");
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
     } catch {
+      setCopied(false);
+      linkInput.current?.focus();
+      linkInput.current?.select();
       setCopyError("Copy the link from the field below.");
     }
   }
   return (
-    <Modal title="Bring everyone together" onClose={onClose}>
-      <div className="share-content">
-        <p className="muted">Your session is ready for company.</p>
+      <div className={`share-content ${inline ? "lobby-share" : ""}`}>
+        {!inline && <p className="muted">Your session is ready for company.</p>}
         <div className="qr-frame">
-          <QRCodeSVG value={url} size={180} fgColor="#183d35" level="M" />
+          <QRCodeSVG value={url} size={inline ? 208 : 180} marginSize={4} title="Join session QR code" fgColor="#183d35" level="M" />
         </div>
         <span className="eyebrow">ROOM CODE</span>
         <strong className="share-code">
@@ -497,6 +504,7 @@ function ShareModal({ code, onClose }: { code: string; onClose: () => void }) {
         <label className="share-link">
           <Link size={17} />
           <input
+            ref={linkInput}
             aria-label="Participant link"
             value={url}
             readOnly
@@ -508,12 +516,12 @@ function ShareModal({ code, onClose }: { code: string; onClose: () => void }) {
             onClick={copy}
           />
         </label>
-        {copyError && <p role="status">{copyError}</p>}
+        <p className="copy-feedback" role="status">{copyError || (copied ? "Link copied" : "")}</p>
         <p className="muted small">
           On a local server, participants need the same Wi-Fi.
         </p>
         <a
-          className="button primary full"
+          className={inline ? "lobby-open-link" : "button primary full"}
           href={`/join?code=${code}`}
           target="_blank"
           rel="noreferrer"
@@ -522,7 +530,6 @@ function ShareModal({ code, onClose }: { code: string; onClose: () => void }) {
           <ExternalLink size={16} />
         </a>
       </div>
-    </Modal>
   );
 }
 
@@ -743,6 +750,7 @@ function Host() {
       ? room.questions[room.active]
       : session.questions[currentIndex];
   const isLive = !!room && !room.ended;
+  const inLobby = isLive && !room.started;
   const questionList = isLive ? room.questions : session.questions;
   useEffect(() => {
     store("pulse:sessions", sessions);
@@ -876,7 +884,7 @@ function Host() {
       live.setRoom(reply.state!);
       setSelected(0);
       setPresenting(true);
-      setModal("share");
+      setModal(null);
     } catch (failure) {
       setError((failure as Error).message);
     } finally {
@@ -1224,14 +1232,14 @@ function Host() {
                       const Icon = icons[item.type];
                       return (
                         <button
-                          className={`question-thumbnail ${index === currentIndex ? "selected" : ""}`}
+                          className={`question-thumbnail ${!inLobby && index === currentIndex ? "selected" : ""}`}
                           key={item.id}
                           onClick={() =>
                             isLive
                               ? void control("select", index)
                               : setSelected(index)
                           }
-                          disabled={busy}
+                          disabled={busy || inLobby}
                         >
                           <span className="thumbnail-number">
                             {String(index + 1).padStart(2, "0")}
@@ -1312,7 +1320,7 @@ function Host() {
                     />
                   </div>
                 </div>
-                <QuestionStage
+                {inLobby ? <WelcomeLobby room={room} theme={session.theme} host disabled={busy || !connected} onStart={() => void control("start")} /> : <QuestionStage
                   question={question}
                   preview={!isLive}
                   theme={session.theme}
@@ -1320,15 +1328,15 @@ function Host() {
                   index={currentIndex}
                   total={questionList.length}
                   reveal={room?.revealed}
-                />
-                <div className="canvas-footer">
+                />}
+                <div className="canvas-footer" hidden={inLobby}>
                   {isLive ? (
                     <span className="audience-count">
                       <Users size={17} />
                       <strong>{room.participants}</strong> joined{" "}
                       <span className="separator">·</span>
                       <span className={room.accepting ? "live-indicator" : ""}>
-                        {room.accepting
+                        {inLobby ? "Welcome lobby" : room.accepting
                           ? "Accepting responses"
                           : "Responses paused"}
                       </span>
@@ -1350,7 +1358,7 @@ function Host() {
                       ))}
                     </div>
                   )}
-                  <div className="slide-pagination">
+                  {!inLobby && <div className="slide-pagination">
                     <IconButton
                       icon={ChevronLeft}
                       label="Previous question"
@@ -1369,9 +1377,9 @@ function Host() {
                       }
                       onClick={() => move(1)}
                     />
-                  </div>
+                  </div>}
                 </div>
-                {isLive ? (
+                {inLobby ? null : isLive ? (
                   <div className="live-controls">
                     <button
                       className="button secondary"
@@ -2047,6 +2055,8 @@ function Participant() {
             <ArrowRight size={17} />
           </a>
         </main>
+      ) : !room.started ? (
+        <main className="participant-lobby"><WelcomeLobby room={room} /></main>
       ) : (
         question && (
           <main className="participant-session">

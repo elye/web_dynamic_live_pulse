@@ -27,6 +27,7 @@ test("one vote per participant, private answers, and server-calculated scores", 
   assert.equal(joinRoom(room, "Alex", token), token);
   assert.equal(room.participants.size, 1);
   assert.equal(snapshot(room).questions[0].correct, null);
+  controlRoom(room, room.hostToken, "start");
   submitVote(room, token, room.questions[0].id, 1);
   assert.throws(
     () => submitVote(room, token, room.questions[0].id, 0),
@@ -49,6 +50,7 @@ test("question changes reject stale answers and aggregate words case-insensitive
   const room = createRoom("Workshop", questions);
   const firstToken = joinRoom(room, "Alex");
   const secondToken = joinRoom(room, "Sam");
+  controlRoom(room, room.hostToken, "start");
   assert.throws(
     () => submitVote(room, firstToken, room.questions[0].id, 5),
     /available/,
@@ -101,6 +103,34 @@ test("websocket host and audience complete a live round and reconnect", async ()
       name: "Taylor",
     });
     assert.equal(joined.state.questions[0].correct, null);
+    assert.equal(joined.state.started, false);
+    assert.deepEqual(joined.state.participantNames, ["Taylor"]);
+    const started = new Promise((resolve) => audience.once("room:state", resolve));
+    await request(host, "room:control", { code, token: created.token, action: "start" });
+    assert.equal((await started).started, true);
+
+    test("welcome lobby lists names without tokens and only the host can open voting", () => {
+      const room = createRoom("Welcome", questions);
+      const token = joinRoom(room, "Alex");
+      joinRoom(room, "Sam");
+      joinRoom(room, "Alex", token);
+      const state = snapshot(room);
+      assert.equal(state.started, false);
+      assert.equal(state.accepting, false);
+      assert.equal(state.participants, 2);
+      assert.deepEqual(state.participantNames, ["Alex", "Sam"]);
+      assert.equal(JSON.stringify(state).includes(token), false);
+      assert.equal(state.questions[0].correct, null);
+      assert.throws(() => submitVote(room, token, room.questions[0].id, 1), /no longer/);
+      assert.throws(() => controlRoom(room, token, "start"), /host/);
+      for (const action of ["toggle", "select", "reveal"]) assert.throws(() => controlRoom(room, room.hostToken, action, 1), /Start the questions/);
+      controlRoom(room, room.hostToken, "start");
+      assert.equal(snapshot(room).started, true);
+      assert.equal(snapshot(room).accepting, true);
+      assert.throws(() => controlRoom(room, room.hostToken, "start"), /already started/);
+      submitVote(room, token, room.questions[0].id, 1);
+      rooms.delete(room.code);
+    });
     const voted = await request(audience, "room:vote", {
       code,
       token: joined.token,

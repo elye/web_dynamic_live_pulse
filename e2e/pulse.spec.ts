@@ -574,6 +574,71 @@ test("edit, duplicate, reorder, delete, and save a question on a LAN-compatible 
   await expect(page.locator(".question-thumbnail")).toHaveCount(3);
 });
 
+test("title-and-description slides show no input to participants or reveal controls to hosts", async ({
+  page,
+  context,
+}) => {
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "Add question", exact: true })
+    .last()
+    .click();
+  await page.getByRole("button", { name: /Title & description/ }).click();
+  await page
+    .getByRole("textbox", { name: "Title", exact: true })
+    .fill("Welcome aboard");
+  await page
+    .getByRole("textbox", { name: "Description", exact: true })
+    .fill("Grab a coffee and settle in. We'll begin shortly.");
+  await page
+    .getByRole("button", { name: "Save question", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Welcome aboard", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("No responses needed")).toBeVisible();
+  await expect(page.locator(".question-thumbnail")).toHaveCount(5);
+  await page.getByRole("button", { name: "Present live", exact: true }).click();
+  await page.getByRole("button", { name: "Invite audience", exact: true }).click();
+  const link = await page
+    .getByRole("dialog")
+    .getByLabel("Participant link", { exact: true })
+    .inputValue();
+  const code = new URL(link).searchParams.get("code")!;
+  await page.getByRole("button", { name: "Close dialog", exact: true }).click();
+  const participant = await context.newPage();
+  await participant.goto(`/join?code=${code}`);
+  await participant.getByLabel("Your name", { exact: true }).fill("Alex");
+  await participant
+    .getByRole("button", { name: "Join the room", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Start questions", exact: true }).click();
+  for (let step = 0; step < 4; step++)
+    await page
+      .getByRole("button", { name: "Next question", exact: true })
+      .last()
+      .click();
+  await expect(
+    page.getByRole("heading", { name: "Welcome aboard", exact: true }),
+  ).toBeVisible();
+  await expect(
+    participant.getByRole("heading", { name: "Welcome aboard", exact: true }),
+  ).toBeVisible();
+  await expect(participant.getByText(/Grab a coffee/)).toBeVisible();
+  await expect(
+    participant.getByRole("button", { name: "Send response", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Pause responses", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Reveal results", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Finish session", exact: true }),
+  ).toBeVisible();
+});
+
 test("two audiences answer all types, reconnect, receive reveals, and finish with scores and export", async ({
   page,
   browser,

@@ -21,6 +21,27 @@ const questions = [
   { type: "cloud", title: "One word?", options: [] },
 ];
 
+test("title and description slides never accept responses and preserve content", () => {
+  const slide = { type: "slide", title: "Agenda", description: "Welcome\nToday's topics", options: [] };
+  const room = createRoom("Workshop", [slide, ...questions]);
+  const token = joinRoom(room, "Alex");
+  controlRoom(room, room.hostToken, "start");
+  assert.equal(room.accepting, false);
+  assert.equal(snapshot(room).questions[0].description, slide.description);
+  assert.throws(() => submitVote(room, token, room.questions[0].id, "hello"), /does not accept/);
+  assert.throws(() => controlRoom(room, room.hostToken, "toggle"), /does not accept/);
+  assert.throws(() => controlRoom(room, room.hostToken, "reveal"), /no results/);
+  controlRoom(room, room.hostToken, "select", 1);
+  assert.equal(room.accepting, true);
+  submitVote(room, token, room.questions[1].id, 1);
+  controlRoom(room, room.hostToken, "select", 0);
+  assert.equal(room.accepting, false);
+  assert.deepEqual(snapshot(room, true).questions[0].results, []);
+  assert.throws(() => createRoom("Invalid", [{ ...slide, description: "" }]), /description/);
+  assert.throws(() => createRoom("Invalid", [{ ...slide, description: "a".repeat(2001) }]), /description/);
+  rooms.delete(room.code);
+});
+
 test("one vote per participant, private answers, and server-calculated scores", () => {
   const room = createRoom("Team check-in", questions);
   const token = joinRoom(room, "Alex");

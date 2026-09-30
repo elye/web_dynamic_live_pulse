@@ -1,8 +1,9 @@
-export type Kind = "cloud" | "poll" | "quiz" | "text";
+export type Kind = "cloud" | "poll" | "quiz" | "text" | "slide";
 export type Question = {
   id: string;
   type: Kind;
   title: string;
+  description?: string;
   options: string[];
   correct: number | null;
   responses?: number;
@@ -34,6 +35,7 @@ export const labels: Record<Kind, string> = {
   poll: "Multiple choice",
   quiz: "Quiz",
   text: "Open response",
+  slide: "Title & description",
 };
 
 export function createId() {
@@ -51,7 +53,14 @@ export function newQuestion(type: Kind): Question {
       poll: "What should we focus on next?",
       quiz: "Which planet has the most moons?",
       text: "What is one thing we could do better?",
+      slide: "A quick word before we dive in",
     }[type],
+    ...(type === "slide"
+      ? {
+          description:
+            "Take a breath, get comfortable, and get ready to share.",
+        }
+      : {}),
     options:
       type === "quiz"
         ? ["Jupiter", "Saturn", "Neptune", "Mars"]
@@ -128,12 +137,15 @@ export function serializeSession(session: Session): string {
       version: 1,
       title: session.title,
       theme: session.theme,
-      questions: session.questions.map(({ type, title, options, correct }) => ({
-        type,
-        title,
-        options,
-        correct,
-      })),
+      questions: session.questions.map(
+        ({ type, title, options, correct, description }) => ({
+          type,
+          title,
+          options,
+          correct,
+          ...(type === "slide" ? { description } : {}),
+        }),
+      ),
     },
     null,
     2,
@@ -181,7 +193,9 @@ export function importSession(json: string): Session {
       const question = item as Record<string, unknown>;
       if (
         typeof question.type !== "string" ||
-        !["cloud", "poll", "quiz", "text"].includes(question.type)
+        !(["cloud", "poll", "quiz", "text", "slide"] as string[]).includes(
+          question.type,
+        )
       )
         throw new Error(prefix + "unsupported question type.");
       if (
@@ -190,6 +204,15 @@ export function importSession(json: string): Session {
         question.title.length > 200
       )
         throw new Error(prefix + "title must contain 1 to 200 characters.");
+      if (
+        question.type === "slide" &&
+        (typeof question.description !== "string" ||
+          !question.description.trim() ||
+          question.description.length > 2000)
+      )
+        throw new Error(
+          prefix + "add a description with 1 to 2000 characters.",
+        );
       const options = question.options;
       if (
         !Array.isArray(options) ||
@@ -223,6 +246,9 @@ export function importSession(json: string): Session {
         id: createId(),
         type: question.type as Kind,
         title: question.title.trim(),
+        ...(question.type === "slide"
+          ? { description: (question.description as string).trim() }
+          : {}),
         options: options.map((option: string) => option.trim()),
         correct: question.type === "quiz" ? (question.correct as number) : null,
       };

@@ -18,6 +18,7 @@ import {
   Expand,
   ExternalLink,
   Eye,
+  FileText,
   FlaskConical,
   FolderOpen,
   LayoutGrid,
@@ -66,8 +67,9 @@ const icons: Record<Kind, LucideIcon> = {
   poll: BarChart3,
   quiz: Trophy,
   text: MessageCircle,
+  slide: FileText,
 };
-const kinds: Kind[] = ["cloud", "poll", "quiz", "text"];
+const kinds: Kind[] = ["cloud", "poll", "quiz", "text", "slide"];
 const samples = [
   { text: "excited", count: 12 },
   { text: "curious", count: 9 },
@@ -160,6 +162,7 @@ function ResultsVisual({
   preview?: boolean;
   reveal?: boolean;
 }) {
+  if (question.type === "slide") return null;
   const results = preview
     ? question.type === "cloud"
       ? samples
@@ -268,17 +271,24 @@ function QuestionStage({
       </div>
       <div className="stage-title">
         <span className="question-eyebrow">
-          A LITTLE CHECK-IN, A BIG CONNECTION
+          {question.type === "slide"
+            ? "A MOMENT TOGETHER"
+            : "A LITTLE CHECK-IN, A BIG CONNECTION"}
         </span>
         <h2>{question.title}</h2>
         {question.type === "cloud" && <p>One word. All the feels.</p>}
+        {question.type === "slide" && <p>{question.description}</p>}
       </div>
       <ResultsVisual question={question} preview={preview} reveal={reveal} />
       <div className="stage-bottom">
         <span className="stage-brand">
           <Zap size={16} fill="currentColor" /> pulse.
         </span>
-        {preview ? (
+        {question.type === "slide" ? (
+          <span className="sample-label">
+            <FileText size={12} /> No responses needed
+          </span>
+        ) : preview ? (
           <span className="sample-label">
             <Eye size={12} /> Sample responses
           </span>
@@ -323,6 +333,7 @@ function QuestionEditor({
 }) {
   const [draft, setDraft] = useState(question);
   const isOptions = draft.type === "poll" || draft.type === "quiz";
+  const isSlide = draft.type === "slide";
   function submit(event: FormEvent) {
     event.preventDefault();
     onSave(draft);
@@ -352,7 +363,7 @@ function QuestionEditor({
           </select>
         </label>
         <label>
-          Your question
+          {isSlide ? "Title" : "Your question"}
           <textarea
             autoFocus
             required
@@ -364,6 +375,21 @@ function QuestionEditor({
             rows={3}
           />
         </label>
+        {isSlide && (
+          <label>
+            Description
+            <textarea
+              required
+              maxLength={2000}
+              value={draft.description || ""}
+              onChange={(event) =>
+                setDraft({ ...draft, description: event.target.value })
+              }
+              rows={5}
+              placeholder="Add the details you'd like everyone to see..."
+            />
+          </label>
+        )}
         {isOptions && (
           <fieldset>
             <legend>
@@ -447,7 +473,8 @@ function QuestionEditor({
             type="submit"
             disabled={
               !draft.title.trim() ||
-              (isOptions && draft.options.some((option) => !option.trim()))
+              (isOptions && draft.options.some((option) => !option.trim())) ||
+              (isSlide && !draft.description?.trim())
             }
           >
             <Check size={16} />
@@ -584,15 +611,18 @@ function ResultsPage({ room }: { room: Room | null }) {
               <strong>{room.questions.length}</strong>
             </div>
           </div>
-          {room.questions.map((question, index) => (
-            <section className="result-section" key={question.id}>
-              <span className="eyebrow">
-                {String(index + 1).padStart(2, "0")} / {labels[question.type]}
-              </span>
-              <h2>{question.title}</h2>
-              <ResultsVisual question={question} reveal />
-            </section>
-          ))}
+          {room.questions
+            .filter((question) => question.type !== "slide")
+            .map((question, index) => (
+              <section className="result-section" key={question.id}>
+                <span className="eyebrow">
+                  {String(index + 1).padStart(2, "0")} /{" "}
+                  {labels[question.type]}
+                </span>
+                <h2>{question.title}</h2>
+                <ResultsVisual question={question} reveal />
+              </section>
+            ))}
           {room.leaderboard.some((entry) => entry.score > 0) && (
             <Leaderboard room={room} />
           )}
@@ -1302,6 +1332,12 @@ function Host() {
                               </div>
                             ) : item.type === "quiz" ? (
                               <Trophy size={32} strokeWidth={1.5} />
+                            ) : item.type === "slide" ? (
+                              <div className="mini-slide">
+                                <FileText size={26} />
+                                <i />
+                                <i />
+                              </div>
                             ) : (
                               <div className="mini-message">
                                 <MessageCircle size={30} />
@@ -1425,26 +1461,30 @@ function Host() {
                 </div>
                 {inLobby ? null : isLive ? (
                   <div className="live-controls">
-                    <button
-                      className="button secondary"
-                      onClick={() => void control("toggle")}
-                      disabled={busy}
-                    >
-                      {room.accepting ? (
-                        <Pause size={16} />
-                      ) : (
-                        <Play size={16} />
-                      )}
-                      {room.accepting ? "Pause responses" : "Reopen responses"}
-                    </button>
-                    <button
-                      className="button secondary"
-                      onClick={() => void control("reveal")}
-                      disabled={room.revealed || busy}
-                    >
-                      <Eye size={17} />
-                      {room.revealed ? "Results revealed" : "Reveal results"}
-                    </button>
+                    {question.type !== "slide" && (
+                      <button
+                        className="button secondary"
+                        onClick={() => void control("toggle")}
+                        disabled={busy}
+                      >
+                        {room.accepting ? (
+                          <Pause size={16} />
+                        ) : (
+                          <Play size={16} />
+                        )}
+                        {room.accepting ? "Pause responses" : "Reopen responses"}
+                      </button>
+                    )}
+                    {question.type !== "slide" && (
+                      <button
+                        className="button secondary"
+                        onClick={() => void control("reveal")}
+                        disabled={room.revealed || busy}
+                      >
+                        <Eye size={17} />
+                        {room.revealed ? "Results revealed" : "Reveal results"}
+                      </button>
+                    )}
                     <button
                       className="button primary"
                       onClick={() =>
@@ -1478,7 +1518,9 @@ function Host() {
                               ? "Different perspectives. One shared picture."
                               : question.type === "quiz"
                                 ? "A little friendly competition."
-                                : "Space for the longer answer."}
+                                : question.type === "slide"
+                                  ? "Just a title and description. No input needed."
+                                  : "Space for the longer answer."}
                         </p>
                       </div>
                     </div>
@@ -1829,7 +1871,9 @@ function Host() {
                           ? "Let everyone pick their favorite"
                           : kind === "quiz"
                             ? "A correct answer and a little competition"
-                            : "Give every thought a little room"}
+                            : kind === "slide"
+                              ? "Just a title and description, no input needed"
+                              : "Give every thought a little room"}
                     </small>
                   </span>
                   <Plus size={19} />
@@ -2123,7 +2167,15 @@ function Participant() {
               {labels[question.type]}
             </span>
             <h1>{question.title}</h1>
-            {room.revealed ? (
+            {question.type === "slide" ? (
+              <div className="participant-slide">
+                <FileText size={38} />
+                <p>{question.description}</p>
+                <p className="waiting-note">
+                  Sit back for a moment. Your host will continue shortly.
+                </p>
+              </div>
+            ) : room.revealed ? (
               <div className="participant-reveal">
                 <span className="result-tag">
                   <BarChart3 size={15} />

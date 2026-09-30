@@ -1,6 +1,6 @@
 # Pulse
 
-A real-time audience app for live word clouds, multiple-choice polls, quizzes, and open responses. Built with React, TypeScript, Vite, Express, and Socket.IO.
+A real-time audience app for live word clouds, multiple-choice polls, quizzes, open responses, and title-and-description slides. Built with React, TypeScript, Vite, Express, and Socket.IO.
 
 ## Run Locally
 
@@ -22,6 +22,8 @@ Open http://localhost:5173. The command starts Vite and the live server together
 4. Participants visit `/join`, enter the room code and a display name, and submit one response per question.
 5. Pause or reopen voting, reveal results, and advance questions. Each correct quiz answer earns 1,000 points.
 6. End the session to view the summary and leaderboard. Export aggregated responses to CSV before stopping the server or starting another room.
+
+Add a **Title & description** question when you just need to show participants a title and a longer description without collecting any response, such as a welcome slide or a break announcement. Participants see only the title and description text and cannot submit anything; hosts see **Next question**/**Finish session** but no pause or reveal controls, since there is nothing to collect. Slide questions are skipped in the results summary.
 
 The editor's sample responses are labeled and never become live submissions. Live sessions always start empty. Quiz answers and audience results stay hidden from participants until the host reveals them. Participants and hosts can refresh and reconnect to their existing session.
 
@@ -61,7 +63,7 @@ The versioned format is:
 }
 ```
 
-Supported types are `cloud`, `poll`, `quiz`, and `text`; supported themes are `mint`, `peach`, `lilac`, and `sky`. `correct` is a zero-based option index for quizzes and `null` otherwise. Word clouds and open responses use an empty `options` array. Existing question and option limits apply to imports.
+Supported types are `cloud`, `poll`, `quiz`, `text`, and `slide`; supported themes are `mint`, `peach`, `lilac`, and `sky`. `correct` is a zero-based option index for quizzes and `null` otherwise. Word clouds, open responses, and slides use an empty `options` array. Slide questions require a non-empty `description` (up to 2000 characters); other types omit it. Existing question and option limits apply to imports.
 
 Newly hosted rooms are tracked with their source session, even across multiple runs. For sessions hosted before this feature, the currently recoverable host room is linked when its title and questions match the draft; older rooms whose host credentials were not retained cannot be recovered or deleted through the library and expire normally.
 

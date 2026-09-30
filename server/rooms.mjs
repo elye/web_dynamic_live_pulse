@@ -1,7 +1,7 @@
 import { randomInt, randomUUID } from "node:crypto";
 
 export const rooms = new Map();
-const kinds = new Set(["cloud", "poll", "quiz", "text"]);
+const kinds = new Set(["cloud", "poll", "quiz", "text", "slide"]);
 
 export function validateQuestions(input) {
   if (!Array.isArray(input) || !input.length || input.length > 30)
@@ -14,7 +14,9 @@ export function validateQuestions(input) {
       question.title.length > 200
     )
       throw new Error("Each question needs a title (up to 200 characters).");
-    const options = Array.isArray(question.options)
+    if (question.type === "slide" && (typeof question.description !== "string" || !question.description.trim() || question.description.length > 2000))
+      throw new Error("Add a description with 1 to 2000 characters.");
+    const options = question.type !== "slide" && Array.isArray(question.options)
       ? question.options.map((option) => String(option).trim())
       : [];
     if (
@@ -35,6 +37,7 @@ export function validateQuestions(input) {
       id: randomUUID(),
       type: question.type,
       title: question.title.trim(),
+      ...(question.type === "slide" ? { description: question.description.trim() } : {}),
       options,
       correct: question.type === "quiz" ? question.correct : null,
     };
@@ -97,6 +100,7 @@ export function submitVote(room, token, questionId, value) {
   if (!room.participants.has(token))
     throw new Error("Join the room before responding.");
   const question = room.questions[room.active];
+  if (question.type === "slide") throw new Error("This slide does not accept responses.");
   if (!room.started || room.ended || !room.accepting || question.id !== questionId)
     throw new Error("This question is no longer accepting responses.");
   const votes = room.votes.get(question.id);
@@ -132,17 +136,19 @@ export function controlRoom(room, token, action, index) {
     if (room.started) throw new Error("The questions have already started.");
     room.started = true;
     room.active = 0;
-    room.accepting = true;
+    room.accepting = room.questions[room.active].type !== "slide";
   } else if (action === "select") {
     if (!Number.isInteger(index) || index < 0 || index >= room.questions.length)
       throw new Error("Question not found.");
     room.active = index;
-    room.accepting = true;
+    room.accepting = room.questions[room.active].type !== "slide";
     room.revealed = false;
   } else if (action === "toggle") {
+    if (room.questions[room.active].type === "slide") throw new Error("This slide does not accept responses.");
     room.accepting = !room.accepting;
     if (room.accepting) room.revealed = false;
   } else if (action === "reveal") {
+    if (room.questions[room.active].type === "slide") throw new Error("This slide has no results to reveal.");
     room.revealed = true;
     room.accepting = false;
   } else if (action === "end") {

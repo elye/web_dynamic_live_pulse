@@ -1,4 +1,4 @@
-export type Kind = "cloud" | "poll" | "quiz" | "text" | "slide";
+export type Kind = "slide" | "cloud" | "poll" | "quiz" | "text";
 export type Question = {
   id: string;
   type: Kind;
@@ -31,11 +31,11 @@ export type Room = {
   leaderboard: { name: string; score: number }[];
 };
 export const labels: Record<Kind, string> = {
+  slide: "Title & description",
   cloud: "Word cloud",
   poll: "Multiple choice",
   quiz: "Quiz",
   text: "Open response",
-  slide: "Title & description",
 };
 
 export function createId() {
@@ -193,7 +193,7 @@ export function importSession(json: string): Session {
       const question = item as Record<string, unknown>;
       if (
         typeof question.type !== "string" ||
-        !(["cloud", "poll", "quiz", "text", "slide"] as string[]).includes(
+        !(["slide", "cloud", "poll", "quiz", "text"] as string[]).includes(
           question.type,
         )
       )

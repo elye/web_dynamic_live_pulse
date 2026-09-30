@@ -16,7 +16,7 @@ Open http://localhost:5173. The command starts Vite and the live server together
 ## Host a Session
 
 1. Start in the studio with an editable four-question check-in, or create a session from the template library.
-2. Edit questions, answer choices, and correct quiz answers. Duplicate, reorder, or delete questions and select a slide mood.
+2. Edit questions, answer choices, and correct quiz answers. Duplicate, reorder, or delete questions and select a slide mood. Reorder by dragging a question's card in the question rail to a new position (drag handle on the right), or use the up/down arrows in the question details panel. Reordering is disabled while a session is live.
 3. Select **Present live** to open the welcome screen. The QR code, room code, and selectable participant URL are always visible beside the live participant roster. Use the copy icon to copy the URL, or select the field to copy it manually.
   Select **Start questions** when everyone is ready. Participants wait in the welcome lobby until then.
 4. Participants visit `/join`, enter the room code and a display name, and submit one response per question.
@@ -63,7 +63,7 @@ The versioned format is:
 }
 ```
 
-Supported types are `cloud`, `poll`, `quiz`, `text`, and `slide`; supported themes are `mint`, `peach`, `lilac`, and `sky`. `correct` is a zero-based option index for quizzes and `null` otherwise. Word clouds, open responses, and slides use an empty `options` array. Slide questions require a non-empty `description` (up to 280 characters); other types omit it. Existing question and option limits apply to imports.
+Supported types are `slide`, `cloud`, `poll`, `quiz`, and `text`; supported themes are `mint`, `peach`, `lilac`, and `sky`. `correct` is a zero-based option index for quizzes and `null` otherwise. Word clouds, open responses, and slides use an empty `options` array. Slide questions require a non-empty `description` (up to 280 characters); other types omit it. Existing question and option limits apply to imports.
 
 Newly hosted rooms are tracked with their source session, even across multiple runs. For sessions hosted before this feature, the currently recoverable host room is linked when its title and questions match the draft; older rooms whose host credentials were not retained cannot be recovered or deleted through the library and expire normally.
 

@@ -640,6 +640,22 @@ button:not(:disabled):active {
   box-shadow: 0 0 0 1px #578461;
   background: #fcfefb;
 }
+.question-thumbnail[draggable="true"] {
+  cursor: grab;
+}
+.question-thumbnail.dragging {
+  opacity: 0.4;
+}
+.question-thumbnail.drag-over {
+  border-color: #578461;
+  box-shadow: 0 -2px 0 #578461 inset;
+}
+.thumbnail-drag-handle {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  color: #b7c2b4;
+}
 .thumbnail-number {
   position: absolute;
   left: 11px;

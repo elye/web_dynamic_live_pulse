@@ -21,6 +21,7 @@ import {
   FileText,
   FlaskConical,
   FolderOpen,
+  GripVertical,
   LayoutGrid,
   Link,
   LoaderCircle,
@@ -63,13 +64,13 @@ import { request, useLive } from "./live";
 import WordCloud from "./WordCloud";
 
 const icons: Record<Kind, LucideIcon> = {
+  slide: FileText,
   cloud: Cloud,
   poll: BarChart3,
   quiz: Trophy,
   text: MessageCircle,
-  slide: FileText,
 };
-const kinds: Kind[] = ["cloud", "poll", "quiz", "text", "slide"];
+const kinds: Kind[] = ["slide", "cloud", "poll", "quiz", "text"];
 const samples = [
   { text: "excited", count: 12 },
   { text: "curious", count: 9 },
@@ -812,6 +813,8 @@ function Host() {
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState("");
   const [notice, setNotice] = useState("");
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const live = useLive("host", "", restoreSessionRoom);
   const { room, connected, error, setError } = live;
   const session =
@@ -1005,6 +1008,21 @@ function Host() {
     ];
     updateSession({ questions });
     setSelected(destination);
+  }
+  function moveQuestion(from: number, to: number) {
+    if (
+      from === to ||
+      from < 0 ||
+      to < 0 ||
+      from >= session.questions.length ||
+      to >= session.questions.length
+    )
+      return;
+    const questions = [...session.questions];
+    const [moved] = questions.splice(from, 1);
+    questions.splice(to, 0, moved);
+    updateSession({ questions });
+    setSelected(to);
   }
   const templateChoices = (
     <div className="template-grid">
@@ -1307,17 +1325,49 @@ function Host() {
                   <div className="question-list">
                     {questionList.map((item, index) => {
                       const Icon = icons[item.type];
+                      const draggable = !isLive && questionList.length > 1;
                       return (
                         <button
-                          className={`question-thumbnail ${!inLobby && index === currentIndex ? "selected" : ""}`}
+                          className={`question-thumbnail ${!inLobby && index === currentIndex ? "selected" : ""} ${dragIndex === index ? "dragging" : ""} ${dragOverIndex === index && dragIndex !== null && dragIndex !== index ? "drag-over" : ""}`}
                           key={item.id}
+                          draggable={draggable}
+                          aria-grabbed={dragIndex === index}
                           onClick={() =>
                             isLive
                               ? void control("select", index)
                               : setSelected(index)
                           }
+                          onDragStart={(event) => {
+                            if (!draggable) return;
+                            setDragIndex(index);
+                            event.dataTransfer.effectAllowed = "move";
+                          }}
+                          onDragEnter={(event) => {
+                            if (dragIndex === null) return;
+                            event.preventDefault();
+                            setDragOverIndex(index);
+                          }}
+                          onDragOver={(event) => {
+                            if (dragIndex === null) return;
+                            event.preventDefault();
+                          }}
+                          onDragEnd={() => {
+                            setDragIndex(null);
+                            setDragOverIndex(null);
+                          }}
+                          onDrop={(event) => {
+                            event.preventDefault();
+                            if (dragIndex !== null) moveQuestion(dragIndex, index);
+                            setDragIndex(null);
+                            setDragOverIndex(null);
+                          }}
                           disabled={busy || inLobby}
                         >
+                          {draggable && (
+                            <span className="thumbnail-drag-handle" aria-hidden="true">
+                              <GripVertical size={13} />
+                            </span>
+                          )}
                           <span className="thumbnail-number">
                             {String(index + 1).padStart(2, "0")}
                           </span>

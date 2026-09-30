@@ -1,7 +1,7 @@
 import { randomInt, randomUUID } from "node:crypto";
 
 export const rooms = new Map();
-const kinds = new Set(["cloud", "poll", "quiz", "text", "slide"]);
+const kinds = new Set(["slide", "cloud", "poll", "quiz", "text"]);
 
 export function validateQuestions(input) {
   if (!Array.isArray(input) || !input.length || input.length > 30)

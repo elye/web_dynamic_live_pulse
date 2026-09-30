@@ -1,0 +1,38 @@
+diff --git a/node_modules/wordcloud/src/wordcloud2.js b/node_modules/wordcloud/src/wordcloud2.js
+index 9ed6be3..bd4c883 100644
+--- a/node_modules/wordcloud/src/wordcloud2.js
++++ b/node_modules/wordcloud/src/wordcloud2.js
+@@ -204,6 +204,7 @@ if (!window.clearImmediate) {
+       backgroundColor: '#fff', // opaque white = rgba(255, 255, 255, 1)
+ 
+       gridSize: 8,
++      wordPadding: 0,
+       drawOutOfBound: false,
+       shrinkToFit: false,
+       origin: null,
+@@ -573,8 +574,8 @@ if (!window.clearImmediate) {
+ 
+       // Create a boundary box that is larger than our estimates,
+       // so text don't get cut of (it sill might)
+-      var boxWidth = fw + fh * 2
+-      var boxHeight = fh * 3
++      var boxWidth = fw + fh * 2 + settings.wordPadding * 2
++      var boxHeight = fh * 3 + settings.wordPadding * 2
+       var fgw = Math.ceil(boxWidth / g)
+       var fgh = Math.ceil(boxHeight / g)
+       boxWidth = fgw * g
+@@ -630,6 +631,14 @@ if (!window.clearImmediate) {
+         word, fillTextOffsetX * mu,
+         (fillTextOffsetY + fontSize * 0.5) * mu
+       )
++      if (settings.wordPadding > 0) {
++        fctx.lineWidth = settings.wordPadding * 2 * mu
++        fctx.lineJoin = 'round'
++        fctx.strokeText(
++          word, fillTextOffsetX * mu,
++          (fillTextOffsetY + fontSize * 0.5) * mu
++        )
++      }
+ 
+       // Get the pixels of the text
+       var imageData = fctx.getImageData(0, 0, width, height).data

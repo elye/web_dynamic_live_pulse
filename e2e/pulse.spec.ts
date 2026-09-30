@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
+import { io as connect } from "socket.io-client";
 
 async function noOverflow(page: Page) {
   expect(
@@ -10,29 +11,188 @@ async function noOverflow(page: Page) {
   ).toBe(true);
 }
 
-async function checkCloudGeometry(page: Page, count: number) {
+async function checkCloudGeometry(page: Page | Locator, count: number) {
   await expect(page.locator(".cloud-word")).toHaveCount(count);
-  const geometry = await page.locator(".word-cloud").evaluate((element) => {
-    const frame = element.getBoundingClientRect();
-    const words = [...element.querySelectorAll(".cloud-word")].map((word) => word.getBoundingClientRect());
-    const left = Math.min(...words.map((word) => word.left));
-    const right = Math.max(...words.map((word) => word.right));
-    const top = Math.min(...words.map((word) => word.top));
-    const bottom = Math.max(...words.map((word) => word.bottom));
+  const canvas = page.locator(".cloud-canvas");
+  await expect(canvas).toHaveAttribute("data-ready", "true");
+  await expect(canvas).toHaveAttribute("data-words", String(count));
+  const geometry = await canvas.evaluate((surface: HTMLCanvasElement) => {
+    const pixels = surface.getContext("2d")!.getImageData(0, 0, surface.width, surface.height).data;
+    let left = surface.width;
+    let right = 0;
+    let top = surface.height;
+    let bottom = 0;
+    let painted = 0;
+    for (let index = 0; index < pixels.length / 4; index++) {
+      if (pixels[index * 4 + 3] < 128) continue;
+      const column = index % surface.width;
+      const row = Math.floor(index / surface.width);
+      left = Math.min(left, column);
+      right = Math.max(right, column);
+      top = Math.min(top, row);
+      bottom = Math.max(bottom, row);
+      painted++;
+    }
+    const ratio = surface.width / surface.getBoundingClientRect().width;
+    const frame = surface.parentElement!.getBoundingClientRect();
+    const bounds = surface.getBoundingClientRect();
+    const draws: { text: string; top: number; size: number }[] = JSON.parse(surface.dataset.testDraws || "[]");
     return {
-      rows: new Set(words.map((word) => Math.round(word.top))).size,
-      inside: left >= frame.left && right <= frame.right && top >= frame.top && bottom <= frame.bottom,
-      horizontalOffset: Math.abs((left + right) / 2 - (frame.left + frame.right) / 2),
-      verticalOffset: Math.abs((top + bottom) / 2 - (frame.top + frame.bottom) / 2),
-      overlaps: words.some((first, index) => words.slice(index + 1).some((second) => first.left < second.right - 1 && first.right > second.left + 1 && first.top < second.bottom - 1 && first.bottom > second.top + 1)),
+      rows: new Set(draws.map((word) => Math.round(word.top))).size,
+      inside: bounds.left + left / ratio > frame.left && bounds.left + right / ratio < frame.right && bounds.top + top / ratio > frame.top && bounds.top + bottom / ratio < frame.bottom,
+      horizontalOffset: Math.abs(bounds.left + (left + right) / (2 * ratio) - (frame.left + frame.right) / 2),
+      verticalOffset: Math.abs(bounds.top + (top + bottom) / (2 * ratio) - (frame.top + frame.bottom) / 2),
+      overlappingPixels: Number(surface.dataset.testOverlap || 0),
+      spacingViolations: Number(surface.dataset.testSpacingViolations || 0),
+      drawn: draws.length,
+      sizeRatio: Math.max(...draws.map((word) => word.size)) / Math.min(...draws.map((word) => word.size)),
+      fontLoaded: document.fonts.check('700 78px "Pulse Cloud"'),
+      painted,
     };
   });
+  expect(geometry.painted).toBeGreaterThan(100);
+  expect(geometry.fontLoaded).toBe(true);
+  expect(geometry.drawn).toBe(count);
   expect(geometry.inside).toBe(true);
-  expect(geometry.overlaps).toBe(false);
+  expect(geometry.overlappingPixels).toBe(0);
   expect(geometry.horizontalOffset).toBeLessThan(25);
   expect(geometry.verticalOffset).toBeLessThan(25);
-  if (count > 2) expect(geometry.rows).toBeGreaterThan(2);
+  if (count > 5) expect(geometry.rows).toBeGreaterThan(2);
+  if (count === 11) expect(geometry.sizeRatio).toBeGreaterThan(2);
+  if (count > 1) expect(geometry.spacingViolations).toBe(0);
 }
+
+async function installCloudProbe(page: Page) {
+  await page.addInitScript(() => {
+    const nativeFillText = CanvasRenderingContext2D.prototype.fillText;
+    const nativeClearRect = CanvasRenderingContext2D.prototype.clearRect;
+    CanvasRenderingContext2D.prototype.clearRect = function(...args) {
+      if (this.canvas.matches(".cloud-canvas")) {
+        this.canvas.dataset.testOverlap = "0";
+        this.canvas.dataset.testSpacingViolations = "0";
+        this.canvas.dataset.testDraws = "[]";
+      }
+      nativeClearRect.apply(this, args);
+    };
+    CanvasRenderingContext2D.prototype.fillText = function(text, left, top, maxWidth) {
+      if (this.canvas.matches(".cloud-canvas")) {
+        const stamp = document.createElement("canvas");
+        stamp.width = this.canvas.width;
+        stamp.height = this.canvas.height;
+        const context = stamp.getContext("2d")!;
+        context.setTransform(this.getTransform());
+        context.font = this.font;
+        context.textAlign = this.textAlign;
+        context.textBaseline = this.textBaseline;
+        nativeFillText.call(context, text, left, top);
+        const before = this.getImageData(0, 0, stamp.width, stamp.height).data;
+        const next = context.getImageData(0, 0, stamp.width, stamp.height).data;
+        let overlaps = Number(this.canvas.dataset.testOverlap || 0);
+        for (let index = 3; index < before.length; index += 4) {
+          if (before[index] >= 128 && next[index] >= 128) overlaps++;
+        }
+        this.canvas.dataset.testOverlap = String(overlaps);
+        const ratio = this.canvas.width / this.canvas.clientWidth;
+        context.lineWidth = 16 * ratio;
+        context.lineJoin = "round";
+        context.strokeText(text, left, top);
+        const padded = context.getImageData(0, 0, stamp.width, stamp.height).data;
+        let spacingViolations = Number(this.canvas.dataset.testSpacingViolations || 0);
+        for (let index = 3; index < before.length; index += 4) {
+          if (before[index] >= 128 && padded[index] >= 128) spacingViolations++;
+        }
+        this.canvas.dataset.testSpacingViolations = String(spacingViolations);
+        const draws = JSON.parse(this.canvas.dataset.testDraws || "[]");
+        draws.push({ text, top: this.getTransform().f, size: Number(this.font.match(/([\d.]+)px/)?.[1] || 0) });
+        this.canvas.dataset.testDraws = JSON.stringify(draws);
+      }
+      if (maxWidth === undefined) nativeFillText.call(this, text, left, top);
+      else nativeFillText.call(this, text, left, top, maxWidth);
+    };
+  });
+}
+
+test.beforeEach(async ({ page }) => installCloudProbe(page));
+
+test("cloud simulator previews many words without changing the session", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator(".cloud-canvas")).toHaveAttribute("data-ready", "true");
+  const saved = await page.evaluate(() => localStorage.getItem("pulse:sessions"));
+  await page.getByRole("button", { name: "Simulate word cloud", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Word cloud simulator" });
+  await checkCloudGeometry(dialog, 60);
+  await expect(dialog.getByText("60 distinct words", { exact: true })).toBeVisible();
+  await page.screenshot({ path: "test-results/cloud-simulator-desktop.png", fullPage: true });
+  const original = await dialog.locator(".cloud-word").first().textContent();
+  await dialog.getByRole("button", { name: "Regenerate sample", exact: true }).click();
+  await expect(dialog.locator(".cloud-word").first()).not.toHaveText(original!);
+  await checkCloudGeometry(dialog, 60);
+  const slider = dialog.getByRole("slider", { name: "Distinct words", exact: true });
+  await slider.fill("30");
+  await checkCloudGeometry(dialog, 30);
+  await dialog.getByLabel("Frequency distribution", { exact: true }).selectOption("equal");
+  await expect(dialog.getByText("150 sample responses", { exact: true })).toBeVisible();
+  await checkCloudGeometry(dialog, 30);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await slider.fill("60");
+  await checkCloudGeometry(dialog, 60);
+  await noOverflow(page);
+  expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+  await page.screenshot({ path: "test-results/cloud-simulator-mobile.png", fullPage: true });
+  await dialog.getByRole("button", { name: "Close dialog", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await checkCloudGeometry(page, 11);
+  expect(await page.evaluate(() => localStorage.getItem("pulse:sessions"))).toBe(saved);
+  expect(await page.evaluate(() => localStorage.getItem("pulse:host"))).toBeNull();
+});
+
+test("dense canvas cloud handles long phrases, live updates, and resizing", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Present live", exact: true }).click();
+  const url = await page.getByLabel("Participant link", { exact: true }).inputValue();
+  const code = new URL(url).searchParams.get("code")!;
+  await page.getByRole("button", { name: "Start questions", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Pause responses", exact: true })).toBeVisible();
+  const clients: ReturnType<typeof connect>[] = [];
+  try {
+    for (let index = 0; index < 60; index++) {
+      const client = connect("http://localhost:5173", { transports: ["websocket"], forceNew: true });
+      clients.push(client);
+      const joined = await client.timeout(3000).emitWithAck("room:join", { code, name: `Guest ${index + 1}` });
+      expect(joined.ok).toBe(true);
+      const value = index === 0 ? "a wonderfully creative day" : `idea ${index + 1}`;
+      const voted = await client.timeout(3000).emitWithAck("room:vote", { code, token: joined.token, questionId: joined.state.questions[0].id, value });
+      expect(voted.ok, voted.error).toBe(true);
+      if (index === 1 || index === 4) {
+        await checkCloudGeometry(page, index + 1);
+        await page.screenshot({ path: `test-results/cloud-${index + 1}-words.png`, fullPage: true });
+      }
+    }
+    await checkCloudGeometry(page, 60);
+    await page.screenshot({ path: "test-results/cloud-dense-desktop.png", fullPage: true });
+    await page.setViewportSize({ width: 390, height: 1000 });
+    await expect.poll(() => page.locator(".cloud-canvas").evaluate((surface: HTMLCanvasElement) => Math.abs(surface.width - surface.clientWidth))).toBeLessThan(2);
+    await checkCloudGeometry(page, 60);
+    await noOverflow(page);
+    await page.screenshot({ path: "test-results/cloud-dense-mobile.png", fullPage: true });
+  } finally {
+    clients.forEach((client) => client.disconnect());
+  }
+});
+
+test("canvas cloud stays crisp and collision-free on high-DPI phones", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+  try {
+    const page = await context.newPage();
+    await installCloudProbe(page);
+    await page.goto("/");
+    await checkCloudGeometry(page, 11);
+    expect(await page.locator(".cloud-canvas").evaluate((surface: HTMLCanvasElement) => surface.width / surface.clientWidth)).toBe(2);
+    await page.screenshot({ path: "test-results/cloud-retina-mobile.png", fullPage: true });
+  } finally {
+    await context.close();
+  }
+});
 
 test("welcome screen keeps QR, copyable URL, and roster visible without a dialog", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
@@ -439,6 +599,8 @@ test("two audiences answer all types, reconnect, receive reveals, and finish wit
   });
   const audience = await audienceContext.newPage();
   const second = await secondContext.newPage();
+  await installCloudProbe(audience);
+  await installCloudProbe(second);
   audience.on("pageerror", (error) => errors.push(error.message));
   try {
     for (const [participant, name] of [
@@ -487,7 +649,7 @@ test("two audiences answer all types, reconnect, receive reveals, and finish wit
       ).toBeVisible();
     }
     await expect(page.locator(".cloud-word")).toContainText("inspired");
-    await expect(page.locator(".cloud-word title")).toHaveText("2 responses");
+    await expect(page.locator(".cloud-word")).toHaveAttribute("title", "2 responses");
     await checkCloudGeometry(page, 1);
     await audience.reload();
     await expect(

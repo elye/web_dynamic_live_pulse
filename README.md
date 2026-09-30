@@ -25,6 +25,14 @@ Open http://localhost:5173. The command starts Vite and the live server together
 
 The editor's sample responses are labeled and never become live submissions. Live sessions always start empty. Quiz answers and audience results stay hidden from participants until the host reveals them. Participants and hosts can refresh and reconnect to their existing session.
 
+Word clouds use WordCloud2's canvas glyph-occupancy layout: frequent responses appear larger, smaller words pack around them with occasional vertical rotations, and the finished cloud is centered in its frame. The renderer adapts to screen size and high-DPI displays, uses a bundled Manrope font to keep measurement and drawing consistent, and provides hover counts plus an accessible text list.
+
+Each word reserves an invisible margin around its letters, with extra spacing for small clouds. Dense mobile clouds use a taller drawing area to preserve readable gaps. This relies on the tracked WordCloud2 patch in `patches/`, applied automatically by `npm install` via `patch-package`; installations that skip lifecycle scripts must run `npm run postinstall` before building.
+
+### Quick Word Cloud Simulation
+
+Select a word-cloud question in the studio and click the flask icon (**Simulate word cloud**) above the slide preview. The simulator opens with 60 sample words. Adjust **Distinct words** from 10 to 60, choose popular or equal frequencies, and use **Regenerate sample** to try another mix. It uses the real cloud renderer but never creates a live room, adds votes, or modifies saved questions. Close the dialog to return to the usual preview.
+
 ## Back Up, Restore, and Delete Sessions
 
 - **Export:** Select the download icon on a session in **My sessions**, or **Export session JSON** in the studio. This downloads a `.pulse.json` file containing the session title, theme, questions, choices, and correct quiz answers. Keep this file private if quiz answers are sensitive.

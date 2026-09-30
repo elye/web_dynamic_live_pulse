@@ -911,14 +911,20 @@ button:not(:disabled):active {
   margin: auto;
   overflow: hidden;
 }
-.scattered-cloud svg { display: block; overflow: visible; }
-.cloud-word { letter-spacing: 0; }
-.cloud-color-0 { fill: #426c4b; }
-.cloud-color-1 { fill: #7b9264; }
-.cloud-color-2 { fill: #c87c65; }
-.cloud-color-3 { fill: #8585a0; }
-.cloud-color-4 { fill: #4e8778; }
-.cloud-color-5 { fill: #8f9971; }
+.cloud-canvas { display: block; width: 100%; height: 300px; }
+.cloud-simulator { min-width: 0; }
+.simulation-controls { display: flex; align-items: end; gap: 20px; padding: 4px 0 22px; flex-wrap: wrap; }
+.simulation-controls label { display: flex; flex-direction: column; gap: 9px; font-size: 12px; min-width: 0; flex: 1 1 170px; }
+.simulation-controls .simulation-count { display: grid; grid-template-columns: 1fr auto; }
+.simulation-count input { grid-column: 1 / -1; width: 100%; accent-color: #315844; padding: 0; height: 35px; }
+.simulation-count output { font-weight: 700; }
+.simulation-controls select { min-width: 0; width: 100%; padding: 9px; border: 1px solid #dce4d9; border-radius: 4px; background: white; font: inherit; color: inherit; }
+.simulation-controls > button { margin-bottom: 1px; }
+.simulation-stage { padding: 24px 16px 16px; text-align: center; }
+.simulation-stage h3 { margin: 12px 0 20px; font-size: 22px; overflow-wrap: anywhere; }
+.simulation-summary { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 11px; padding-top: 16px; }
+.simulation-summary span { display: inline-flex; align-items: center; gap: 6px; }
+.cloud-accessible-words { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .welcome-lobby {
   border: 1px solid #d9e6d4;
   border-radius: 7px;

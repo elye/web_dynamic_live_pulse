@@ -906,6 +906,15 @@ button:not(:disabled):active {
   font-size: 11px;
   opacity: 0.68;
 }
+.stage-slide-description {
+  font-size: 17px !important;
+  font-weight: 550;
+  line-height: 1.75 !important;
+  opacity: 0.85 !important;
+  max-width: 480px;
+  margin: 6px auto 0 !important;
+  overflow-wrap: anywhere;
+}
 .word-cloud {
   display: flex;
   flex-wrap: wrap;
@@ -2366,20 +2375,25 @@ textarea {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   text-align: center;
-  gap: 14px;
+  gap: 20px;
+  min-height: 360px;
   padding: 30px 10px;
   color: #a68a55;
 }
 .participant-slide p {
-  color: #566047;
-  font-size: 14px;
-  line-height: 1.6;
+  color: #2f4a35;
+  font-size: 21px;
+  font-weight: 550;
+  line-height: 1.75;
   white-space: pre-wrap;
-  max-width: 480px;
+  max-width: 540px;
+  overflow-wrap: anywhere;
 }
 .participant-slide .waiting-note {
   color: #97a58a;
+  font-size: 11px;
   margin-top: 6px;
 }
 .participant-finish {
@@ -3581,6 +3595,13 @@ textarea {
   }
   .participant-session > .eyebrow {
     font-size: 8px;
+  }
+  .participant-slide {
+    min-height: 260px;
+  }
+  .participant-slide p {
+    font-size: 17px;
+    line-height: 1.65;
   }
   .participant-room {
     font-size: 11px;

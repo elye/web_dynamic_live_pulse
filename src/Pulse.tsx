@@ -277,7 +277,9 @@ function QuestionStage({
         </span>
         <h2>{question.title}</h2>
         {question.type === "cloud" && <p>One word. All the feels.</p>}
-        {question.type === "slide" && <p>{question.description}</p>}
+        {question.type === "slide" && (
+          <p className="stage-slide-description">{question.description}</p>
+        )}
       </div>
       <ResultsVisual question={question} preview={preview} reveal={reveal} />
       <div className="stage-bottom">
@@ -380,7 +382,7 @@ function QuestionEditor({
             Description
             <textarea
               required
-              maxLength={2000}
+              maxLength={280}
               value={draft.description || ""}
               onChange={(event) =>
                 setDraft({ ...draft, description: event.target.value })
@@ -388,6 +390,9 @@ function QuestionEditor({
               rows={5}
               placeholder="Add the details you'd like everyone to see..."
             />
+            <small className="character-count">
+              {(draft.description || "").length} / 280
+            </small>
           </label>
         )}
         {isOptions && (

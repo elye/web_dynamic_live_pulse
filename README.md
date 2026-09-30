@@ -63,7 +63,7 @@ The versioned format is:
 }
 ```
 
-Supported types are `cloud`, `poll`, `quiz`, `text`, and `slide`; supported themes are `mint`, `peach`, `lilac`, and `sky`. `correct` is a zero-based option index for quizzes and `null` otherwise. Word clouds, open responses, and slides use an empty `options` array. Slide questions require a non-empty `description` (up to 2000 characters); other types omit it. Existing question and option limits apply to imports.
+Supported types are `cloud`, `poll`, `quiz`, `text`, and `slide`; supported themes are `mint`, `peach`, `lilac`, and `sky`. `correct` is a zero-based option index for quizzes and `null` otherwise. Word clouds, open responses, and slides use an empty `options` array. Slide questions require a non-empty `description` (up to 280 characters); other types omit it. Existing question and option limits apply to imports.
 
 Newly hosted rooms are tracked with their source session, even across multiple runs. For sessions hosted before this feature, the currently recoverable host room is linked when its title and questions match the draft; older rooms whose host credentials were not retained cannot be recovered or deleted through the library and expire normally.
 
@@ -102,7 +102,7 @@ Server tests cover authorization, hidden answers, input validation, duplicate vo
 - Live rooms and responses are held in server memory. They expire after 24 hours and are lost when the server restarts, including development-server restarts after backend edits.
 - The results view shows the most recently hosted room. Export it before creating another room.
 - Each room supports at most 30 questions and 500 participant identities. A participant token permits one response per question. Clearing browser storage creates a new identity; this is not a verified-person voting system.
-- Word clouds accept up to 30 characters and display the 60 most frequent distinct responses. Open responses accept up to 280 characters. Polls and quizzes support 2 to 6 options.
+- Word clouds accept up to 30 characters and display the 60 most frequent distinct responses. Open responses and slide descriptions accept up to 280 characters. Polls and quizzes support 2 to 6 options.
 - Host controls require a server-generated bearer token. Keep host browser storage private. All visitors can create their own rooms; room codes are invitation codes, not confidential access controls.
 
 ## Before Public Deployment

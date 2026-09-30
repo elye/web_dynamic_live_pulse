@@ -14,8 +14,8 @@ export function validateQuestions(input) {
       question.title.length > 200
     )
       throw new Error("Each question needs a title (up to 200 characters).");
-    if (question.type === "slide" && (typeof question.description !== "string" || !question.description.trim() || question.description.length > 2000))
-      throw new Error("Add a description with 1 to 2000 characters.");
+    if (question.type === "slide" && (typeof question.description !== "string" || !question.description.trim() || question.description.length > 280))
+      throw new Error("Add a description with 1 to 280 characters.");
     const options = question.type !== "slide" && Array.isArray(question.options)
       ? question.options.map((option) => String(option).trim())
       : [];

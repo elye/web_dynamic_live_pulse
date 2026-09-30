@@ -208,10 +208,10 @@ export function importSession(json: string): Session {
         question.type === "slide" &&
         (typeof question.description !== "string" ||
           !question.description.trim() ||
-          question.description.length > 2000)
+          question.description.length > 280)
       )
         throw new Error(
-          prefix + "add a description with 1 to 2000 characters.",
+          prefix + "add a description with 1 to 280 characters.",
         );
       const options = question.options;
       if (

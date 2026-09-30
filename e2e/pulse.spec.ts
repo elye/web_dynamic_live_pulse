@@ -588,7 +588,7 @@ test("title-and-description slides show no input to participants or reveal contr
     .getByRole("textbox", { name: "Title", exact: true })
     .fill("Welcome aboard");
   await page
-    .getByRole("textbox", { name: "Description", exact: true })
+    .getByRole("textbox", { name: /Description/ })
     .fill("Grab a coffee and settle in. We'll begin shortly.");
   await page
     .getByRole("button", { name: "Save question", exact: true })

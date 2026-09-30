@@ -38,7 +38,7 @@ test("title and description slides never accept responses and preserve content",
   assert.equal(room.accepting, false);
   assert.deepEqual(snapshot(room, true).questions[0].results, []);
   assert.throws(() => createRoom("Invalid", [{ ...slide, description: "" }]), /description/);
-  assert.throws(() => createRoom("Invalid", [{ ...slide, description: "a".repeat(2001) }]), /description/);
+  assert.throws(() => createRoom("Invalid", [{ ...slide, description: "a".repeat(281) }]), /description/);
   rooms.delete(room.code);
 });
 

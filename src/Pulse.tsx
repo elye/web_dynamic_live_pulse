@@ -38,6 +38,7 @@ import {
   Shuffle,
   Sparkles,
   Square,
+  ToggleLeft,
   Trash2,
   Trophy,
   Upload,
@@ -68,9 +69,10 @@ const icons: Record<Kind, LucideIcon> = {
   cloud: Cloud,
   poll: BarChart3,
   quiz: Trophy,
+  truefalse: ToggleLeft,
   text: MessageCircle,
 };
-const kinds: Kind[] = ["slide", "cloud", "poll", "quiz", "text"];
+const kinds: Kind[] = ["slide", "cloud", "poll", "quiz", "truefalse", "text"];
 const samples = [
   { text: "excited", count: 12 },
   { text: "curious", count: 9 },
@@ -217,7 +219,7 @@ function ResultsVisual({
               </b>
               {item.text}
               {reveal &&
-                question.type === "quiz" &&
+                ["quiz", "truefalse"].includes(question.type) &&
                 question.correct === index && <Check size={18} />}
             </span>
             <strong>
@@ -335,7 +337,9 @@ function QuestionEditor({
   onClose: () => void;
 }) {
   const [draft, setDraft] = useState(question);
-  const isOptions = draft.type === "poll" || draft.type === "quiz";
+  const isTrueFalse = draft.type === "truefalse";
+  const isOptions = draft.type === "poll" || draft.type === "quiz" || isTrueFalse;
+  const hasCorrectAnswer = draft.type === "quiz" || isTrueFalse;
   const isSlide = draft.type === "slide";
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -400,13 +404,11 @@ function QuestionEditor({
           <fieldset>
             <legend>
               Answer options{" "}
-              {draft.type === "quiz" && (
-                <span>· Select the correct answer</span>
-              )}
+              {hasCorrectAnswer && <span>· Select the correct answer</span>}
             </legend>
             {draft.options.map((option, index) => (
               <div className="option-editor" key={index}>
-                {draft.type === "quiz" ? (
+                {hasCorrectAnswer ? (
                   <input
                     aria-label={`Option ${index + 1} is correct`}
                     type="radio"
@@ -433,30 +435,32 @@ function QuestionEditor({
                     })
                   }
                 />
-                <IconButton
-                  icon={X}
-                  label={`Remove option ${index + 1}`}
-                  disabled={draft.options.length <= 2}
-                  onClick={() =>
-                    setDraft({
-                      ...draft,
-                      options: draft.options.filter(
-                        (_, position) => position !== index,
-                      ),
-                      correct:
-                        draft.type === "quiz"
-                          ? draft.correct === index
-                            ? 0
-                            : draft.correct! > index
-                              ? draft.correct! - 1
-                              : draft.correct
-                          : null,
-                    })
-                  }
-                />
+                {!isTrueFalse && (
+                  <IconButton
+                    icon={X}
+                    label={`Remove option ${index + 1}`}
+                    disabled={draft.options.length <= 2}
+                    onClick={() =>
+                      setDraft({
+                        ...draft,
+                        options: draft.options.filter(
+                          (_, position) => position !== index,
+                        ),
+                        correct:
+                          hasCorrectAnswer
+                            ? draft.correct === index
+                              ? 0
+                              : draft.correct! > index
+                                ? draft.correct! - 1
+                                : draft.correct
+                            : null,
+                      })
+                    }
+                  />
+                )}
               </div>
             ))}
-            {draft.options.length < 6 && (
+            {!isTrueFalse && draft.options.length < 6 && (
               <button
                 type="button"
                 className="text-button"
@@ -1387,6 +1391,8 @@ function Host() {
                               </div>
                             ) : item.type === "quiz" ? (
                               <Trophy size={32} strokeWidth={1.5} />
+                            ) : item.type === "truefalse" ? (
+                              <ToggleLeft size={32} strokeWidth={1.5} />
                             ) : item.type === "slide" ? (
                               <div className="mini-slide">
                                 <FileText size={26} />
@@ -1573,9 +1579,11 @@ function Host() {
                               ? "Different perspectives. One shared picture."
                               : question.type === "quiz"
                                 ? "A little friendly competition."
-                                : question.type === "slide"
-                                  ? "Just a title and description. No input needed."
-                                  : "Space for the longer answer."}
+                                : question.type === "truefalse"
+                                  ? "A quick binary call: true or false."
+                                  : question.type === "slide"
+                                    ? "Just a title and description. No input needed."
+                                    : "Space for the longer answer."}
                         </p>
                       </div>
                     </div>
@@ -1926,9 +1934,11 @@ function Host() {
                           ? "Let everyone pick their favorite"
                           : kind === "quiz"
                             ? "A correct answer and a little competition"
-                            : kind === "slide"
-                              ? "Just a title and description, no input needed"
-                              : "Give every thought a little room"}
+                            : kind === "truefalse"
+                              ? "A binary choice: true or false"
+                              : kind === "slide"
+                                ? "Just a title and description, no input needed"
+                                : "Give every thought a little room"}
                     </small>
                   </span>
                   <Plus size={19} />
@@ -2237,7 +2247,7 @@ function Participant() {
                   The results are in
                 </span>
                 <ResultsVisual question={question} reveal />
-                {question.type === "quiz" && (
+                {["quiz", "truefalse"].includes(question.type) && (
                   <div className="correct-answer">
                     <Check size={20} />
                     Correct answer: {question.options[question.correct!]}
@@ -2269,7 +2279,7 @@ function Participant() {
               </div>
             ) : (
               <form onSubmit={vote} className="answer-form">
-                {question.type === "poll" || question.type === "quiz" ? (
+                {["poll", "quiz", "truefalse"].includes(question.type) ? (
                   <div className="answer-options">
                     {question.options.map((option, index) => (
                       <button

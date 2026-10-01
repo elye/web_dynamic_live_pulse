@@ -1,7 +1,7 @@
 import { randomInt, randomUUID } from "node:crypto";
 
 export const rooms = new Map();
-const kinds = new Set(["slide", "cloud", "poll", "quiz", "text"]);
+const kinds = new Set(["slide", "cloud", "poll", "quiz", "truefalse", "text"]);
 
 export function validateQuestions(input) {
   if (!Array.isArray(input) || !input.length || input.length > 30)
@@ -20,6 +20,12 @@ export function validateQuestions(input) {
       ? question.options.map((option) => String(option).trim())
       : [];
     if (
+      question.type === "truefalse" &&
+      (options.length !== 2 ||
+        options.some((option) => !option || option.length > 100))
+    )
+      throw new Error("A true-or-false question needs exactly 2 answer options.");
+    if (
       ["poll", "quiz"].includes(question.type) &&
       (options.length < 2 ||
         options.length > 6 ||
@@ -27,19 +33,19 @@ export function validateQuestions(input) {
     )
       throw new Error("Add 2 to 6 answer options, up to 100 characters each.");
     if (
-      question.type === "quiz" &&
+      ["quiz", "truefalse"].includes(question.type) &&
       (!Number.isInteger(question.correct) ||
         question.correct < 0 ||
         question.correct >= options.length)
     )
-      throw new Error("Choose the correct quiz answer.");
+      throw new Error("Choose the correct answer.");
     return {
       id: randomUUID(),
       type: question.type,
       title: question.title.trim(),
       ...(question.type === "slide" ? { description: question.description.trim() } : {}),
       options,
-      correct: question.type === "quiz" ? question.correct : null,
+      correct: ["quiz", "truefalse"].includes(question.type) ? question.correct : null,
     };
   });
 }
@@ -105,7 +111,7 @@ export function submitVote(room, token, questionId, value) {
     throw new Error("This question is no longer accepting responses.");
   const votes = room.votes.get(question.id);
   if (votes.has(token)) throw new Error("Your response is already in.");
-  if (["poll", "quiz"].includes(question.type)) {
+  if (["poll", "quiz", "truefalse"].includes(question.type)) {
     if (
       !Number.isInteger(value) ||
       value < 0 ||
@@ -160,7 +166,7 @@ export function controlRoom(room, token, action, index) {
 
 function results(room, question) {
   const values = [...room.votes.get(question.id).values()];
-  if (["poll", "quiz"].includes(question.type))
+  if (["poll", "quiz", "truefalse"].includes(question.type))
     return question.options.map((text, index) => ({
       text,
       count: values.filter((value) => value === index).length,
@@ -184,7 +190,7 @@ export function snapshot(room, host = false) {
           score: room.questions.reduce(
             (score, question) =>
               score +
-              (question.type === "quiz" &&
+              (["quiz", "truefalse"].includes(question.type) &&
               room.votes.get(question.id).get(token) === question.correct
                 ? 1000
                 : 0),

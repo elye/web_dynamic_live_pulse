@@ -1,6 +1,6 @@
 # Pulse
 
-A real-time audience app for live word clouds, multiple-choice polls, quizzes, open responses, and title-and-description slides. Built with React, TypeScript, Vite, Express, and Socket.IO.
+A real-time audience app for live word clouds, multiple-choice polls, quizzes, true-or-false questions, open responses, and title-and-description slides. Built with React, TypeScript, Vite, Express, and Socket.IO.
 
 ## Run Locally
 
@@ -20,10 +20,12 @@ Open http://localhost:5173. The command starts Vite and the live server together
 3. Select **Present live** to open the welcome screen. The QR code, room code, and selectable participant URL are always visible beside the live participant roster. Use the copy icon to copy the URL, or select the field to copy it manually.
   Select **Start questions** when everyone is ready. Participants wait in the welcome lobby until then.
 4. Participants visit `/join`, enter the room code and a display name, and submit one response per question.
-5. Pause or reopen voting, reveal results, and advance questions. Each correct quiz answer earns 1,000 points.
+5. Pause or reopen voting, reveal results, and advance questions. Each correct quiz or true-or-false answer earns 1,000 points.
 6. End the session to view the summary and leaderboard. Export aggregated responses to CSV before stopping the server or starting another room.
 
 Add a **Title & description** question when you just need to show participants a title and a longer description without collecting any response, such as a welcome slide or a break announcement. Participants see only the title and description text and cannot submit anything; hosts see **Next question**/**Finish session** but no pause or reveal controls, since there is nothing to collect. Slide questions are skipped in the results summary.
+
+Add a **True or false** question for a quick binary call. It behaves like a quiz with exactly two fixed options ("True"/"False", editable), a correct answer, and a 1,000-point reward for a correct response.
 
 The editor's sample responses are labeled and never become live submissions. Live sessions always start empty. Quiz answers and audience results stay hidden from participants until the host reveals them. Participants and hosts can refresh and reconnect to their existing session.
 
@@ -58,12 +60,18 @@ The versioned format is:
       "title": "Which planet has the most moons?",
       "options": ["Jupiter", "Saturn", "Neptune", "Mars"],
       "correct": 1
+    },
+    {
+      "type": "truefalse",
+      "title": "The sky is blue.",
+      "options": ["True", "False"],
+      "correct": 0
     }
   ]
 }
 ```
 
-Supported types are `slide`, `cloud`, `poll`, `quiz`, and `text`; supported themes are `mint`, `peach`, `lilac`, and `sky`. `correct` is a zero-based option index for quizzes and `null` otherwise. Word clouds, open responses, and slides use an empty `options` array. Slide questions require a non-empty `description` (up to 280 characters); other types omit it. Existing question and option limits apply to imports.
+Supported types are `slide`, `cloud`, `poll`, `quiz`, `truefalse`, and `text`; supported themes are `mint`, `peach`, `lilac`, and `sky`. `correct` is a zero-based option index for quizzes and true-or-false questions, and `null` otherwise. Word clouds, open responses, and slides use an empty `options` array; true-or-false questions require exactly 2 options; polls and quizzes require 2 to 6. Slide questions require a non-empty `description` (up to 280 characters); other types omit it. Existing question and option limits apply to imports.
 
 Newly hosted rooms are tracked with their source session, even across multiple runs. For sessions hosted before this feature, the currently recoverable host room is linked when its title and questions match the draft; older rooms whose host credentials were not retained cannot be recovered or deleted through the library and expire normally.
 

@@ -1,4 +1,10 @@
-export type Kind = "slide" | "cloud" | "poll" | "quiz" | "text";
+export type Kind =
+  | "slide"
+  | "cloud"
+  | "poll"
+  | "quiz"
+  | "truefalse"
+  | "text";
 export type Question = {
   id: string;
   type: Kind;
@@ -35,6 +41,7 @@ export const labels: Record<Kind, string> = {
   cloud: "Word cloud",
   poll: "Multiple choice",
   quiz: "Quiz",
+  truefalse: "True or false",
   text: "Open response",
 };
 
@@ -52,6 +59,7 @@ export function newQuestion(type: Kind): Question {
       cloud: "How are you feeling in one word?",
       poll: "What should we focus on next?",
       quiz: "Which planet has the most moons?",
+      truefalse: "Octopuses have three hearts.",
       text: "What is one thing we could do better?",
       slide: "A quick word before we dive in",
     }[type],
@@ -71,8 +79,10 @@ export function newQuestion(type: Kind): Question {
               "Learning something new",
               "Making things happen",
             ]
-          : [],
-    correct: type === "quiz" ? 1 : null,
+          : type === "truefalse"
+            ? ["True", "False"]
+            : [],
+    correct: type === "quiz" ? 1 : type === "truefalse" ? 0 : null,
   };
 }
 
@@ -193,9 +203,9 @@ export function importSession(json: string): Session {
       const question = item as Record<string, unknown>;
       if (
         typeof question.type !== "string" ||
-        !(["slide", "cloud", "poll", "quiz", "text"] as string[]).includes(
-          question.type,
-        )
+        !(
+          ["slide", "cloud", "poll", "quiz", "truefalse", "text"] as string[]
+        ).includes(question.type)
       )
         throw new Error(prefix + "unsupported question type.");
       if (
@@ -219,7 +229,15 @@ export function importSession(json: string): Session {
         options.some((option) => typeof option !== "string")
       )
         throw new Error(prefix + "options must be an array of strings.");
-      if (["poll", "quiz"].includes(question.type)) {
+      if (question.type === "truefalse") {
+        if (
+          options.length !== 2 ||
+          options.some(
+            (option: string) => !option.trim() || option.length > 100,
+          )
+        )
+          throw new Error(prefix + "add exactly 2 nonempty options.");
+      } else if (["poll", "quiz"].includes(question.type)) {
         if (
           options.length < 2 ||
           options.length > 6 ||
@@ -233,7 +251,7 @@ export function importSession(json: string): Session {
       } else if (options.length)
         throw new Error(prefix + "this question type must have empty options.");
       if (
-        question.type === "quiz" &&
+        ["quiz", "truefalse"].includes(question.type) &&
         (typeof question.correct !== "number" ||
           !Number.isInteger(question.correct) ||
           question.correct < 0 ||
@@ -250,7 +268,9 @@ export function importSession(json: string): Session {
           ? { description: (question.description as string).trim() }
           : {}),
         options: options.map((option: string) => option.trim()),
-        correct: question.type === "quiz" ? (question.correct as number) : null,
+        correct: ["quiz", "truefalse"].includes(question.type)
+          ? (question.correct as number)
+          : null,
       };
     },
   );

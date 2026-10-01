@@ -683,6 +683,10 @@ button:not(:disabled):active {
   background: #eee9f6;
   color: #88729f;
 }
+.art-truefalse {
+  background: #e3eef6;
+  color: #4d79a0;
+}
 .art-text {
   background: #e7edf5;
   color: #7892b2;

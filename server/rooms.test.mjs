@@ -104,6 +104,34 @@ test("invalid question definitions cannot create a room", () => {
   );
 });
 
+test("true-or-false questions score like quizzes and require exactly two options", () => {
+  const truefalse = {
+    type: "truefalse",
+    title: "The sky is blue.",
+    options: ["True", "False"],
+    correct: 0,
+  };
+  assert.throws(
+    () => createRoom("Invalid", [{ ...truefalse, options: ["True"] }]),
+    /exactly 2/,
+  );
+  assert.throws(
+    () => createRoom("Invalid", [{ ...truefalse, correct: 2 }]),
+    /correct/,
+  );
+  const room = createRoom("Pop quiz", [truefalse]);
+  const token = joinRoom(room, "Alex");
+  controlRoom(room, room.hostToken, "start");
+  submitVote(room, token, room.questions[0].id, 0);
+  controlRoom(room, room.hostToken, "reveal");
+  assert.deepEqual(snapshot(room, true).questions[0].results, [
+    { text: "True", count: 1 },
+    { text: "False", count: 0 },
+  ]);
+  assert.equal(snapshot(room).leaderboard[0].score, 1000);
+  rooms.delete(room.code);
+});
+
 test("websocket host and audience complete a live round and reconnect", async () => {
   const { http, io } = createAppServer();
   await new Promise((resolve) => http.listen(0, "127.0.0.1", resolve));

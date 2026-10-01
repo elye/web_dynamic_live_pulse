@@ -27,6 +27,7 @@ import {
   ListOrdered,
   LoaderCircle,
   MessageCircle,
+  MessageCircleQuestion,
   Monitor,
   Pause,
   Pencil,
@@ -74,6 +75,7 @@ const icons: Record<Kind, LucideIcon> = {
   truefalse: ToggleLeft,
   ranking: ListOrdered,
   slider: SlidersHorizontal,
+  qna: MessageCircleQuestion,
   text: MessageCircle,
 };
 const kinds: Kind[] = [
@@ -84,6 +86,7 @@ const kinds: Kind[] = [
   "truefalse",
   "ranking",
   "slider",
+  "qna",
   "text",
 ];
 const samples = [
@@ -173,13 +176,17 @@ function ResultsVisual({
   question,
   preview = false,
   reveal = false,
+  onUpvote,
+  upvotedIds,
 }: {
   question: Question;
   preview?: boolean;
   reveal?: boolean;
+  onUpvote?: (entrantId: string) => void;
+  upvotedIds?: Set<string>;
 }) {
   if (question.type === "slide") return null;
-  const results = preview
+  const results: { text: string; count: number; id?: string }[] = preview
     ? question.type === "cloud"
       ? samples
       : question.type === "text"
@@ -195,10 +202,15 @@ function ResultsVisual({
               { text: "7", count: 1 },
               { text: String(question.sliderMax ?? 10), count: 1 },
             ]
-          : question.options.map((text, index) => ({
-              text,
-              count: [8, 14, 6, 10, 4, 5][index],
-            }))
+          : question.type === "qna"
+            ? [
+                { id: "1", text: "What’s next for the roadmap?", count: 6 },
+                { id: "2", text: "Can we see this in action?", count: 3 },
+              ]
+            : question.options.map((text, index) => ({
+                text,
+                count: [8, 14, 6, 10, 4, 5][index],
+              }))
     : question.results || [];
   const total = results.reduce((sum, item) => sum + item.count, 0);
   if (!preview && !total)
@@ -211,7 +223,9 @@ function ResultsVisual({
         <p>
           {question.type === "cloud"
             ? "Your audience’s words will appear here."
-            : "Responses will appear here as they arrive."}
+            : question.type === "qna"
+              ? "Submitted questions will appear here as they arrive."
+              : "Responses will appear here as they arrive."}
         </p>
       </div>
     );
@@ -276,6 +290,35 @@ function ResultsVisual({
             {item.count > 1 && <span>×{item.count}</span>}
           </div>
         ))}
+      </div>
+    );
+  if (question.type === "qna")
+    return (
+      <div className="qna-results">
+        {[...results]
+          .sort((first, second) => second.count - first.count)
+          .map((item, index) => (
+            <div className="qna-entry" key={item.id ?? index}>
+              <MessageCircleQuestion size={18} />
+              <p>{item.text}</p>
+              {onUpvote && item.id ? (
+                <button
+                  type="button"
+                  className={`qna-upvote ${upvotedIds?.has(item.id) ? "chosen" : ""}`}
+                  onClick={() => onUpvote(item.id!)}
+                  aria-pressed={upvotedIds?.has(item.id)}
+                >
+                  <ArrowUp size={14} />
+                  {item.count}
+                </button>
+              ) : (
+                <span className="qna-upvote-count">
+                  <ArrowUp size={14} />
+                  {item.count}
+                </span>
+              )}
+            </div>
+          ))}
       </div>
     );
   return (
@@ -1533,6 +1576,8 @@ function Host() {
                               <ListOrdered size={32} strokeWidth={1.5} />
                             ) : item.type === "slider" ? (
                               <SlidersHorizontal size={32} strokeWidth={1.5} />
+                            ) : item.type === "qna" ? (
+                              <MessageCircleQuestion size={32} strokeWidth={1.5} />
                             ) : item.type === "slide" ? (
                               <div className="mini-slide">
                                 <FileText size={26} />
@@ -1676,7 +1721,7 @@ function Host() {
                         {room.accepting ? "Pause responses" : "Reopen responses"}
                       </button>
                     )}
-                    {question.type !== "slide" && (
+                    {question.type !== "slide" && question.type !== "qna" && (
                       <button
                         className="button secondary"
                         onClick={() => void control("reveal")}
@@ -1725,9 +1770,11 @@ function Host() {
                                     ? "Drag to sort what matters most."
                                     : question.type === "slider"
                                       ? "Slide to estimate a number."
-                                      : question.type === "slide"
-                                        ? "Just a title and description. No input needed."
-                                        : "Space for the longer answer."}
+                                      : question.type === "qna"
+                                        ? "Submit and upvote live questions."
+                                        : question.type === "slide"
+                                          ? "Just a title and description. No input needed."
+                                          : "Space for the longer answer."}
                         </p>
                       </div>
                     </div>
@@ -2084,9 +2131,11 @@ function Host() {
                                 ? "Drag to sort items from most to least important"
                                 : kind === "slider"
                                   ? "Estimate a numeric value on a sliding scale"
-                                  : kind === "slide"
-                                    ? "Just a title and description, no input needed"
-                                    : "Give every thought a little room"}
+                                  : kind === "qna"
+                                    ? "Participants submit and upvote live questions"
+                                    : kind === "slide"
+                                      ? "Just a title and description, no input needed"
+                                      : "Give every thought a little room"}
                     </small>
                   </span>
                   <Plus size={19} />
@@ -2202,9 +2251,12 @@ function Participant() {
   const [busy, setBusy] = useState(false);
   const [answer, setAnswer] = useState<string | number | number[]>("");
   const [answerQuestion, setAnswerQuestion] = useState("");
+  const [upvoted, setUpvoted] = useState<Set<string>>(new Set());
+  const [upvotedQuestion, setUpvotedQuestion] = useState("");
   const live = useLive("audience", initialCode);
   const { room, connected, error, setError, submitted } = live;
   const question = room?.questions[room.active];
+  const currentUpvoted = upvotedQuestion === question?.id ? upvoted : new Set<string>();
   const currentAnswer = answerQuestion === question?.id ? answer : "";
   const rankingOrder =
     question?.type === "ranking"
@@ -2273,6 +2325,28 @@ function Participant() {
     next.splice(to, 0, moved);
     setAnswer(next);
     setAnswerQuestion(question.id);
+  }
+  async function upvote(entrantId: string) {
+    if (!question) return;
+    const toggle = (current: Set<string>) => {
+      const next = new Set(current);
+      if (next.has(entrantId)) next.delete(entrantId);
+      else next.add(entrantId);
+      return next;
+    };
+    setUpvotedQuestion(question.id);
+    setUpvoted(toggle(currentUpvoted));
+    try {
+      await request("room:upvote", {
+        ...live.credentials(),
+        questionId: question.id,
+        entrantToken: entrantId,
+      });
+    } catch (failure) {
+      setUpvotedQuestion(question.id);
+      setUpvoted((current) => toggle(current));
+      setError((failure as Error).message);
+    }
   }
   return (
     <div className="participant-shell">
@@ -2414,6 +2488,68 @@ function Participant() {
                 <p className="waiting-note">
                   Sit back for a moment. Your host will continue shortly.
                 </p>
+              </div>
+            ) : question.type === "qna" ? (
+              <div className="qna-session">
+                {!hasSubmitted && room.accepting ? (
+                  <form
+                    onSubmit={vote}
+                    className="answer-form qna-submit-form"
+                  >
+                    <label>
+                      Ask your question
+                      <textarea
+                        rows={3}
+                        maxLength={280}
+                        required
+                        placeholder="What would you like to ask?"
+                        value={String(currentAnswer)}
+                        onChange={(event) => {
+                          setAnswer(event.target.value);
+                          setAnswerQuestion(question.id);
+                        }}
+                      />
+                      <small className="character-count">
+                        {String(currentAnswer).length} / 280
+                      </small>
+                    </label>
+                    <button
+                      className="button primary full"
+                      disabled={
+                        busy ||
+                        !connected ||
+                        !(
+                          typeof currentAnswer === "string" &&
+                          currentAnswer.trim()
+                        )
+                      }
+                    >
+                      {busy ? (
+                        <LoaderCircle className="spin" size={18} />
+                      ) : (
+                        <>
+                          <Send size={17} />
+                          Submit question
+                        </>
+                      )}
+                    </button>
+                  </form>
+                ) : hasSubmitted ? (
+                  <div className="qna-submitted-note">
+                    <CheckCheck size={20} />
+                    Your question is in. Keep upvoting the ones you like most.
+                  </div>
+                ) : (
+                  <div className="qna-submitted-note">
+                    <Pause size={20} />
+                    Your host has paused new questions. You can still upvote.
+                  </div>
+                )}
+                <ResultsVisual
+                  question={question}
+                  onUpvote={(entrantId) => void upvote(entrantId)}
+                  upvotedIds={currentUpvoted}
+                />
               </div>
             ) : room.revealed ? (
               <div className="participant-reveal">

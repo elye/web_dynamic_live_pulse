@@ -1,7 +1,7 @@
 import { randomInt, randomUUID } from "node:crypto";
 
 export const rooms = new Map();
-const kinds = new Set(["slide", "cloud", "poll", "quiz", "truefalse", "ranking", "slider", "text"]);
+const kinds = new Set(["slide", "cloud", "poll", "quiz", "truefalse", "ranking", "slider", "qna", "text"]);
 
 export function validateQuestions(input) {
   if (!Array.isArray(input) || !input.length || input.length > 30)
@@ -87,9 +87,13 @@ export function createRoom(title, questions) {
     ended: false,
     participants: new Map(),
     votes: new Map(),
+    upvotes: new Map(),
     createdAt: Date.now(),
   };
-  room.questions.forEach((question) => room.votes.set(question.id, new Map()));
+  room.questions.forEach((question) => {
+    room.votes.set(question.id, new Map());
+    room.upvotes.set(question.id, new Map());
+  });
   rooms.set(code, room);
   return room;
 }
@@ -168,6 +172,31 @@ export function submitVote(room, token, questionId, value) {
   votes.set(token, value);
 }
 
+export function submitUpvote(room, token, questionId, entrantToken) {
+  if (!room.participants.has(token))
+    throw new Error("Join the room before responding.");
+  const question = room.questions[room.active];
+  if (question.type !== "qna")
+    throw new Error("This question does not accept upvotes.");
+  if (!room.started || room.ended || !room.accepting || question.id !== questionId)
+    throw new Error("This question is no longer accepting responses.");
+  const votes = room.votes.get(question.id);
+  if (!votes.has(entrantToken))
+    throw new Error("That question no longer exists.");
+  const upvotes = room.upvotes.get(question.id);
+  let voters = upvotes.get(entrantToken);
+  if (!voters) {
+    voters = new Set();
+    upvotes.set(entrantToken, voters);
+  }
+  if (voters.has(token)) {
+    voters.delete(token);
+    return false;
+  }
+  voters.add(token);
+  return true;
+}
+
 export function controlRoom(room, token, action, index) {
   authorize(room, token);
   if (room.ended)
@@ -233,6 +262,16 @@ function results(room, question) {
         .sort((first, second) => Number(first.text) - Number(second.text)),
     ];
   }
+  if (question.type === "qna") {
+    const upvotes = room.upvotes.get(question.id);
+    return [...room.votes.get(question.id)]
+      .map(([entrantToken, text]) => ({
+        id: entrantToken,
+        text,
+        count: upvotes.get(entrantToken)?.size || 0,
+      }))
+      .sort((first, second) => second.count - first.count);
+  }
   const counts = new Map();
   for (const value of values) {
     const key = question.type === "cloud" ? value.toLocaleLowerCase() : value;
@@ -281,7 +320,9 @@ export function snapshot(room, host = false) {
           : null,
       responses: room.votes.get(question.id).size,
       results:
-        host || (room.revealed && (index === room.active || room.ended))
+        host ||
+        question.type === "qna" ||
+        (room.revealed && (index === room.active || room.ended))
           ? results(room, question)
           : [],
     })),

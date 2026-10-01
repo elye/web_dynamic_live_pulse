@@ -6,6 +6,7 @@ export type Kind =
   | "truefalse"
   | "ranking"
   | "slider"
+  | "qna"
   | "text";
 export type Question = {
   id: string;
@@ -18,7 +19,7 @@ export type Question = {
   sliderMax?: number;
   sliderStep?: number;
   responses?: number;
-  results?: { text: string; count: number }[];
+  results?: { text: string; count: number; id?: string }[];
 };
 export type Session = {
   id: string;
@@ -49,6 +50,7 @@ export const labels: Record<Kind, string> = {
   truefalse: "True or false",
   ranking: "Ranking",
   slider: "Slider",
+  qna: "Q&A",
   text: "Open response",
 };
 
@@ -69,6 +71,7 @@ export function newQuestion(type: Kind): Question {
       truefalse: "Octopuses have three hearts.",
       ranking: "Rank these from most to least important",
       slider: "How many hours a day do you spend in meetings?",
+      qna: "Ask us anything",
       text: "What is one thing we could do better?",
       slide: "A quick word before we dive in",
     }[type],
@@ -236,6 +239,7 @@ export function importSession(json: string): Session {
             "truefalse",
             "ranking",
             "slider",
+            "qna",
             "text",
           ] as string[]
         ).includes(question.type)

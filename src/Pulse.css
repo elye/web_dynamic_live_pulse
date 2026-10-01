@@ -695,6 +695,10 @@ button:not(:disabled):active {
   background: #e6f0ea;
   color: #4f8c6c;
 }
+.art-qna {
+  background: #e1eef0;
+  color: #3f7f8c;
+}
 .art-text {
   background: #e7edf5;
   color: #7892b2;
@@ -1268,6 +1272,10 @@ button:not(:disabled):active {
 .type-slider {
   background: #e6f0ea;
   color: #4f8c6c;
+}
+.type-qna {
+  background: #e1eef0;
+  color: #3f7f8c;
 }
 .detail-title h3 {
   font-size: 11px;
@@ -2044,7 +2052,100 @@ textarea {
   overflow-wrap: anywhere;
   flex: 1;
 }
+.qna-results {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  flex: 1;
+  justify-content: flex-start;
+  max-height: 400px;
+  overflow: auto;
+}
+.qna-entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #ffffff80;
+  padding: 14px 17px;
+  border: 1px solid #ffffff90;
+  border-radius: 5px;
+  font-size: 12px;
+  line-height: 1.6;
+  flex-shrink: 0;
+}
+.qna-entry svg {
+  flex-shrink: 0;
+  opacity: 0.55;
+}
+.qna-entry p {
+  overflow-wrap: anywhere;
+  flex: 1;
+  margin: 0;
+}
+.qna-upvote-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+.qna-upvote {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 20px;
+  padding: 6px 11px;
+  cursor: pointer;
+  color: inherit;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.qna-upvote:hover {
+  background: #eef6f3;
+}
+.qna-upvote.chosen {
+  background: #3f7f8c;
+  border-color: #3f7f8c;
+  color: #fff;
+}
+.qna-session {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  flex: 1;
+}
+.qna-submit-form {
+  max-width: 600px;
+  margin: 0 auto;
+  width: 100%;
+}
+.qna-submitted-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4f7a62;
+  background: #eaf3ee;
+  border-radius: 7px;
+  padding: 14px 17px;
+  max-width: 600px;
+  margin: 0 auto;
+  width: 100%;
+}
 .result-section .text-response,
+.result-section .qna-entry,
 .result-section .bar-track {
   background: #fff;
   border-color: var(--line);

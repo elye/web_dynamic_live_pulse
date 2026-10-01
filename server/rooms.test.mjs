@@ -4,6 +4,7 @@ import {
   createRoom,
   joinRoom,
   submitVote,
+  submitUpvote,
   controlRoom,
   snapshot,
   rooms,
@@ -205,6 +206,47 @@ test("slider questions require a valid range and aggregate average plus distribu
     { text: "4", count: 1 },
     { text: "8", count: 1 },
   ]);
+  assert.ok(snapshot(room).leaderboard.every((entry) => entry.score === 0));
+  rooms.delete(room.code);
+});
+
+test("Q&A questions let anyone submit and upvote entries, with live results before reveal", () => {
+  const qna = { type: "qna", title: "Ask us anything", options: [], correct: null };
+  const room = createRoom("Office hours", [qna]);
+  const firstToken = joinRoom(room, "Alex");
+  const secondToken = joinRoom(room, "Sam");
+  const thirdToken = joinRoom(room, "Jordan");
+  controlRoom(room, room.hostToken, "start");
+  assert.throws(
+    () => submitUpvote(room, firstToken, room.questions[0].id, firstToken),
+    /no longer exists/,
+  );
+  submitVote(room, firstToken, room.questions[0].id, "What's next for the roadmap?");
+  submitVote(room, secondToken, room.questions[0].id, "Can we see a demo?");
+  // Results are visible live, before any reveal, unlike other question types.
+  assert.equal(snapshot(room).questions[0].results.length, 2);
+  assert.equal(snapshot(room).questions[0].responses, 2);
+  assert.equal(submitUpvote(room, secondToken, room.questions[0].id, firstToken), true);
+  assert.equal(submitUpvote(room, thirdToken, room.questions[0].id, firstToken), true);
+  assert.equal(submitUpvote(room, secondToken, room.questions[0].id, secondToken), true);
+  // Toggling the same upvote again removes it.
+  assert.equal(submitUpvote(room, secondToken, room.questions[0].id, secondToken), false);
+  assert.deepEqual(
+    snapshot(room).questions[0].results.map(({ text, count }) => ({ text, count })),
+    [
+      { text: "What's next for the roadmap?", count: 2 },
+      { text: "Can we see a demo?", count: 0 },
+    ],
+  );
+  assert.throws(
+    () => submitUpvote(room, firstToken, room.questions[0].id, "unknown-token"),
+    /no longer exists/,
+  );
+  controlRoom(room, room.hostToken, "toggle");
+  assert.throws(
+    () => submitUpvote(room, firstToken, room.questions[0].id, secondToken),
+    /no longer accepting/,
+  );
   assert.ok(snapshot(room).leaderboard.every((entry) => entry.score === 0));
   rooms.delete(room.code);
 });

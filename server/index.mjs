@@ -12,6 +12,7 @@ import {
   joinRoom,
   rooms,
   snapshot,
+  submitUpvote,
   submitVote,
 } from "./rooms.mjs";
 
@@ -95,6 +96,12 @@ export function createAppServer() {
       submitVote(room, token, questionId, value);
       broadcast(room);
       return {};
+    });
+    listen("room:upvote", ({ code, token, questionId, entrantToken }) => {
+      const room = getRoom(code);
+      const upvoted = submitUpvote(room, token, questionId, entrantToken);
+      broadcast(room);
+      return { upvoted };
     });
     listen("room:control", ({ code, token, action, index }) => {
       const room = getRoom(code);

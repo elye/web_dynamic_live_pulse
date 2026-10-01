@@ -49,14 +49,23 @@ Quiz and True or False questions have a **Competition mode** checkbox in the que
 - Quiz and True or False questions that are not competitive keep awarding a flat 1,000 points for a correct answer.
 - Scores are calculated on the server and appear on the leaderboard only after the host reveals results.
 - Response times are kept in memory for the live room only; they are never exported.
-- **Final podium:** when at least one question in the session is competitive and someone scored, ending the session shows a Kahoot-style podium with the top 3 players (gold, silver, and bronze medals, names, and points) and a confetti burst. It appears on every participant's wrap-up screen and at the top of the host's **Results** page, above the full leaderboard. Sessions without a competitive question keep the plain leaderboard and no confetti. With reduced-motion settings, the confetti and podium animations are turned off.
+- **Final podium:** when the session has at least one question with an answer and someone scored, the host's last step before **Finish session** is **Show podium**: a Kahoot-style podium of the top 3 players (gold, silver, and bronze medals, names, and points) with a confetti burst, shown on the host stage and every participant's screen. It also appears on the wrap-up screen and at the top of the host's **Results** page, above the full leaderboard. Sessions with no answered questions keep the plain leaderboard and no confetti. With reduced-motion settings, the confetti and podium animations are turned off.
+
+### Question groups
+
+The question picker and the editor's type menu split question types in two groups:
+
+1. **Without an answer** (title & description, word cloud, multiple choice, ranking, slider, Q&A, 100 Points, 2x2 Grid, open response): responses default to **Show on the fly** and nothing is scored.
+2. **With an answer** (Quiz, True or False): responses default to **Hide until done**, players are scored, and after **Show results** the host can click **Show ranking** to show the top 10 players to everyone before the next question. Untick **Show the top 10 ranking** in the editor to skip that step for a question (stored as `showRanking` in exported JSON; the ranking is never shown after the final question, which goes to the podium instead).
+
+The host's main button therefore steps through: **Show results** → **Show ranking** → **Next question**, and at the end **Show podium** → **Finish session**. Steps that don't apply to a question are skipped.
 
 ### Reveal mode
 
 Every question that collects responses (everything except title-and-description slides and Q&A, which is always live) has a **When should responses show?** setting in the question editor:
 
-- **Hide until done** (default for every type except word clouds): the host dashboard and participants see only how many people have responded. Click **Reveal results** to show the answers.
-- **Show on the fly** (default for word clouds): responses appear live as people answer, for both the host and the audience. Correct answers and leaderboard scores for quizzes still wait for **Reveal results**.
+- **Hide until done** (default for questions with an answer: Quiz and True or False): the host dashboard and participants see only how many people have responded. Click **Reveal results** to show the answers.
+- **Show on the fly** (default for every other type): responses appear live as people answer, for both the host and the audience. Correct answers and leaderboard scores for quizzes still wait for **Reveal results**.
 
 While a question's results are still hidden, the host's main button reads **Show results**: the first click reveals them, and only then does it become **Next question** (or **Finish session** on the last question). This prevents skipping past a question before the audience has seen the answers. Slides, Q&A, and questions set to **Show on the fly** have nothing left to reveal, so they go straight to the next question. The exception is Quiz and True or False, whose correct answer and scores still wait for **Show results** even in live mode. The small arrow in the slide controls still jumps directly.
 

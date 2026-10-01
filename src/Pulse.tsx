@@ -85,18 +85,28 @@ const icons: Record<Kind, LucideIcon> = {
   grid2x2: Grid2x2,
   text: MessageCircle,
 };
-const kinds: Kind[] = [
-  "slide",
-  "cloud",
-  "poll",
-  "quiz",
-  "truefalse",
-  "ranking",
-  "slider",
-  "qna",
-  "points100",
-  "grid2x2",
-  "text",
+/** Questions without a right answer show responses live; questions with one are scored and ranked. */
+const kindGroups: { title: string; hint: string; kinds: Kind[] }[] = [
+  {
+    title: "Without an answer",
+    hint: "Gather opinions. Responses show live by default.",
+    kinds: [
+      "slide",
+      "cloud",
+      "poll",
+      "ranking",
+      "slider",
+      "qna",
+      "points100",
+      "grid2x2",
+      "text",
+    ],
+  },
+  {
+    title: "With an answer",
+    hint: "Score players. Responses stay hidden and a top 10 ranking follows.",
+    kinds: ["quiz", "truefalse"],
+  },
 ];
 const samples = [
   { text: "excited", count: 12 },
@@ -671,10 +681,14 @@ function QuestionEditor({
               });
             }}
           >
-            {kinds.map((kind) => (
-              <option key={kind} value={kind}>
-                {labels[kind]}
-              </option>
+            {kindGroups.map((group) => (
+              <optgroup key={group.title} label={group.title}>
+                {group.kinds.map((kind) => (
+                  <option key={kind} value={kind}>
+                    {labels[kind]}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </label>
@@ -777,6 +791,24 @@ function QuestionEditor({
               <small>
                 Score this question: 500 points for the right answer plus up to 500
                 for answering fast. The final podium shows the top 3 players.
+              </small>
+            </span>
+          </label>
+        )}
+        {canCompete(draft.type) && (
+          <label className="competitive-toggle">
+            <input
+              type="checkbox"
+              checked={draft.showRanking !== false}
+              onChange={(event) =>
+                setDraft({ ...draft, showRanking: event.target.checked })
+              }
+            />
+            <span>
+              <b>Show the top 10 ranking</b>
+              <small>
+                After the results, show the ranking of the top 10 players before
+                the next question.
               </small>
             </span>
           </label>
@@ -1160,7 +1192,7 @@ const medals = ["gold", "silver", "bronze"] as const;
 /** Kahoot-style podium for the top three players of a competitive session, with confetti. */
 function Podium({ room }: { room: Room }) {
   const winners = room.leaderboard.slice(0, 3).filter((entry) => entry.score > 0);
-  if (!room.ended || !room.competitive || !winners.length) return null;
+  if (!(room.ended || room.podium) || !room.scored || !winners.length) return null;
   // Visual order on the podium: silver, gold, bronze.
   const order = [1, 0, 2].filter((index) => winners[index]);
   return (
@@ -1186,11 +1218,36 @@ function Podium({ room }: { room: Room }) {
   );
 }
 
-function Leaderboard({ room }: { room: Room }) {
+/** The host's full-slide ranking of the top 10 players, or the final podium. */
+function ScoreStage({ room, theme }: { room: Room; theme: string }) {
   return (
-    <section className="leaderboard">
+    <section className={`question-stage score-stage theme-${theme}`}>
+      {room.podium ? (
+        room.leaderboard.some((entry) => entry.score > 0) ? (
+          <Podium room={room} />
+        ) : (
+          <p className="score-empty">No points were scored.</p>
+        )
+      ) : (
+        <Leaderboard room={room} compact title="Top 10 players" />
+      )}
+    </section>
+  );
+}
+
+function Leaderboard({
+  room,
+  compact = false,
+  title = "The leaderboard",
+}: {
+  room: Room;
+  compact?: boolean;
+  title?: string;
+}) {
+  return (
+    <section className={`leaderboard ${compact ? "compact" : ""}`}>
       <Trophy size={32} />
-      <h2>The leaderboard</h2>
+      <h2>{title}</h2>
       {room.leaderboard.map((entry, index) => (
         <div className="leader-row" key={index}>
           <b>{index + 1}</b>
@@ -2016,7 +2073,7 @@ function Host() {
                   </div>
                 </div>
                 {modal === "simulate" && <CloudSimulator question={question} theme={session.theme} onClose={() => setModal(null)} />}
-                {inLobby ? <WelcomeLobby room={room} theme={session.theme} host disabled={busy || !connected} onStart={() => void control("start")} /> : <QuestionStage
+                {inLobby ? <WelcomeLobby room={room} theme={session.theme} host disabled={busy || !connected} onStart={() => void control("start")} /> : isLive && (room.ranking || room.podium) ? <ScoreStage room={room} theme={session.theme} /> : <QuestionStage
                   question={question}
                   preview={!isLive}
                   theme={session.theme}
@@ -2103,23 +2160,37 @@ function Host() {
                     )}
                     {(() => {
                       const last = currentIndex === questionList.length - 1;
-                      // Hidden results are shown first; the next click moves on.
-                      // Questions already showing results on the fly skip this step,
-                      // except quizzes, whose correct answer and scores still need a reveal.
+                      // Each click advances one step: show results, then the top 10
+                      // ranking (answered questions, not the last one), then the next
+                      // question. After the last question a session with answered
+                      // questions ends on the podium before it is finished.
+                      // Questions already showing results on the fly skip the first step,
+                      // except answered ones, whose correct answer still needs a reveal.
                       const showFirst =
                         hasRevealMode(question.type) &&
                         (question.revealMode !== "live" ||
                           canCompete(question.type)) &&
                         !room.revealed;
+                      const showRanking =
+                        !showFirst &&
+                        !last &&
+                        canCompete(question.type) &&
+                        question.showRanking !== false &&
+                        !room.ranking;
+                      const showPodium = !showFirst && last && room.scored && !room.podium;
                       return (
                         <button
                           className="button primary"
                           onClick={() =>
                             showFirst
                               ? void control("reveal")
-                              : last
-                                ? setModal("end")
-                                : move(1)
+                              : showRanking
+                                ? void control("ranking")
+                                : showPodium
+                                  ? void control("podium")
+                                  : last
+                                    ? setModal("end")
+                                    : move(1)
                           }
                           disabled={busy}
                         >
@@ -2127,6 +2198,16 @@ function Host() {
                             <>
                               <Eye size={17} />
                               Show results
+                            </>
+                          ) : showRanking ? (
+                            <>
+                              <Trophy size={17} />
+                              Show ranking
+                            </>
+                          ) : showPodium ? (
+                            <>
+                              <Trophy size={17} />
+                              Show podium
                             </>
                           ) : (
                             <>
@@ -2493,8 +2574,12 @@ function Host() {
           title="What would you like to ask?"
           onClose={() => setModal(null)}
         >
+          {kindGroups.map((group) => (
+          <section className="question-group" key={group.title}>
+            <h3>{group.title}</h3>
+            <p>{group.hint}</p>
           <div className="question-types">
-            {kinds.map((kind) => {
+            {group.kinds.map((kind) => {
               const Icon = icons[kind];
               return (
                 <button
@@ -2543,6 +2628,8 @@ function Host() {
               );
             })}
           </div>
+          </section>
+          ))}
         </Modal>
       )}
       {modal === "share" && room && (
@@ -2932,7 +3019,21 @@ function Participant() {
               {labels[question.type]}
             </span>
             <h1>{question.title}</h1>
-            {question.type === "slide" ? (
+            {room.podium && room.scored ? (
+              <div className="participant-reveal">
+                <Podium room={room} />
+                <p className="waiting-note">
+                  Thanks for playing. Your host will wrap up shortly.
+                </p>
+              </div>
+            ) : room.ranking ? (
+              <div className="participant-reveal">
+                <Leaderboard room={room} compact title="Top 10 players" />
+                <p className="waiting-note">
+                  Your host will continue to the next question shortly.
+                </p>
+              </div>
+            ) : question.type === "slide" ? (
               <div className="participant-slide">
                 <FileText size={38} />
                 <p>{question.description}</p>

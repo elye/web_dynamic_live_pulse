@@ -325,6 +325,7 @@ test("session JSON backup restores a deleted draft from a file or pasted JSON", 
         correct,
         revealMode,
         competitive,
+        showRanking,
       }: {
         type: string;
         title: string;
@@ -332,6 +333,7 @@ test("session JSON backup restores a deleted draft from a file or pasted JSON", 
         correct: number | null;
         revealMode?: string;
         competitive?: boolean;
+        showRanking?: boolean;
       }) => ({
         type,
         title,
@@ -339,6 +341,7 @@ test("session JSON backup restores a deleted draft from a file or pasted JSON", 
         correct,
         ...(revealMode ? { revealMode } : {}),
         ...(competitive !== undefined ? { competitive } : {}),
+        ...(showRanking !== undefined ? { showRanking } : {}),
       }),
     ),
   ).toEqual(backup.questions);
@@ -646,6 +649,8 @@ test("title-and-description slides show no input to participants or reveal contr
   await expect(
     page.getByRole("button", { name: "Reveal results", exact: true }),
   ).toHaveCount(0);
+  // The default session has a quiz, so it closes on the podium before finishing.
+  await page.getByRole("button", { name: "Show podium", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Finish session", exact: true }),
   ).toBeVisible();
@@ -744,8 +749,9 @@ test("two audiences answer all types, reconnect, receive reveals, and finish wit
     await page
       .getByRole("button", { name: "Pause responses", exact: true })
       .click();
+    // Questions without an answer show live results by default, even when paused.
     await expect(
-      audience.getByRole("heading", { name: "A little pause.", exact: true }),
+      audience.getByText("Live results", { exact: true }),
     ).toBeVisible();
     await page
       .getByRole("button", { name: "Reopen responses", exact: true })
@@ -780,6 +786,8 @@ test("two audiences answer all types, reconnect, receive reveals, and finish wit
     await expect(
       audience.getByRole("heading", { name: "Your voice is in.", exact: true }),
     ).toBeVisible();
+    // Questions with an answer hide responses until revealed.
+    await expect(page.locator(".response-hidden")).toContainText("1");
     await page
       .getByRole("button", { name: "Reveal results", exact: true })
       .click();
@@ -792,6 +800,12 @@ test("two audiences answer all types, reconnect, receive reveals, and finish wit
     await page.reload();
     await expect(page.getByText("LIVE SESSION", { exact: true })).toBeVisible();
     await expect(page.locator(".audience-count strong")).toHaveText("2");
+    // The quiz has an answer: after its results come the top 10 ranking.
+    await page
+      .getByRole("button", { name: "Show ranking", exact: true })
+      .click();
+    await expect(page.locator(".leaderboard.compact")).toContainText("1,000 pts");
+    await expect(audience.locator(".leaderboard.compact")).toContainText("Alex");
     await page
       .getByRole("button", { name: "Next question", exact: true })
       .last()
@@ -806,18 +820,17 @@ test("two audiences answer all types, reconnect, receive reveals, and finish wit
     await audience
       .getByRole("button", { name: "Send response", exact: true })
       .click();
-    await expect(page.locator(".response-hidden")).toContainText("1");
-    await expect(page.locator(".text-results")).toHaveCount(0);
-    // Before results are shown, the main button reveals them instead of moving on.
-    await expect(
-      page.getByRole("button", { name: "Finish session", exact: true }),
-    ).toHaveCount(0);
-    await page
-      .getByRole("button", { name: "Show results", exact: true })
-      .click();
+    // Open responses show on the fly, so there is no separate show-results step.
+    await expect(page.locator(".response-hidden")).toHaveCount(0);
     await expect(page.locator(".text-results")).toContainText(
       "More time to explore together.",
     );
+    // The session has scored questions, so it ends on the podium.
+    await expect(
+      page.getByRole("button", { name: "Finish session", exact: true }),
+    ).toHaveCount(0);
+    await page.getByRole("button", { name: "Show podium", exact: true }).click();
+    await expect(audience.locator(".podium-section")).toContainText("Alex");
     await page
       .getByRole("button", { name: "Finish session", exact: true })
       .click();

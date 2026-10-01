@@ -44,9 +44,9 @@ test("title and description slides never accept responses and preserve content",
   rooms.delete(room.code);
 });
 
-test("reveal mode defaults to onDone, hides results until reveal, and shows live results on the fly", () => {
+test("reveal mode defaults to live without an answer and onDone with one, hides results until reveal, and shows live results on the fly", () => {
   const room = createRoom("Modes", [
-    { type: "poll", title: "Hidden?", options: ["A", "B"] },
+    { type: "poll", title: "Hidden?", options: ["A", "B"], revealMode: "onDone" },
     { type: "poll", title: "Live?", options: ["A", "B"], revealMode: "live" },
     { type: "qna", title: "Ask", options: [] },
     { type: "slide", title: "Hi", description: "Welcome", options: [] },
@@ -117,6 +117,43 @@ test("competition mode scores correctness plus speed and only applies to quiz an
   rooms.delete(room.code);
   const plain = createRoom("Plain", [{ type: "quiz", title: "Q", ...base }]);
   assert.equal(snapshot(plain).competitive, false);
+  rooms.delete(plain.code);
+});
+
+test("questions with answers default to hidden, ranking and podium steps are controlled by the host", () => {
+  const base = { options: ["A", "B"], correct: 0 };
+  const room = createRoom("Steps", [
+    { type: "quiz", title: "Q1", ...base },
+    { type: "truefalse", title: "Q2", ...base, showRanking: false },
+    { type: "cloud", title: "Cloud", options: [] },
+  ]);
+  assert.deepEqual(room.questions.map((question) => question.revealMode), ["onDone", "onDone", "live"]);
+  assert.deepEqual(room.questions.map((question) => question.showRanking), [true, false, undefined]);
+  assert.throws(() => createRoom("Bad", [{ type: "quiz", title: "Q", ...base, showRanking: "yes" }]), /Show ranking/);
+  const ann = joinRoom(room, "Ann");
+  controlRoom(room, room.hostToken, "start", undefined, 1000);
+  submitVote(room, ann, room.questions[0].id, 0, 2000);
+  assert.equal(snapshot(room).scored, true);
+  assert.deepEqual(snapshot(room).leaderboard, []);
+  controlRoom(room, room.hostToken, "ranking");
+  let state = snapshot(room);
+  assert.equal(state.ranking, true);
+  assert.equal(state.leaderboard[0].score, 1000);
+  controlRoom(room, room.hostToken, "select", 1, 3000);
+  state = snapshot(room);
+  assert.equal(state.ranking, false);
+  assert.equal(state.revealed, false);
+  controlRoom(room, room.hostToken, "select", 2, 4000);
+  controlRoom(room, room.hostToken, "podium");
+  state = snapshot(room);
+  assert.equal(state.podium, true);
+  assert.equal(state.ranking, false);
+  assert.equal(state.leaderboard[0].name, "Ann");
+  rooms.delete(room.code);
+  const plain = createRoom("Plain", [{ type: "cloud", title: "C", options: [] }]);
+  controlRoom(plain, plain.hostToken, "start");
+  assert.equal(snapshot(plain).scored, false);
+  assert.throws(() => controlRoom(plain, plain.hostToken, "podium"), /no questions with answers/);
   rooms.delete(plain.code);
 });
 

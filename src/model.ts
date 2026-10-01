@@ -16,13 +16,13 @@ export const revealModes: RevealMode[] = ["live", "onDone"];
 export function hasRevealMode(type: Kind) {
   return type !== "slide" && type !== "qna";
 }
-/** Word clouds are naturally live; every other type reveals when the host is done. */
-export function defaultRevealMode(type: Kind): RevealMode {
-  return type === "cloud" ? "live" : "onDone";
-}
-/** Only questions with a correct answer can be played competitively. */
+/** Only questions with a correct answer can be scored and ranked. */
 export function canCompete(type: Kind) {
   return type === "quiz" || type === "truefalse";
+}
+/** Questions with an answer hide responses until the host reveals them; all others show them live. */
+export function defaultRevealMode(type: Kind): RevealMode {
+  return canCompete(type) ? "onDone" : "live";
 }
 export type Question = {
   id: string;
@@ -36,6 +36,8 @@ export type Question = {
   sliderStep?: number;
   revealMode?: RevealMode;
   competitive?: boolean;
+  /** Show the top-10 ranking after this question's results (answered questions only). */
+  showRanking?: boolean;
   responses?: number;
   results?: { text: string; count: number; id?: string }[];
 };
@@ -54,11 +56,17 @@ export type Room = {
   started: boolean;
   accepting: boolean;
   revealed: boolean;
+  /** The host is showing the top-10 ranking. */
+  ranking: boolean;
+  /** The host is showing the final podium. */
+  podium: boolean;
   ended: boolean;
   participants: number;
   participantNames: string[];
   questions: Question[];
   competitive: boolean;
+  /** At least one question has a correct answer, so players earn points. */
+  scored: boolean;
   leaderboard: { name: string; score: number }[];
 };
 export const labels: Record<Kind, string> = {
@@ -108,7 +116,7 @@ export function newQuestion(type: Kind): Question {
       ? { sliderMin: 0, sliderMax: 10, sliderStep: 1 }
       : {}),
     ...(hasRevealMode(type) ? { revealMode: defaultRevealMode(type) } : {}),
-    ...(canCompete(type) ? { competitive: false } : {}),
+    ...(canCompete(type) ? { competitive: false, showRanking: true } : {}),
     options:
       type === "quiz"
         ? ["Jupiter", "Saturn", "Neptune", "Mars"]
@@ -206,12 +214,18 @@ export function serializeSession(session: Session): string {
           sliderStep,
           revealMode,
           competitive,
+          showRanking,
         }) => ({
           type,
           title,
           options,
           correct,
-          ...(canCompete(type) ? { competitive: competitive === true } : {}),
+          ...(canCompete(type)
+            ? {
+                competitive: competitive === true,
+                showRanking: showRanking !== false,
+              }
+            : {}),
           ...(type === "slide" ? { description } : {}),
           ...(type === "slider" ? { sliderMin, sliderMax, sliderStep } : {}),
           ...(hasRevealMode(type)
@@ -377,12 +391,20 @@ export function importSession(json: string): Session {
         throw new Error(
           prefix + "only quiz and truefalse questions can set competitive to true.",
         );
+      if (
+        question.showRanking !== undefined &&
+        typeof question.showRanking !== "boolean"
+      )
+        throw new Error(prefix + "showRanking must be true or false.");
       return {
         id: createId(),
         type: question.type as Kind,
         title: question.title.trim(),
         ...(canCompete(question.type as Kind)
-          ? { competitive: question.competitive === true }
+          ? {
+              competitive: question.competitive === true,
+              showRanking: question.showRanking !== false,
+            }
           : {}),
         ...(question.type === "slide"
           ? { description: (question.description as string).trim() }

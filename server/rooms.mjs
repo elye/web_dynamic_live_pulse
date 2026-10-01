@@ -6,6 +6,8 @@ const kinds = new Set(["slide", "cloud", "poll", "quiz", "truefalse", "ranking",
 const hasRevealMode = (type) => type !== "slide" && type !== "qna";
 /** Only questions with a correct answer can be competitive. */
 const canCompete = (type) => type === "quiz" || type === "truefalse";
+/** Questions with a correct answer hide responses until revealed; all others show them live. */
+const defaultRevealMode = (type) => (canCompete(type) ? "onDone" : "live");
 export const baseScore = 500;
 export const speedBonus = 500;
 export const speedWindowMs = 20000;
@@ -77,14 +79,18 @@ export function validateQuestions(input) {
         (question.competitive && !canCompete(question.type)))
     )
       throw new Error("Only quiz and true-or-false questions can be competitive.");
+    if (question.showRanking !== undefined && typeof question.showRanking !== "boolean")
+      throw new Error("Show ranking must be true or false.");
     return {
       id: randomUUID(),
       type: question.type,
       title: question.title.trim(),
       ...(hasRevealMode(question.type)
-        ? { revealMode: question.revealMode ?? (question.type === "cloud" ? "live" : "onDone") }
+        ? { revealMode: question.revealMode ?? defaultRevealMode(question.type) }
         : {}),
-      ...(canCompete(question.type) ? { competitive: question.competitive === true } : {}),
+      ...(canCompete(question.type)
+        ? { competitive: question.competitive === true, showRanking: question.showRanking !== false }
+        : {}),
       ...(question.type === "slide" ? { description: question.description.trim() } : {}),
       ...(question.type === "slider"
         ? { sliderMin: question.sliderMin, sliderMax: question.sliderMax, sliderStep: question.sliderStep }
@@ -113,6 +119,8 @@ export function createRoom(title, questions) {
     started: false,
     accepting: false,
     revealed: false,
+    ranking: false,
+    podium: false,
     ended: false,
     hearts: 0,
     participants: new Map(),
@@ -318,16 +326,36 @@ export function controlRoom(room, token, action, index, now = Date.now()) {
     room.active = index;
     room.accepting = room.questions[room.active].type !== "slide";
     room.revealed = false;
+    room.ranking = false;
+    room.podium = false;
     markOpened(room, now);
   } else if (action === "toggle") {
     if (room.questions[room.active].type === "slide") throw new Error("This slide does not accept responses.");
     room.accepting = !room.accepting;
-    if (room.accepting) room.revealed = false;
+    if (room.accepting) {
+      room.revealed = false;
+      room.ranking = false;
+      room.podium = false;
+    }
     markOpened(room, now);
   } else if (action === "reveal") {
     if (room.questions[room.active].type === "slide") throw new Error("This slide has no results to reveal.");
     room.revealed = true;
     room.accepting = false;
+  } else if (action === "ranking") {
+    if (!room.questions.some((question) => canCompete(question.type)))
+      throw new Error("This session has no questions with answers to rank.");
+    room.revealed = true;
+    room.accepting = false;
+    room.ranking = true;
+    room.podium = false;
+  } else if (action === "podium") {
+    if (!room.questions.some((question) => canCompete(question.type)))
+      throw new Error("This session has no questions with answers to rank.");
+    room.revealed = true;
+    room.accepting = false;
+    room.ranking = false;
+    room.podium = true;
   } else if (action === "end") {
     room.ended = true;
     room.accepting = false;
@@ -433,10 +461,13 @@ export function snapshot(room, host = false) {
     started: room.started,
     accepting: room.accepting,
     revealed: room.revealed,
+    ranking: room.ranking,
+    podium: room.podium,
     ended: room.ended,
     participants: room.participants.size,
     participantNames: [...room.participants.values()].map((member) => member.name),
     competitive: room.questions.some((question) => question.competitive === true),
+    scored: room.questions.some((question) => canCompete(question.type)),
     leaderboard,
     questions: room.questions.map((question, index) => ({
       ...question,

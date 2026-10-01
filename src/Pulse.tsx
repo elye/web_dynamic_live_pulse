@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import type { FormEvent, ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import type { FormEvent, ReactNode, RefObject } from "react";
 import {
   ArrowDown,
   ArrowLeft,
@@ -605,6 +605,86 @@ function QuestionStage({
   );
 }
 
+/**
+ * Grows the font size of `list` to the largest value (between min and max, in px)
+ * whose content still fits inside `box`, and keeps it fitted on resize.
+ */
+function useFitFont(
+  box: RefObject<HTMLElement | null>,
+  list: RefObject<HTMLElement | null>,
+  min: number,
+  max: number,
+  key: string,
+) {
+  useLayoutEffect(() => {
+    const container = box.current;
+    const content = list.current;
+    if (!container || !content) return;
+    const fit = () => {
+      let low = min;
+      let high = max;
+      while (low < high) {
+        const middle = Math.ceil((low + high) / 2);
+        content.style.fontSize = `${middle}px`;
+        if (
+          content.offsetHeight <= container.clientHeight &&
+          content.scrollWidth <= container.clientWidth
+        )
+          low = middle;
+        else high = middle - 1;
+      }
+      content.style.fontSize = `${low}px`;
+    };
+    fit();
+    let cancelled = false;
+    void document.fonts?.ready.then(() => {
+      if (!cancelled) fit();
+    });
+    const observer = new ResizeObserver(fit);
+    observer.observe(container);
+    return () => {
+      cancelled = true;
+      observer.disconnect();
+    };
+  }, [box, list, min, max, key]);
+}
+
+/** A stable pseudo-random number between -1 and 1 for a name, so the layout looks scattered but never jumps. */
+function jitter(name: string) {
+  let hash = 0;
+  for (const character of name) hash = (hash * 31 + character.charCodeAt(0)) | 0;
+  return ((Math.abs(hash) % 2001) - 1000) / 1000;
+}
+
+/** Joined participants, as large as the space allows and smaller as more people arrive. */
+function LobbyNames({ names, max }: { names: string[]; max: number }) {
+  const box = useRef<HTMLDivElement>(null);
+  const list = useRef<HTMLUListElement>(null);
+  useFitFont(box, list, 12, max, names.join("\n"));
+  return (
+    <div className="lobby-people" aria-label="Joined participants" ref={box}>
+      {names.length ? (
+        <ul ref={list}>
+          {names.map((name, index) => (
+            <li
+              key={index}
+              className={`color-${index % 4}`}
+              style={{ ["--jitter" as string]: jitter(name + index) }}
+            >
+              {name}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="lobby-empty">
+          <Users size={32} strokeWidth={1.3} />
+          <p>Waiting for everyone to arrive</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function WelcomeLobby({ room, theme = "mint", host = false, onStart, disabled }: { room: Room; theme?: string; host?: boolean; onStart?: () => void; disabled?: boolean }) {
   return <section className={`welcome-lobby theme-${theme} ${host ? "host-lobby" : ""}`} aria-label="Welcome lobby">
     <div className="lobby-intro"><div><span className="eyebrow">{host ? "WELCOME TO THE SESSION" : room.title}</span><h1>{host ? room.title : "Welcome, everyone."}</h1><span className="lobby-waiting"><span className="live-indicator" />{host ? "The room is open" : "You're in"}</span></div>{host && <button className="button primary" disabled={disabled} onClick={onStart}><Play size={17} />Start questions</button>}</div>
@@ -612,9 +692,7 @@ function WelcomeLobby({ room, theme = "mint", host = false, onStart, disabled }:
       {host ? <div className="lobby-join"><h2>Join the session</h2><ShareDetails code={room.code} inline /></div> : <div className="lobby-code"><span>ROOM CODE</span><strong>{room.code.slice(0, 3)} {room.code.slice(3)}</strong></div>}
       <div className="lobby-roster">
         <div className="lobby-count" role="status" aria-label="Total participants joined"><Users size={22} /><strong>{room.participants}</strong><span>{room.participants === 1 ? "participant joined" : "participants joined"}</span></div>
-        <div className="lobby-people" aria-label="Joined participants">
-          {room.participantNames.length ? <ul>{room.participantNames.map((name, index) => <li key={index}><span className={`participant-initial color-${index % 4}`} aria-hidden="true">{name.slice(0, 1).toLocaleUpperCase()}</span><span>{name}</span></li>)}</ul> : <div className="lobby-empty"><Users size={32} strokeWidth={1.3} /><p>Waiting for everyone to arrive</p></div>}
-        </div>
+        <LobbyNames names={room.participantNames} max={host ? 120 : 56} />
       </div>
     </div>
     <div className="lobby-footer"><span className="stage-brand"><Zap size={16} fill="currentColor" />pulse.</span><span>{host ? "Everyone in? Let's begin." : "Waiting for your host to start."}</span></div>
@@ -1147,8 +1225,8 @@ type ConfettiPiece = {
   sway: number;
 };
 
-/** A full-screen burst of falling confetti that removes itself after a few seconds. */
-function Confetti() {
+/** A full-screen burst of falling confetti that starts after `delay` ms and removes itself after a few seconds. */
+function Confetti({ delay = 0 }: { delay?: number }) {
   const [pieces] = useState<ConfettiPiece[]>(() =>
     Array.from({ length: 90 }, (_, index) => ({
       left: Math.random() * 100,
@@ -1160,12 +1238,17 @@ function Confetti() {
       sway: Math.round(Math.random() * 160 - 80),
     })),
   );
+  const [ready, setReady] = useState(delay === 0);
   const [done, setDone] = useState(false);
   useEffect(() => {
-    const timer = setTimeout(() => setDone(true), 7500);
-    return () => clearTimeout(timer);
-  }, []);
-  if (done) return null;
+    const start = setTimeout(() => setReady(true), delay);
+    const stop = setTimeout(() => setDone(true), delay + 7500);
+    return () => {
+      clearTimeout(start);
+      clearTimeout(stop);
+    };
+  }, [delay]);
+  if (done || !ready) return null;
   return (
     <div className="confetti" aria-hidden="true">
       {pieces.map((piece, index) => (
@@ -1197,7 +1280,8 @@ function Podium({ room }: { room: Room }) {
   const order = [1, 0, 2].filter((index) => winners[index]);
   return (
     <section className="podium-section" aria-label="Final podium">
-      <Confetti />
+      {/* 3rd, 2nd and 1st place rise one after another; confetti follows the winner. */}
+      <Confetti delay={3500} />
       <Trophy size={32} className="podium-trophy" />
       <h2>And the winners are…</h2>
       <div className="podium">
@@ -1244,8 +1328,35 @@ function Leaderboard({
   compact?: boolean;
   title?: string;
 }) {
+  const box = useRef<HTMLDivElement>(null);
+  const list = useRef<HTMLDivElement>(null);
+  useFitFont(
+    box,
+    list,
+    11,
+    64,
+    JSON.stringify(room.leaderboard) + (compact ? "c" : ""),
+  );
+  if (compact)
+    return (
+      <section className="leaderboard compact">
+        <Trophy size={28} />
+        <h2>{title}</h2>
+        <div className="leader-fit" ref={box}>
+          <div className="leader-list" ref={list}>
+            {room.leaderboard.map((entry, index) => (
+              <div className="leader-row" key={index}>
+                <b>{index + 1}</b>
+                <span>{entry.name}</span>
+                <strong>{entry.score.toLocaleString()} pts</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
   return (
-    <section className={`leaderboard ${compact ? "compact" : ""}`}>
+    <section className="leaderboard">
       <Trophy size={32} />
       <h2>{title}</h2>
       {room.leaderboard.map((entry, index) => (
@@ -3028,7 +3139,9 @@ function Participant() {
               </div>
             ) : room.ranking ? (
               <div className="participant-reveal">
-                <Leaderboard room={room} compact title="Top 10 players" />
+                <div className="participant-ranking">
+                  <Leaderboard room={room} compact title="Top 10 players" />
+                </div>
                 <p className="waiting-note">
                   Your host will continue to the next question shortly.
                 </p>

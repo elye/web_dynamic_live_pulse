@@ -704,7 +704,7 @@ test("two audiences answer all types, reconnect, receive reveals, and finish wit
       await expect(participant.getByRole("button", { name: "Send response", exact: true })).toHaveCount(0);
     }
     await expect(page.locator(".lobby-count strong")).toHaveText("2");
-    await expect(page.locator(".lobby-people li")).toHaveText(["AAlex", "SSam"]);
+    await expect(page.locator(".lobby-people li")).toHaveText(["Alex", "Sam"]);
     await audience.reload();
     await expect(audience.getByRole("heading", { name: "Welcome, everyone.", exact: true })).toBeVisible();
     await expect(audience.locator(".lobby-count strong")).toHaveText("2");

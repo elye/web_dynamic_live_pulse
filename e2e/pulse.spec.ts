@@ -624,10 +624,11 @@ test("title-and-description slides show no input to participants or reveal contr
     .getByRole("button", { name: "Join the room", exact: true })
     .click();
   await page.getByRole("button", { name: "Start questions", exact: true }).click();
+  // The arrow beside the counter skips ahead without revealing results first.
   for (let step = 0; step < 4; step++)
     await page
       .getByRole("button", { name: "Next question", exact: true })
-      .last()
+      .first()
       .click();
   await expect(
     page.getByRole("heading", { name: "Welcome aboard", exact: true }),

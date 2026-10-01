@@ -2103,10 +2103,13 @@ function Host() {
                     )}
                     {(() => {
                       const last = currentIndex === questionList.length - 1;
-                      // Questions with results show them first; the next click moves on.
+                      // Hidden results are shown first; the next click moves on.
+                      // Questions already showing results on the fly skip this step,
+                      // except quizzes, whose correct answer and scores still need a reveal.
                       const showFirst =
-                        question.type !== "slide" &&
-                        question.type !== "qna" &&
+                        hasRevealMode(question.type) &&
+                        (question.revealMode !== "live" ||
+                          canCompete(question.type)) &&
                         !room.revealed;
                       return (
                         <button

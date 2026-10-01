@@ -1,6 +1,6 @@
 # Pulse
 
-A real-time audience app for live word clouds, multiple-choice polls, quizzes, true-or-false questions, ranking exercises, slider estimates, live Q&A, 100-point allocations, open responses, and title-and-description slides. Built with React, TypeScript, Vite, Express, and Socket.IO.
+A real-time audience app for live word clouds, multiple-choice polls, quizzes, true-or-false questions, ranking exercises, slider estimates, live Q&A, 100-point allocations, 2x2 grid placements, open responses, and title-and-description slides. Built with React, TypeScript, Vite, Express, and Socket.IO.
 
 ## Run Locally
 
@@ -34,6 +34,8 @@ Add a **Slider** question to have participants estimate a numeric value on a sli
 Add a **Q&A** question to let participants submit and upvote live questions, such as for an open floor or office hours. Each participant can submit one question of their own and upvote (or remove their upvote from) any submitted question, including their own, with one upvote per participant per entry. Unlike every other question type, Q&A results are visible to participants immediately as entries and upvotes arrive, not just after the host reveals them, so the host's **Reveal results** control does not apply to Q&A. Q&A has no single correct answer, so it does not award leaderboard points.
 
 Add a **100 Points** question to have participants allocate 100 points across 2 to 6 options to show relative priorities. Each participant distributes exactly 100 points across the options (using a slider or a number field per option) and submits once their total reaches 100. Results show the summed points per option, sorted from highest to lowest. 100 Points has no single correct answer, so it does not award leaderboard points.
+
+Add a **2x2 Grid** question to have participants rate something across two axes at once, such as urgency versus impact. Set 4 axis labels in the question editor (x-axis low/high and y-axis low/high); participants tap anywhere on the grid to place a point and submit. Results show the average point plus every individual response plotted as a dot on the same grid. 2x2 Grid has no single correct answer, so it does not award leaderboard points.
 
 The editor's sample responses are labeled and never become live submissions. Live sessions always start empty. Quiz answers and audience results stay hidden from participants until the host reveals them. Participants and hosts can refresh and reconnect to their existing session.
 
@@ -101,12 +103,18 @@ The versioned format is:
       "title": "Allocate 100 points across what matters most to you",
       "options": ["Design", "Performance", "Reliability", "Cost"],
       "correct": null
+    },
+    {
+      "type": "grid2x2",
+      "title": "Place your priority on the grid",
+      "options": ["Low urgency", "High urgency", "Low impact", "High impact"],
+      "correct": null
     }
   ]
 }
 ```
 
-Supported types are `slide`, `cloud`, `poll`, `quiz`, `truefalse`, `ranking`, `slider`, `qna`, `points100`, and `text`; supported themes are `mint`, `peach`, `lilac`, and `sky`. `correct` is a zero-based option index for quizzes and true-or-false questions, and `null` otherwise (including for ranking, slider, Q&A, and 100 Points, which have no single correct answer). Word clouds, open responses, Q&A, and slides use an empty `options` array; true-or-false questions require exactly 2 options; polls, quizzes, ranking, and 100 Points require 2 to 6; slider questions also use an empty `options` array and instead require `sliderMin`, `sliderMax`, and `sliderStep` (`sliderMax` must exceed `sliderMin`, `sliderStep` must be positive, and the range must divide into at most 1000 steps). Slide questions require a non-empty `description` (up to 280 characters); other types omit it. Existing question and option limits apply to imports.
+Supported types are `slide`, `cloud`, `poll`, `quiz`, `truefalse`, `ranking`, `slider`, `qna`, `points100`, `grid2x2`, and `text`; supported themes are `mint`, `peach`, `lilac`, and `sky`. `correct` is a zero-based option index for quizzes and true-or-false questions, and `null` otherwise (including for ranking, slider, Q&A, 100 Points, and 2x2 Grid, which have no single correct answer). Word clouds, open responses, Q&A, and slides use an empty `options` array; true-or-false questions require exactly 2 options; polls, quizzes, ranking, and 100 Points require 2 to 6; 2x2 Grid questions require exactly 4 options, used as axis labels in a fixed order (x-axis low, x-axis high, y-axis low, y-axis high) up to 40 characters each rather than selectable choices; slider questions also use an empty `options` array and instead require `sliderMin`, `sliderMax`, and `sliderStep` (`sliderMax` must exceed `sliderMin`, `sliderStep` must be positive, and the range must divide into at most 1000 steps). Slide questions require a non-empty `description` (up to 280 characters); other types omit it. Existing question and option limits apply to imports.
 
 Newly hosted rooms are tracked with their source session, even across multiple runs. For sessions hosted before this feature, the currently recoverable host room is linked when its title and questions match the draft; older rooms whose host credentials were not retained cannot be recovered or deleted through the library and expire normally.
 
@@ -145,7 +153,7 @@ Server tests cover authorization, hidden answers, input validation, duplicate vo
 - Live rooms and responses are held in server memory. They expire after 24 hours and are lost when the server restarts, including development-server restarts after backend edits.
 - The results view shows the most recently hosted room. Export it before creating another room.
 - Each room supports at most 30 questions and 500 participant identities. A participant token permits one response per question. Clearing browser storage creates a new identity; this is not a verified-person voting system.
-- Word clouds accept up to 30 characters and display the 60 most frequent distinct responses. Open responses, Q&A questions, and slide descriptions accept up to 280 characters. Polls, quizzes, ranking, and 100 Points questions support 2 to 6 options. Slider questions use a configurable numeric range (minimum, maximum, and step) instead of options, with at most 1000 steps across the range.
+- Word clouds accept up to 30 characters and display the 60 most frequent distinct responses. Open responses, Q&A questions, and slide descriptions accept up to 280 characters. Polls, quizzes, ranking, and 100 Points questions support 2 to 6 options. 2x2 Grid questions require exactly 4 axis labels, up to 40 characters each, and each submitted point is constrained to -100 to 100 on both axes. Slider questions use a configurable numeric range (minimum, maximum, and step) instead of options, with at most 1000 steps across the range.
 - Host controls require a server-generated bearer token. Keep host browser storage private. All visitors can create their own rooms; room codes are invitation codes, not confidential access controls.
 
 ## Before Public Deployment

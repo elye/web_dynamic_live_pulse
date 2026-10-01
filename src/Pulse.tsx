@@ -21,6 +21,7 @@ import {
   FileText,
   FlaskConical,
   FolderOpen,
+  Grid2x2,
   GripVertical,
   LayoutGrid,
   Link,
@@ -78,6 +79,7 @@ const icons: Record<Kind, LucideIcon> = {
   slider: SlidersHorizontal,
   qna: MessageCircleQuestion,
   points100: Percent,
+  grid2x2: Grid2x2,
   text: MessageCircle,
 };
 const kinds: Kind[] = [
@@ -90,6 +92,7 @@ const kinds: Kind[] = [
   "slider",
   "qna",
   "points100",
+  "grid2x2",
   "text",
 ];
 const samples = [
@@ -210,10 +213,19 @@ function ResultsVisual({
                 { id: "1", text: "What’s next for the roadmap?", count: 6 },
                 { id: "2", text: "Can we see this in action?", count: 3 },
               ]
-            : question.options.map((text, index) => ({
-                text,
-                count: [8, 14, 6, 10, 4, 5][index],
-              }))
+            : question.type === "grid2x2"
+              ? [
+                  { text: "Average: 24,18", count: 5 },
+                  { text: "40,30", count: 1 },
+                  { text: "10,20", count: 1 },
+                  { text: "-20,10", count: 1 },
+                  { text: "30,-5", count: 1 },
+                  { text: "60,35", count: 1 },
+                ]
+              : question.options.map((text, index) => ({
+                  text,
+                  count: [8, 14, 6, 10, 4, 5][index],
+                }))
     : question.results || [];
   const total =
     question.type === "qna"
@@ -309,6 +321,62 @@ function ResultsVisual({
               <small>{item.text}</small>
             </div>
           ))}
+        </div>
+      </div>
+    );
+  }
+  if (question.type === "grid2x2") {
+    const [summary, ...points] = results;
+    const toPercent = (value: number) => ((value + 100) / 200) * 100;
+    const parsePoint = (text: string) => {
+      const [x, y] = text.split(",").map(Number);
+      return { x: x || 0, y: y || 0 };
+    };
+    const average = summary ? parsePoint(summary.text.replace("Average: ", "")) : { x: 0, y: 0 };
+    return (
+      <div className="grid2x2-results">
+        <div className="grid2x2-plot">
+          <span className="grid2x2-axis-label grid2x2-top">
+            {question.options[3]}
+          </span>
+          <span className="grid2x2-axis-label grid2x2-bottom">
+            {question.options[2]}
+          </span>
+          <span className="grid2x2-axis-label grid2x2-left">
+            {question.options[0]}
+          </span>
+          <span className="grid2x2-axis-label grid2x2-right">
+            {question.options[1]}
+          </span>
+          <span className="grid2x2-quadrant-h" />
+          <span className="grid2x2-quadrant-v" />
+          {points.map((point, index) => {
+            const { x, y } = parsePoint(point.text);
+            return (
+              <span
+                key={index}
+                className="grid2x2-dot"
+                style={{
+                  left: `${toPercent(x)}%`,
+                  top: `${toPercent(-y)}%`,
+                }}
+              />
+            );
+          })}
+          {points.length > 0 && (
+            <span
+              className="grid2x2-dot grid2x2-dot-average"
+              style={{
+                left: `${toPercent(average.x)}%`,
+                top: `${toPercent(-average.y)}%`,
+              }}
+            />
+          )}
+        </div>
+        <div className="grid2x2-summary">
+          <Grid2x2 size={18} />
+          <strong>{summary?.text || "Average: 0,0"}</strong>
+          <span>{points.length} responses placed</span>
         </div>
       </div>
     );
@@ -486,6 +554,7 @@ function QuestionEditor({
   const isTrueFalse = draft.type === "truefalse";
   const isRanking = draft.type === "ranking";
   const isPoints100 = draft.type === "points100";
+  const isGrid2x2 = draft.type === "grid2x2";
   const isSlider = draft.type === "slider";
   const isOptions =
     draft.type === "poll" ||
@@ -503,6 +572,14 @@ function QuestionEditor({
       draft.sliderStep > 0 &&
       draft.sliderMax > draft.sliderMin &&
       (draft.sliderMax - draft.sliderMin) / draft.sliderStep <= 1000);
+  function setAxisLabel(index: number, text: string) {
+    setDraft({
+      ...draft,
+      options: draft.options.map((value, position) =>
+        position === index ? text : value,
+      ),
+    });
+  }
   function submit(event: FormEvent) {
     event.preventDefault();
     onSave(draft);
@@ -616,6 +693,47 @@ function QuestionEditor({
             )}
           </fieldset>
         )}
+        {isGrid2x2 && (
+          <fieldset className="grid2x2-axis-editor">
+            <legend>Axis labels</legend>
+            <label>
+              X axis · left (low)
+              <input
+                required
+                maxLength={40}
+                value={draft.options[0] ?? ""}
+                onChange={(event) => setAxisLabel(0, event.target.value)}
+              />
+            </label>
+            <label>
+              X axis · right (high)
+              <input
+                required
+                maxLength={40}
+                value={draft.options[1] ?? ""}
+                onChange={(event) => setAxisLabel(1, event.target.value)}
+              />
+            </label>
+            <label>
+              Y axis · bottom (low)
+              <input
+                required
+                maxLength={40}
+                value={draft.options[2] ?? ""}
+                onChange={(event) => setAxisLabel(2, event.target.value)}
+              />
+            </label>
+            <label>
+              Y axis · top (high)
+              <input
+                required
+                maxLength={40}
+                value={draft.options[3] ?? ""}
+                onChange={(event) => setAxisLabel(3, event.target.value)}
+              />
+            </label>
+          </fieldset>
+        )}
         {isOptions && (
           <fieldset>
             <legend>
@@ -704,6 +822,7 @@ function QuestionEditor({
             disabled={
               !draft.title.trim() ||
               (isOptions && draft.options.some((option) => !option.trim())) ||
+              (isGrid2x2 && draft.options.some((option) => !option.trim())) ||
               (isSlide && !draft.description?.trim()) ||
               (isSlider && !sliderRangeValid)
             }
@@ -1622,6 +1741,8 @@ function Host() {
                               <MessageCircleQuestion size={32} strokeWidth={1.5} />
                             ) : item.type === "points100" ? (
                               <Percent size={32} strokeWidth={1.5} />
+                            ) : item.type === "grid2x2" ? (
+                              <Grid2x2 size={32} strokeWidth={1.5} />
                             ) : item.type === "slide" ? (
                               <div className="mini-slide">
                                 <FileText size={26} />
@@ -1818,9 +1939,11 @@ function Host() {
                                         ? "Submit and upvote live questions."
                                         : question.type === "points100"
                                           ? "Divide 100 points across what matters most."
-                                          : question.type === "slide"
-                                            ? "Just a title and description. No input needed."
-                                            : "Space for the longer answer."}
+                                          : question.type === "grid2x2"
+                                            ? "Place a point across two axes."
+                                            : question.type === "slide"
+                                              ? "Just a title and description. No input needed."
+                                              : "Space for the longer answer."}
                         </p>
                       </div>
                     </div>
@@ -2181,9 +2304,11 @@ function Host() {
                                     ? "Participants submit and upvote live questions"
                                     : kind === "points100"
                                       ? "Allocate 100 points across a set of options to show priorities"
-                                      : kind === "slide"
-                                        ? "Just a title and description, no input needed"
-                                        : "Give every thought a little room"}
+                                      : kind === "grid2x2"
+                                        ? "Rate items across a two-axis graph"
+                                        : kind === "slide"
+                                          ? "Just a title and description, no input needed"
+                                          : "Give every thought a little room"}
                     </small>
                   </span>
                   <Plus size={19} />
@@ -2297,7 +2422,9 @@ function Participant() {
   const [code, setCode] = useState(initialCode);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
-  const [answer, setAnswer] = useState<string | number | number[]>("");
+  const [answer, setAnswer] = useState<
+    string | number | number[] | { x: number; y: number }
+  >("");
   const [answerQuestion, setAnswerQuestion] = useState("");
   const [upvoted, setUpvoted] = useState<Set<string>>(new Set());
   const [upvotedQuestion, setUpvotedQuestion] = useState("");
@@ -2331,6 +2458,14 @@ function Participant() {
     (sum, points) => sum + points,
     0,
   );
+  const gridPoint =
+    question?.type === "grid2x2"
+      ? currentAnswer &&
+        typeof currentAnswer === "object" &&
+        !Array.isArray(currentAnswer)
+        ? currentAnswer
+        : null
+      : null;
   const hasSubmitted = !!question && submitted.includes(question.id);
 
   async function join(event: FormEvent) {
@@ -2370,7 +2505,9 @@ function Participant() {
               ? sliderValue
               : question.type === "points100"
                 ? pointsAllocation
-                : currentAnswer,
+                : question.type === "grid2x2"
+                  ? gridPoint
+                  : currentAnswer,
       });
       live.setSubmitted((items) => [...items, question.id]);
     } catch (failure) {
@@ -2393,6 +2530,14 @@ function Participant() {
       position === index ? points : value,
     );
     setAnswer(next);
+    setAnswerQuestion(question.id);
+  }
+  function setGridPoint(x: number, y: number) {
+    if (!question) return;
+    setAnswer({
+      x: Math.max(-100, Math.min(100, Math.round(x))),
+      y: Math.max(-100, Math.min(100, Math.round(y))),
+    });
     setAnswerQuestion(question.id);
   }
   async function upvote(entrantId: string) {
@@ -2788,6 +2933,55 @@ function Participant() {
                       </small>
                     )}
                   </div>
+                ) : question.type === "grid2x2" ? (
+                  <div className="grid2x2-input">
+                    <span className="grid2x2-axis-label grid2x2-top">
+                      {question.options[3]}
+                    </span>
+                    <span className="grid2x2-axis-label grid2x2-bottom">
+                      {question.options[2]}
+                    </span>
+                    <span className="grid2x2-axis-label grid2x2-left">
+                      {question.options[0]}
+                    </span>
+                    <span className="grid2x2-axis-label grid2x2-right">
+                      {question.options[1]}
+                    </span>
+                    <button
+                      type="button"
+                      className="grid2x2-pad"
+                      aria-label="Tap to place your point on the grid"
+                      onClick={(event) => {
+                        const bounds =
+                          event.currentTarget.getBoundingClientRect();
+                        const fractionX =
+                          (event.clientX - bounds.left) / bounds.width;
+                        const fractionY =
+                          (event.clientY - bounds.top) / bounds.height;
+                        setGridPoint(
+                          fractionX * 200 - 100,
+                          -(fractionY * 200 - 100),
+                        );
+                      }}
+                    >
+                      <span className="grid2x2-quadrant-h" />
+                      <span className="grid2x2-quadrant-v" />
+                      {gridPoint && (
+                        <span
+                          className="grid2x2-marker"
+                          style={{
+                            left: `${((gridPoint.x + 100) / 200) * 100}%`,
+                            top: `${((-gridPoint.y + 100) / 200) * 100}%`,
+                          }}
+                        />
+                      )}
+                    </button>
+                    <small className="grid2x2-coords">
+                      {gridPoint
+                        ? `x: ${gridPoint.x} · y: ${gridPoint.y}`
+                        : "Tap the grid to place your point."}
+                    </small>
+                  </div>
                 ) : (
                   <label>
                     {question.type === "cloud"
@@ -2821,10 +3015,12 @@ function Participant() {
                     !connected ||
                     (question.type === "points100"
                       ? pointsAllocated !== 100
-                      : !["ranking", "slider"].includes(question.type) &&
-                        (currentAnswer === "" ||
-                          (typeof currentAnswer === "string" &&
-                            !currentAnswer.trim())))
+                      : question.type === "grid2x2"
+                        ? !gridPoint
+                        : !["ranking", "slider"].includes(question.type) &&
+                          (currentAnswer === "" ||
+                            (typeof currentAnswer === "string" &&
+                              !currentAnswer.trim())))
                   }
                 >
                   {busy ? (

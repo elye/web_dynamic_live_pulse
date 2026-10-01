@@ -8,6 +8,7 @@ export type Kind =
   | "slider"
   | "qna"
   | "points100"
+  | "grid2x2"
   | "text";
 export type Question = {
   id: string;
@@ -53,6 +54,7 @@ export const labels: Record<Kind, string> = {
   slider: "Slider",
   qna: "Q&A",
   points100: "100 Points",
+  grid2x2: "2x2 Grid",
   text: "Open response",
 };
 
@@ -75,6 +77,7 @@ export function newQuestion(type: Kind): Question {
       slider: "How many hours a day do you spend in meetings?",
       qna: "Ask us anything",
       points100: "Allocate 100 points across what matters most to you",
+      grid2x2: "Place your priority on the grid",
       text: "What is one thing we could do better?",
       slide: "A quick word before we dive in",
     }[type],
@@ -103,7 +106,9 @@ export function newQuestion(type: Kind): Question {
               ? ["Speed", "Quality", "Cost", "Communication"]
               : type === "points100"
                 ? ["Design", "Performance", "Reliability", "Cost"]
-                : [],
+                : type === "grid2x2"
+                  ? ["Low urgency", "High urgency", "Low impact", "High impact"]
+                  : [],
     correct: type === "quiz" ? 1 : type === "truefalse" ? 0 : null,
   };
 }
@@ -246,6 +251,7 @@ export function importSession(json: string): Session {
             "slider",
             "qna",
             "points100",
+            "grid2x2",
             "text",
           ] as string[]
         ).includes(question.type)
@@ -280,6 +286,17 @@ export function importSession(json: string): Session {
           )
         )
           throw new Error(prefix + "add exactly 2 nonempty options.");
+      } else if (question.type === "grid2x2") {
+        if (
+          options.length !== 4 ||
+          options.some(
+            (option: string) => !option.trim() || option.length > 40,
+          )
+        )
+          throw new Error(
+            prefix +
+              "add exactly 4 axis labels (x-low, x-high, y-low, y-high), up to 40 characters each.",
+          );
       } else if (["poll", "quiz", "ranking", "points100"].includes(question.type)) {
         if (
           options.length < 2 ||

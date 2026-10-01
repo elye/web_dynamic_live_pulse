@@ -1,7 +1,7 @@
 import { randomInt, randomUUID } from "node:crypto";
 
 export const rooms = new Map();
-const kinds = new Set(["slide", "cloud", "poll", "quiz", "truefalse", "ranking", "slider", "qna", "points100", "text"]);
+const kinds = new Set(["slide", "cloud", "poll", "quiz", "truefalse", "ranking", "slider", "qna", "points100", "grid2x2", "text"]);
 
 export function validateQuestions(input) {
   if (!Array.isArray(input) || !input.length || input.length > 30)
@@ -25,6 +25,12 @@ export function validateQuestions(input) {
         options.some((option) => !option || option.length > 100))
     )
       throw new Error("A true-or-false question needs exactly 2 answer options.");
+    if (
+      question.type === "grid2x2" &&
+      (options.length !== 4 ||
+        options.some((option) => !option || option.length > 40))
+    )
+      throw new Error("A 2x2 grid question needs exactly 4 axis labels.");
     if (
       ["poll", "quiz", "ranking", "points100"].includes(question.type) &&
       (options.length < 2 ||
@@ -168,6 +174,22 @@ export function submitVote(room, token, questionId, value) {
       ) > 1e-9
     )
       throw new Error("Choose a value on the slider.");
+  } else if (question.type === "grid2x2") {
+    if (
+      !value ||
+      typeof value !== "object" ||
+      Array.isArray(value) ||
+      typeof value.x !== "number" ||
+      typeof value.y !== "number" ||
+      !Number.isFinite(value.x) ||
+      !Number.isFinite(value.y) ||
+      value.x < -100 ||
+      value.x > 100 ||
+      value.y < -100 ||
+      value.y > 100
+    )
+      throw new Error("Place a point on the grid between -100 and 100.");
+    value = { x: value.x, y: value.y };
   } else {
     if (
       typeof value !== "string" ||
@@ -289,6 +311,22 @@ function results(room, question) {
         count: upvotes.get(entrantToken)?.size || 0,
       }))
       .sort((first, second) => second.count - first.count);
+  }
+  if (question.type === "grid2x2") {
+    const points = values;
+    const averageX = points.length
+      ? points.reduce((sum, point) => sum + point.x, 0) / points.length
+      : 0;
+    const averageY = points.length
+      ? points.reduce((sum, point) => sum + point.y, 0) / points.length
+      : 0;
+    return [
+      {
+        text: `Average: ${Math.round(averageX * 10) / 10},${Math.round(averageY * 10) / 10}`,
+        count: points.length,
+      },
+      ...points.map((point) => ({ text: `${point.x},${point.y}`, count: 1 })),
+    ];
   }
   const counts = new Map();
   for (const value of values) {

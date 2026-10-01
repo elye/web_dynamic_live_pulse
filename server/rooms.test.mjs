@@ -211,6 +211,48 @@ test("100 Points questions require allocations that sum to exactly 100 and aggre
   rooms.delete(room.code);
 });
 
+test("2x2 Grid questions require exactly 4 axis labels and a point between -100 and 100 on each axis", () => {
+  const grid2x2 = {
+    type: "grid2x2",
+    title: "Place your priority on the grid",
+    options: ["Low urgency", "High urgency", "Low impact", "High impact"],
+    correct: null,
+  };
+  assert.throws(
+    () =>
+      createRoom("Invalid", [
+        { ...grid2x2, options: ["Only one", "Two", "Three"] },
+      ]),
+    /exactly 4 axis labels/,
+  );
+  const room = createRoom("Priorities", [grid2x2]);
+  const firstToken = joinRoom(room, "Alex");
+  const secondToken = joinRoom(room, "Sam");
+  controlRoom(room, room.hostToken, "start");
+  assert.throws(
+    () => submitVote(room, firstToken, room.questions[0].id, { x: 150, y: 0 }),
+    /between -100 and 100/,
+  );
+  assert.throws(
+    () => submitVote(room, firstToken, room.questions[0].id, [10, 10]),
+    /between -100 and 100/,
+  );
+  assert.throws(
+    () => submitVote(room, firstToken, room.questions[0].id, { x: "a", y: 0 }),
+    /between -100 and 100/,
+  );
+  submitVote(room, firstToken, room.questions[0].id, { x: 40, y: 30 });
+  submitVote(room, secondToken, room.questions[0].id, { x: -20, y: 10 });
+  controlRoom(room, room.hostToken, "reveal");
+  assert.deepEqual(snapshot(room, true).questions[0].results, [
+    { text: "Average: 10,20", count: 2 },
+    { text: "40,30", count: 1 },
+    { text: "-20,10", count: 1 },
+  ]);
+  assert.ok(snapshot(room).leaderboard.every((entry) => entry.score === 0));
+  rooms.delete(room.code);
+});
+
 test("slider questions require a valid range and aggregate average plus distribution", () => {
   const slider = {
     type: "slider",

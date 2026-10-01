@@ -703,6 +703,10 @@ button:not(:disabled):active {
   background: #f6ece0;
   color: #a3703c;
 }
+.art-grid2x2 {
+  background: #ece4f3;
+  color: #7a5ba6;
+}
 .art-text {
   background: #e7edf5;
   color: #7892b2;
@@ -1284,6 +1288,10 @@ button:not(:disabled):active {
 .type-points100 {
   background: #f6ece0;
   color: #a3703c;
+}
+.type-grid2x2 {
+  background: #ece4f3;
+  color: #7a5ba6;
 }
 .detail-title h3 {
   font-size: 11px;
@@ -2620,6 +2628,137 @@ textarea {
   border: 1px solid #dce4d5;
   border-radius: 5px;
   font-size: 13px;
+}
+.grid2x2-input {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+.grid2x2-pad {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 1;
+  border: 1px solid #dce4d5;
+  border-radius: 10px;
+  background: #f7faf4;
+  padding: 0;
+  cursor: crosshair;
+  appearance: none;
+}
+.grid2x2-axis-label {
+  position: absolute;
+  font-size: 11px;
+  font-weight: 600;
+  color: #71806a;
+  max-width: 46%;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.grid2x2-top {
+  top: -4px;
+  left: 50%;
+  transform: translate(-50%, -100%);
+}
+.grid2x2-bottom {
+  bottom: -4px;
+  left: 50%;
+  transform: translate(-50%, 100%);
+}
+.grid2x2-left {
+  top: 50%;
+  left: -4px;
+  transform: translate(-100%, -50%);
+}
+.grid2x2-right {
+  top: 50%;
+  right: -4px;
+  transform: translate(100%, -50%);
+}
+.grid2x2-quadrant-h,
+.grid2x2-quadrant-v {
+  position: absolute;
+  background: #dce4d5;
+}
+.grid2x2-quadrant-h {
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+.grid2x2-quadrant-v {
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+.grid2x2-marker {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #578461;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.grid2x2-coords {
+  font-size: 12px;
+  color: #71806a;
+}
+.grid2x2-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.grid2x2-plot {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 1;
+  border: 1px solid #dce4d5;
+  border-radius: 10px;
+  background: #f7faf4;
+}
+.grid2x2-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #7a5ba6;
+  opacity: 0.55;
+  transform: translate(-50%, -50%);
+}
+.grid2x2-dot-average {
+  width: 16px;
+  height: 16px;
+  background: #4a3769;
+  opacity: 1;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+.grid2x2-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #4a3769;
+}
+.grid2x2-summary strong {
+  font-size: 15px;
+}
+.grid2x2-summary span {
+  color: #8b9e7d;
+  font-size: 12px;
+}
+.grid2x2-axis-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 .participant-bottom {
   display: flex;

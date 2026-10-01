@@ -16,6 +16,10 @@ export const revealModes: RevealMode[] = ["live", "onDone"];
 export function hasRevealMode(type: Kind) {
   return type !== "slide" && type !== "qna";
 }
+/** Word clouds are naturally live; every other type reveals when the host is done. */
+export function defaultRevealMode(type: Kind): RevealMode {
+  return type === "cloud" ? "live" : "onDone";
+}
 export type Question = {
   id: string;
   type: Kind;
@@ -97,7 +101,7 @@ export function newQuestion(type: Kind): Question {
     ...(type === "slider"
       ? { sliderMin: 0, sliderMax: 10, sliderStep: 1 }
       : {}),
-    ...(hasRevealMode(type) ? { revealMode: "onDone" as RevealMode } : {}),
+    ...(hasRevealMode(type) ? { revealMode: defaultRevealMode(type) } : {}),
     options:
       type === "quiz"
         ? ["Jupiter", "Saturn", "Neptune", "Mars"]
@@ -201,7 +205,7 @@ export function serializeSession(session: Session): string {
           ...(type === "slide" ? { description } : {}),
           ...(type === "slider" ? { sliderMin, sliderMax, sliderStep } : {}),
           ...(hasRevealMode(type)
-            ? { revealMode: revealMode ?? "onDone" }
+            ? { revealMode: revealMode ?? defaultRevealMode(type) }
             : {}),
         }),
       ),
@@ -370,7 +374,11 @@ export function importSession(json: string): Session {
             }
           : {}),
         ...(hasRevealMode(question.type as Kind)
-          ? { revealMode: (question.revealMode as RevealMode) ?? "onDone" }
+          ? {
+              revealMode:
+                (question.revealMode as RevealMode) ??
+                defaultRevealMode(question.type as Kind),
+            }
           : {}),
         options: options.map((option: string) => option.trim()),
         correct: ["quiz", "truefalse"].includes(question.type)

@@ -71,7 +71,7 @@ export function validateQuestions(input) {
       type: question.type,
       title: question.title.trim(),
       ...(hasRevealMode(question.type)
-        ? { revealMode: question.revealMode ?? "onDone" }
+        ? { revealMode: question.revealMode ?? (question.type === "cloud" ? "live" : "onDone") }
         : {}),
       ...(question.type === "slide" ? { description: question.description.trim() } : {}),
       ...(question.type === "slider"

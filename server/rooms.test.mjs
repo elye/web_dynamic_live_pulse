@@ -49,10 +49,11 @@ test("reveal mode defaults to onDone, hides results until reveal, and shows live
     { type: "poll", title: "Live?", options: ["A", "B"], revealMode: "live" },
     { type: "qna", title: "Ask", options: [] },
     { type: "slide", title: "Hi", description: "Welcome", options: [] },
+    { type: "cloud", title: "Cloud?", options: [] },
   ]);
   assert.deepEqual(
     room.questions.map((question) => question.revealMode),
-    ["onDone", "live", undefined, undefined],
+    ["onDone", "live", undefined, undefined, "live"],
   );
   assert.throws(
     () => createRoom("Bad", [{ type: "poll", title: "x", options: ["A", "B"], revealMode: "soon" }]),

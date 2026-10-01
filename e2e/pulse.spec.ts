@@ -323,12 +323,20 @@ test("session JSON backup restores a deleted draft from a file or pasted JSON", 
         title,
         options,
         correct,
+        revealMode,
       }: {
         type: string;
         title: string;
         options: string[];
         correct: number | null;
-      }) => ({ type, title, options, correct }),
+        revealMode?: string;
+      }) => ({
+        type,
+        title,
+        options,
+        correct,
+        ...(revealMode ? { revealMode } : {}),
+      }),
     ),
   ).toEqual(backup.questions);
   await page.getByRole("button", { name: "My sessions", exact: true }).click();
@@ -706,20 +714,13 @@ test("two audiences answer all types, reconnect, receive reveals, and finish wit
       await participant
         .getByRole("button", { name: "Send response", exact: true })
         .click();
-      await expect(
-        participant.getByRole("heading", {
-          name: "Your voice is in.",
-          exact: true,
-        }),
-      ).toBeVisible();
+      await expect(participant.getByText("Live results", { exact: true })).toBeVisible();
     }
     await expect(page.locator(".cloud-word")).toContainText("inspired");
     await expect(page.locator(".cloud-word")).toHaveAttribute("title", "2 responses");
     await checkCloudGeometry(page, 1);
     await audience.reload();
-    await expect(
-      audience.getByRole("heading", { name: "Your voice is in.", exact: true }),
-    ).toBeVisible();
+    await expect(audience.getByText("Live results", { exact: true })).toBeVisible();
     await expect(page.locator(".audience-count strong")).toHaveText("2");
     await page
       .getByRole("button", { name: "Reveal results", exact: true })
@@ -800,6 +801,11 @@ test("two audiences answer all types, reconnect, receive reveals, and finish wit
     await audience.getByRole("textbox").fill("More time to explore together.");
     await audience
       .getByRole("button", { name: "Send response", exact: true })
+      .click();
+    await expect(page.locator(".response-hidden")).toContainText("1");
+    await expect(page.locator(".text-results")).toHaveCount(0);
+    await page
+      .getByRole("button", { name: "Reveal results", exact: true })
       .click();
     await expect(page.locator(".text-results")).toContainText(
       "More time to explore together.",

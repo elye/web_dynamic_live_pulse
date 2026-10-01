@@ -2952,8 +2952,11 @@ function Participant() {
   }
   function setPointsFor(index: number, points: number) {
     if (!question) return;
+    // The other options keep their points, so this one can only use what is left of 100.
+    const remaining = 100 - (pointsAllocated - (pointsAllocation[index] ?? 0));
+    const capped = Math.max(0, Math.min(remaining, Math.round(points) || 0));
     const next = pointsAllocation.map((value, position) =>
-      position === index ? points : value,
+      position === index ? capped : value,
     );
     setAnswer(next);
     setAnswerQuestion(question.id);
@@ -3375,7 +3378,7 @@ function Participant() {
                             type="number"
                             className="points100-value"
                             min={0}
-                            max={100}
+                            max={100 - (pointsAllocated - (pointsAllocation[index] ?? 0))}
                             inputMode="numeric"
                             value={pointsAllocation[index] ?? 0}
                             onChange={(event) =>

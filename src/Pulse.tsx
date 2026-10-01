@@ -24,6 +24,7 @@ import {
   GripVertical,
   LayoutGrid,
   Link,
+  ListOrdered,
   LoaderCircle,
   MessageCircle,
   Monitor,
@@ -70,9 +71,18 @@ const icons: Record<Kind, LucideIcon> = {
   poll: BarChart3,
   quiz: Trophy,
   truefalse: ToggleLeft,
+  ranking: ListOrdered,
   text: MessageCircle,
 };
-const kinds: Kind[] = ["slide", "cloud", "poll", "quiz", "truefalse", "text"];
+const kinds: Kind[] = [
+  "slide",
+  "cloud",
+  "poll",
+  "quiz",
+  "truefalse",
+  "ranking",
+  "text",
+];
 const samples = [
   { text: "excited", count: 12 },
   { text: "curious", count: 9 },
@@ -196,6 +206,32 @@ function ResultsVisual({
     );
   if (question.type === "cloud")
     return <WordCloud results={results} />;
+  if (question.type === "ranking") {
+    const ranked = [...results].sort((first, second) => second.count - first.count);
+    return (
+      <div className="ranking-results">
+        {ranked.map((item, index) => (
+          <div className="ranking-row" key={item.text}>
+            <div className="poll-label">
+              <span>
+                <span className="ranking-position">{index + 1}</span>
+                {item.text}
+              </span>
+              <strong>{item.count} pts</strong>
+            </div>
+            <div className="bar-track">
+              <div
+                className="bar-fill ranking-fill"
+                style={{
+                  width: `${ranked[0].count ? (item.count / ranked[0].count) * 100 : 0}%`,
+                }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
   if (question.type === "text")
     return (
       <div className="text-results">
@@ -338,7 +374,9 @@ function QuestionEditor({
 }) {
   const [draft, setDraft] = useState(question);
   const isTrueFalse = draft.type === "truefalse";
-  const isOptions = draft.type === "poll" || draft.type === "quiz" || isTrueFalse;
+  const isRanking = draft.type === "ranking";
+  const isOptions =
+    draft.type === "poll" || draft.type === "quiz" || isTrueFalse || isRanking;
   const hasCorrectAnswer = draft.type === "quiz" || isTrueFalse;
   const isSlide = draft.type === "slide";
   function submit(event: FormEvent) {
@@ -403,7 +441,7 @@ function QuestionEditor({
         {isOptions && (
           <fieldset>
             <legend>
-              Answer options{" "}
+              {isRanking ? "Items to rank" : "Answer options"}{" "}
               {hasCorrectAnswer && <span>· Select the correct answer</span>}
             </legend>
             {draft.options.map((option, index) => (
@@ -1393,6 +1431,8 @@ function Host() {
                               <Trophy size={32} strokeWidth={1.5} />
                             ) : item.type === "truefalse" ? (
                               <ToggleLeft size={32} strokeWidth={1.5} />
+                            ) : item.type === "ranking" ? (
+                              <ListOrdered size={32} strokeWidth={1.5} />
                             ) : item.type === "slide" ? (
                               <div className="mini-slide">
                                 <FileText size={26} />
@@ -1581,9 +1621,11 @@ function Host() {
                                 ? "A little friendly competition."
                                 : question.type === "truefalse"
                                   ? "A quick binary call: true or false."
-                                  : question.type === "slide"
-                                    ? "Just a title and description. No input needed."
-                                    : "Space for the longer answer."}
+                                  : question.type === "ranking"
+                                    ? "Drag to sort what matters most."
+                                    : question.type === "slide"
+                                      ? "Just a title and description. No input needed."
+                                      : "Space for the longer answer."}
                         </p>
                       </div>
                     </div>
@@ -1936,9 +1978,11 @@ function Host() {
                             ? "A correct answer and a little competition"
                             : kind === "truefalse"
                               ? "A binary choice: true or false"
-                              : kind === "slide"
-                                ? "Just a title and description, no input needed"
-                                : "Give every thought a little room"}
+                              : kind === "ranking"
+                                ? "Drag to sort items from most to least important"
+                                : kind === "slide"
+                                  ? "Just a title and description, no input needed"
+                                  : "Give every thought a little room"}
                     </small>
                   </span>
                   <Plus size={19} />
@@ -2052,12 +2096,18 @@ function Participant() {
   const [code, setCode] = useState(initialCode);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
-  const [answer, setAnswer] = useState<string | number>("");
+  const [answer, setAnswer] = useState<string | number | number[]>("");
   const [answerQuestion, setAnswerQuestion] = useState("");
   const live = useLive("audience", initialCode);
   const { room, connected, error, setError, submitted } = live;
   const question = room?.questions[room.active];
   const currentAnswer = answerQuestion === question?.id ? answer : "";
+  const rankingOrder =
+    question?.type === "ranking"
+      ? Array.isArray(currentAnswer)
+        ? currentAnswer
+        : question.options.map((_, index) => index)
+      : [];
   const hasSubmitted = !!question && submitted.includes(question.id);
 
   async function join(event: FormEvent) {
@@ -2090,7 +2140,7 @@ function Participant() {
       await request("room:vote", {
         ...live.credentials(),
         questionId: question.id,
-        value: currentAnswer,
+        value: question.type === "ranking" ? rankingOrder : currentAnswer,
       });
       live.setSubmitted((items) => [...items, question.id]);
     } catch (failure) {
@@ -2098,6 +2148,14 @@ function Participant() {
     } finally {
       setBusy(false);
     }
+  }
+  function moveRankItem(from: number, to: number) {
+    if (!question) return;
+    const next = [...rankingOrder];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    setAnswer(next);
+    setAnswerQuestion(question.id);
   }
   return (
     <div className="participant-shell">
@@ -2300,6 +2358,44 @@ function Participant() {
                       </button>
                     ))}
                   </div>
+                ) : question.type === "ranking" ? (
+                  <div className="rank-list" aria-label="Drag to reorder, most important first">
+                    {rankingOrder.map((optionIndex, position) => (
+                      <div
+                        className="rank-item"
+                        key={optionIndex}
+                        draggable
+                        onDragStart={(event) => {
+                          event.dataTransfer.effectAllowed = "move";
+                          event.dataTransfer.setData("text/plain", String(position));
+                        }}
+                        onDragOver={(event) => event.preventDefault()}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          const from = Number(event.dataTransfer.getData("text/plain"));
+                          moveRankItem(from, position);
+                        }}
+                      >
+                        <GripVertical size={16} />
+                        <span className="rank-position">{position + 1}</span>
+                        <span>{question.options[optionIndex]}</span>
+                        <div className="rank-move-buttons">
+                          <IconButton
+                            icon={ArrowUp}
+                            label={`Move ${question.options[optionIndex]} up`}
+                            disabled={position === 0}
+                            onClick={() => moveRankItem(position, position - 1)}
+                          />
+                          <IconButton
+                            icon={ArrowDown}
+                            label={`Move ${question.options[optionIndex]} down`}
+                            disabled={position === rankingOrder.length - 1}
+                            onClick={() => moveRankItem(position, position + 1)}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
                   <label>
                     {question.type === "cloud"
@@ -2331,8 +2427,10 @@ function Participant() {
                   disabled={
                     busy ||
                     !connected ||
-                    currentAnswer === "" ||
-                    (typeof currentAnswer === "string" && !currentAnswer.trim())
+                    (question.type !== "ranking" &&
+                      (currentAnswer === "" ||
+                        (typeof currentAnswer === "string" &&
+                          !currentAnswer.trim())))
                   }
                 >
                   {busy ? (

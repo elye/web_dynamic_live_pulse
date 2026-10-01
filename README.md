@@ -1,6 +1,6 @@
 # Pulse
 
-A real-time audience app for live word clouds, multiple-choice polls, quizzes, true-or-false questions, open responses, and title-and-description slides. Built with React, TypeScript, Vite, Express, and Socket.IO.
+A real-time audience app for live word clouds, multiple-choice polls, quizzes, true-or-false questions, ranking exercises, open responses, and title-and-description slides. Built with React, TypeScript, Vite, Express, and Socket.IO.
 
 ## Run Locally
 
@@ -26,6 +26,8 @@ Open http://localhost:5173. The command starts Vite and the live server together
 Add a **Title & description** question when you just need to show participants a title and a longer description without collecting any response, such as a welcome slide or a break announcement. Participants see only the title and description text and cannot submit anything; hosts see **Next question**/**Finish session** but no pause or reveal controls, since there is nothing to collect. Slide questions are skipped in the results summary.
 
 Add a **True or false** question for a quick binary call. It behaves like a quiz with exactly two fixed options ("True"/"False", editable), a correct answer, and a 1,000-point reward for a correct response.
+
+Add a **Ranking** question to have participants drag (or use the up/down controls) to sort 2 to 6 items from most to least important. Each participant submits a full ordering; results are aggregated with Borda-count scoring (an item earns more points the higher it's ranked) and shown sorted from highest to lowest. Ranking has no single correct answer, so it does not award leaderboard points.
 
 The editor's sample responses are labeled and never become live submissions. Live sessions always start empty. Quiz answers and audience results stay hidden from participants until the host reveals them. Participants and hosts can refresh and reconnect to their existing session.
 
@@ -66,12 +68,18 @@ The versioned format is:
       "title": "The sky is blue.",
       "options": ["True", "False"],
       "correct": 0
+    },
+    {
+      "type": "ranking",
+      "title": "Rank these from most to least important",
+      "options": ["Speed", "Quality", "Cost", "Communication"],
+      "correct": null
     }
   ]
 }
 ```
 
-Supported types are `slide`, `cloud`, `poll`, `quiz`, `truefalse`, and `text`; supported themes are `mint`, `peach`, `lilac`, and `sky`. `correct` is a zero-based option index for quizzes and true-or-false questions, and `null` otherwise. Word clouds, open responses, and slides use an empty `options` array; true-or-false questions require exactly 2 options; polls and quizzes require 2 to 6. Slide questions require a non-empty `description` (up to 280 characters); other types omit it. Existing question and option limits apply to imports.
+Supported types are `slide`, `cloud`, `poll`, `quiz`, `truefalse`, `ranking`, and `text`; supported themes are `mint`, `peach`, `lilac`, and `sky`. `correct` is a zero-based option index for quizzes and true-or-false questions, and `null` otherwise (including for ranking, which has no single correct answer). Word clouds, open responses, and slides use an empty `options` array; true-or-false questions require exactly 2 options; polls, quizzes, and ranking require 2 to 6. Slide questions require a non-empty `description` (up to 280 characters); other types omit it. Existing question and option limits apply to imports.
 
 Newly hosted rooms are tracked with their source session, even across multiple runs. For sessions hosted before this feature, the currently recoverable host room is linked when its title and questions match the draft; older rooms whose host credentials were not retained cannot be recovered or deleted through the library and expire normally.
 
@@ -110,7 +118,7 @@ Server tests cover authorization, hidden answers, input validation, duplicate vo
 - Live rooms and responses are held in server memory. They expire after 24 hours and are lost when the server restarts, including development-server restarts after backend edits.
 - The results view shows the most recently hosted room. Export it before creating another room.
 - Each room supports at most 30 questions and 500 participant identities. A participant token permits one response per question. Clearing browser storage creates a new identity; this is not a verified-person voting system.
-- Word clouds accept up to 30 characters and display the 60 most frequent distinct responses. Open responses and slide descriptions accept up to 280 characters. Polls and quizzes support 2 to 6 options.
+- Word clouds accept up to 30 characters and display the 60 most frequent distinct responses. Open responses and slide descriptions accept up to 280 characters. Polls, quizzes, and ranking questions support 2 to 6 options.
 - Host controls require a server-generated bearer token. Keep host browser storage private. All visitors can create their own rooms; room codes are invitation codes, not confidential access controls.
 
 ## Before Public Deployment

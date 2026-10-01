@@ -1,7 +1,7 @@
 import { randomInt, randomUUID } from "node:crypto";
 
 export const rooms = new Map();
-const kinds = new Set(["slide", "cloud", "poll", "quiz", "truefalse", "text"]);
+const kinds = new Set(["slide", "cloud", "poll", "quiz", "truefalse", "ranking", "text"]);
 
 export function validateQuestions(input) {
   if (!Array.isArray(input) || !input.length || input.length > 30)
@@ -26,7 +26,7 @@ export function validateQuestions(input) {
     )
       throw new Error("A true-or-false question needs exactly 2 answer options.");
     if (
-      ["poll", "quiz"].includes(question.type) &&
+      ["poll", "quiz", "ranking"].includes(question.type) &&
       (options.length < 2 ||
         options.length > 6 ||
         options.some((option) => !option || option.length > 100))
@@ -118,6 +118,14 @@ export function submitVote(room, token, questionId, value) {
       value >= question.options.length
     )
       throw new Error("Choose one of the available options.");
+  } else if (question.type === "ranking") {
+    const order = question.options.map((_, index) => index);
+    if (
+      !Array.isArray(value) ||
+      value.length !== question.options.length ||
+      !order.every((index) => value.includes(index))
+    )
+      throw new Error("Rank every option exactly once.");
   } else {
     if (
       typeof value !== "string" ||
@@ -171,6 +179,16 @@ function results(room, question) {
       text,
       count: values.filter((value) => value === index).length,
     }));
+  if (question.type === "ranking") {
+    const points = new Array(question.options.length).fill(0);
+    for (const value of values)
+      value.forEach((optionIndex, position) => {
+        points[optionIndex] += question.options.length - position;
+      });
+    return question.options
+      .map((text, index) => ({ text, count: points[index] }))
+      .sort((first, second) => second.count - first.count);
+  }
   const counts = new Map();
   for (const value of values) {
     const key = question.type === "cloud" ? value.toLocaleLowerCase() : value;

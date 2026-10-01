@@ -132,6 +132,41 @@ test("true-or-false questions score like quizzes and require exactly two options
   rooms.delete(room.code);
 });
 
+test("ranking questions collect a full permutation and score with Borda points", () => {
+  const ranking = {
+    type: "ranking",
+    title: "Rank these from most to least important",
+    options: ["Speed", "Quality", "Cost"],
+    correct: null,
+  };
+  assert.throws(
+    () => createRoom("Invalid", [{ ...ranking, options: ["Only one"] }]),
+    /2 to 6/,
+  );
+  const room = createRoom("Priorities", [ranking]);
+  const firstToken = joinRoom(room, "Alex");
+  const secondToken = joinRoom(room, "Sam");
+  controlRoom(room, room.hostToken, "start");
+  assert.throws(
+    () => submitVote(room, firstToken, room.questions[0].id, [0, 1]),
+    /exactly once/,
+  );
+  assert.throws(
+    () => submitVote(room, firstToken, room.questions[0].id, 0),
+    /exactly once/,
+  );
+  submitVote(room, firstToken, room.questions[0].id, [0, 1, 2]);
+  submitVote(room, secondToken, room.questions[0].id, [1, 0, 2]);
+  controlRoom(room, room.hostToken, "reveal");
+  assert.deepEqual(snapshot(room, true).questions[0].results, [
+    { text: "Speed", count: 5 },
+    { text: "Quality", count: 5 },
+    { text: "Cost", count: 2 },
+  ]);
+  assert.ok(snapshot(room).leaderboard.every((entry) => entry.score === 0));
+  rooms.delete(room.code);
+});
+
 test("websocket host and audience complete a live round and reconnect", async () => {
   const { http, io } = createAppServer();
   await new Promise((resolve) => http.listen(0, "127.0.0.1", resolve));

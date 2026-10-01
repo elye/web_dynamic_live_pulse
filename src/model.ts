@@ -4,6 +4,7 @@ export type Kind =
   | "poll"
   | "quiz"
   | "truefalse"
+  | "ranking"
   | "text";
 export type Question = {
   id: string;
@@ -42,6 +43,7 @@ export const labels: Record<Kind, string> = {
   poll: "Multiple choice",
   quiz: "Quiz",
   truefalse: "True or false",
+  ranking: "Ranking",
   text: "Open response",
 };
 
@@ -60,6 +62,7 @@ export function newQuestion(type: Kind): Question {
       poll: "What should we focus on next?",
       quiz: "Which planet has the most moons?",
       truefalse: "Octopuses have three hearts.",
+      ranking: "Rank these from most to least important",
       text: "What is one thing we could do better?",
       slide: "A quick word before we dive in",
     }[type],
@@ -81,7 +84,9 @@ export function newQuestion(type: Kind): Question {
             ]
           : type === "truefalse"
             ? ["True", "False"]
-            : [],
+            : type === "ranking"
+              ? ["Speed", "Quality", "Cost", "Communication"]
+              : [],
     correct: type === "quiz" ? 1 : type === "truefalse" ? 0 : null,
   };
 }
@@ -204,7 +209,15 @@ export function importSession(json: string): Session {
       if (
         typeof question.type !== "string" ||
         !(
-          ["slide", "cloud", "poll", "quiz", "truefalse", "text"] as string[]
+          [
+            "slide",
+            "cloud",
+            "poll",
+            "quiz",
+            "truefalse",
+            "ranking",
+            "text",
+          ] as string[]
         ).includes(question.type)
       )
         throw new Error(prefix + "unsupported question type.");
@@ -237,7 +250,7 @@ export function importSession(json: string): Session {
           )
         )
           throw new Error(prefix + "add exactly 2 nonempty options.");
-      } else if (["poll", "quiz"].includes(question.type)) {
+      } else if (["poll", "quiz", "ranking"].includes(question.type)) {
         if (
           options.length < 2 ||
           options.length > 6 ||

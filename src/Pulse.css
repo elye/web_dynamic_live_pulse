@@ -699,6 +699,10 @@ button:not(:disabled):active {
   background: #e1eef0;
   color: #3f7f8c;
 }
+.art-points100 {
+  background: #f6ece0;
+  color: #a3703c;
+}
 .art-text {
   background: #e7edf5;
   color: #7892b2;
@@ -1276,6 +1280,10 @@ button:not(:disabled):active {
 .type-qna {
   background: #e1eef0;
   color: #3f7f8c;
+}
+.type-points100 {
+  background: #f6ece0;
+  color: #a3703c;
 }
 .detail-title h3 {
   font-size: 11px;
@@ -2558,6 +2566,60 @@ textarea {
   width: 100%;
   font-size: 11px;
   opacity: 0.7;
+}
+.points100-input {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.points100-total {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 6px;
+  background: #f1f5ed;
+  color: #71806a;
+  font-size: 13px;
+}
+.points100-total strong {
+  font-size: 18px;
+  color: #4a5d44;
+}
+.points100-total.complete {
+  background: #ebf3e6;
+  color: #578461;
+}
+.points100-total.complete strong {
+  color: #578461;
+}
+.points100-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.points100-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.points100-label {
+  flex: 0 0 86px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.points100-row input[type="range"] {
+  flex: 1;
+  accent-color: #578461;
+}
+.points100-value {
+  width: 48px;
+  text-align: center;
+  padding: 6px 4px;
+  border: 1px solid #dce4d5;
+  border-radius: 5px;
+  font-size: 13px;
 }
 .participant-bottom {
   display: flex;

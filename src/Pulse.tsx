@@ -31,6 +31,7 @@ import {
   Monitor,
   Pause,
   Pencil,
+  Percent,
   Play,
   Plus,
   Radio,
@@ -76,6 +77,7 @@ const icons: Record<Kind, LucideIcon> = {
   ranking: ListOrdered,
   slider: SlidersHorizontal,
   qna: MessageCircleQuestion,
+  points100: Percent,
   text: MessageCircle,
 };
 const kinds: Kind[] = [
@@ -87,6 +89,7 @@ const kinds: Kind[] = [
   "ranking",
   "slider",
   "qna",
+  "points100",
   "text",
 ];
 const samples = [
@@ -234,6 +237,33 @@ function ResultsVisual({
     );
   if (question.type === "cloud")
     return <WordCloud results={results} />;
+  if (question.type === "points100") {
+    const allocated = [...results].sort((first, second) => second.count - first.count);
+    const peak = Math.max(1, ...allocated.map((item) => item.count));
+    return (
+      <div className="ranking-results">
+        {allocated.map((item, index) => (
+          <div className="ranking-row" key={item.text}>
+            <div className="poll-label">
+              <span>
+                <b className={`option-letter color-${index % 4}`}>
+                  {String.fromCharCode(65 + index)}
+                </b>
+                {item.text}
+              </span>
+              <strong>{item.count} pts</strong>
+            </div>
+            <div className="bar-track">
+              <div
+                className="bar-fill ranking-fill"
+                style={{ width: `${(item.count / peak) * 100}%` }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
   if (question.type === "ranking") {
     const ranked = [...results].sort((first, second) => second.count - first.count);
     return (
@@ -455,9 +485,14 @@ function QuestionEditor({
   const [draft, setDraft] = useState(question);
   const isTrueFalse = draft.type === "truefalse";
   const isRanking = draft.type === "ranking";
+  const isPoints100 = draft.type === "points100";
   const isSlider = draft.type === "slider";
   const isOptions =
-    draft.type === "poll" || draft.type === "quiz" || isTrueFalse || isRanking;
+    draft.type === "poll" ||
+    draft.type === "quiz" ||
+    isTrueFalse ||
+    isRanking ||
+    isPoints100;
   const hasCorrectAnswer = draft.type === "quiz" || isTrueFalse;
   const isSlide = draft.type === "slide";
   const sliderRangeValid =
@@ -584,7 +619,11 @@ function QuestionEditor({
         {isOptions && (
           <fieldset>
             <legend>
-              {isRanking ? "Items to rank" : "Answer options"}{" "}
+              {isRanking
+                ? "Items to rank"
+                : isPoints100
+                  ? "Options to allocate points across"
+                  : "Answer options"}{" "}
               {hasCorrectAnswer && <span>· Select the correct answer</span>}
             </legend>
             {draft.options.map((option, index) => (
@@ -1581,6 +1620,8 @@ function Host() {
                               <SlidersHorizontal size={32} strokeWidth={1.5} />
                             ) : item.type === "qna" ? (
                               <MessageCircleQuestion size={32} strokeWidth={1.5} />
+                            ) : item.type === "points100" ? (
+                              <Percent size={32} strokeWidth={1.5} />
                             ) : item.type === "slide" ? (
                               <div className="mini-slide">
                                 <FileText size={26} />
@@ -1775,9 +1816,11 @@ function Host() {
                                       ? "Slide to estimate a number."
                                       : question.type === "qna"
                                         ? "Submit and upvote live questions."
-                                        : question.type === "slide"
-                                          ? "Just a title and description. No input needed."
-                                          : "Space for the longer answer."}
+                                        : question.type === "points100"
+                                          ? "Divide 100 points across what matters most."
+                                          : question.type === "slide"
+                                            ? "Just a title and description. No input needed."
+                                            : "Space for the longer answer."}
                         </p>
                       </div>
                     </div>
@@ -2136,9 +2179,11 @@ function Host() {
                                   ? "Estimate a numeric value on a sliding scale"
                                   : kind === "qna"
                                     ? "Participants submit and upvote live questions"
-                                    : kind === "slide"
-                                      ? "Just a title and description, no input needed"
-                                      : "Give every thought a little room"}
+                                    : kind === "points100"
+                                      ? "Allocate 100 points across a set of options to show priorities"
+                                      : kind === "slide"
+                                        ? "Just a title and description, no input needed"
+                                        : "Give every thought a little room"}
                     </small>
                   </span>
                   <Plus size={19} />
@@ -2275,6 +2320,17 @@ function Participant() {
             ((question.sliderMin ?? 0) + (question.sliderMax ?? 10)) / 2,
           )
       : 0;
+  const pointsAllocation =
+    question?.type === "points100"
+      ? Array.isArray(currentAnswer) &&
+        currentAnswer.length === question.options.length
+        ? currentAnswer
+        : question.options.map(() => 0)
+      : [];
+  const pointsAllocated = pointsAllocation.reduce(
+    (sum, points) => sum + points,
+    0,
+  );
   const hasSubmitted = !!question && submitted.includes(question.id);
 
   async function join(event: FormEvent) {
@@ -2312,7 +2368,9 @@ function Participant() {
             ? rankingOrder
             : question.type === "slider"
               ? sliderValue
-              : currentAnswer,
+              : question.type === "points100"
+                ? pointsAllocation
+                : currentAnswer,
       });
       live.setSubmitted((items) => [...items, question.id]);
     } catch (failure) {
@@ -2326,6 +2384,14 @@ function Participant() {
     const next = [...rankingOrder];
     const [moved] = next.splice(from, 1);
     next.splice(to, 0, moved);
+    setAnswer(next);
+    setAnswerQuestion(question.id);
+  }
+  function setPointsFor(index: number, points: number) {
+    if (!question) return;
+    const next = pointsAllocation.map((value, position) =>
+      position === index ? points : value,
+    );
     setAnswer(next);
     setAnswerQuestion(question.id);
   }
@@ -2671,6 +2737,57 @@ function Participant() {
                       <span>{question.sliderMax ?? 10}</span>
                     </div>
                   </div>
+                ) : question.type === "points100" ? (
+                  <div className="points100-input">
+                    <div
+                      className={`points100-total ${pointsAllocated === 100 ? "complete" : ""}`}
+                    >
+                      <Percent size={16} />
+                      <strong>{pointsAllocated}</strong>
+                      <span>/ 100 allocated</span>
+                    </div>
+                    <div className="points100-list">
+                      {question.options.map((option, index) => (
+                        <div className="points100-row" key={index}>
+                          <span className={`option-letter color-${index % 4}`}>
+                            {String.fromCharCode(65 + index)}
+                          </span>
+                          <span className="points100-label">{option}</span>
+                          <input
+                            type="range"
+                            min={0}
+                            max={100}
+                            value={pointsAllocation[index] ?? 0}
+                            onChange={(event) =>
+                              setPointsFor(index, Number(event.target.value))
+                            }
+                          />
+                          <input
+                            type="number"
+                            className="points100-value"
+                            min={0}
+                            max={100}
+                            inputMode="numeric"
+                            value={pointsAllocation[index] ?? 0}
+                            onChange={(event) =>
+                              setPointsFor(
+                                index,
+                                Math.max(
+                                  0,
+                                  Math.min(100, Number(event.target.value) || 0),
+                                ),
+                              )
+                            }
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    {pointsAllocated !== 100 && (
+                      <small className="field-error">
+                        Allocate exactly 100 points to submit.
+                      </small>
+                    )}
+                  </div>
                 ) : (
                   <label>
                     {question.type === "cloud"
@@ -2702,10 +2819,12 @@ function Participant() {
                   disabled={
                     busy ||
                     !connected ||
-                    (!["ranking", "slider"].includes(question.type) &&
-                      (currentAnswer === "" ||
-                        (typeof currentAnswer === "string" &&
-                          !currentAnswer.trim())))
+                    (question.type === "points100"
+                      ? pointsAllocated !== 100
+                      : !["ranking", "slider"].includes(question.type) &&
+                        (currentAnswer === "" ||
+                          (typeof currentAnswer === "string" &&
+                            !currentAnswer.trim())))
                   }
                 >
                   {busy ? (

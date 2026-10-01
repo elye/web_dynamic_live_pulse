@@ -168,6 +168,49 @@ test("ranking questions collect a full permutation and score with Borda points",
   rooms.delete(room.code);
 });
 
+test("100 Points questions require allocations that sum to exactly 100 and aggregate totals", () => {
+  const points100 = {
+    type: "points100",
+    title: "Allocate 100 points across what matters most to you",
+    options: ["Design", "Performance", "Reliability"],
+    correct: null,
+  };
+  assert.throws(
+    () => createRoom("Invalid", [{ ...points100, options: ["Only one"] }]),
+    /2 to 6/,
+  );
+  const room = createRoom("Priorities", [points100]);
+  const firstToken = joinRoom(room, "Alex");
+  const secondToken = joinRoom(room, "Sam");
+  controlRoom(room, room.hostToken, "start");
+  assert.throws(
+    () => submitVote(room, firstToken, room.questions[0].id, [50, 50]),
+    /exactly 100/,
+  );
+  assert.throws(
+    () => submitVote(room, firstToken, room.questions[0].id, [40, 40, 40]),
+    /exactly 100/,
+  );
+  assert.throws(
+    () => submitVote(room, firstToken, room.questions[0].id, [-10, 60, 50]),
+    /exactly 100/,
+  );
+  assert.throws(
+    () => submitVote(room, firstToken, room.questions[0].id, [50.5, 49.5, 0]),
+    /exactly 100/,
+  );
+  submitVote(room, firstToken, room.questions[0].id, [60, 30, 10]);
+  submitVote(room, secondToken, room.questions[0].id, [20, 20, 60]);
+  controlRoom(room, room.hostToken, "reveal");
+  assert.deepEqual(snapshot(room, true).questions[0].results, [
+    { text: "Design", count: 80 },
+    { text: "Reliability", count: 70 },
+    { text: "Performance", count: 50 },
+  ]);
+  assert.ok(snapshot(room).leaderboard.every((entry) => entry.score === 0));
+  rooms.delete(room.code);
+});
+
 test("slider questions require a valid range and aggregate average plus distribution", () => {
   const slider = {
     type: "slider",

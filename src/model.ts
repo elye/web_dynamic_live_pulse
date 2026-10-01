@@ -7,6 +7,7 @@ export type Kind =
   | "ranking"
   | "slider"
   | "qna"
+  | "points100"
   | "text";
 export type Question = {
   id: string;
@@ -51,6 +52,7 @@ export const labels: Record<Kind, string> = {
   ranking: "Ranking",
   slider: "Slider",
   qna: "Q&A",
+  points100: "100 Points",
   text: "Open response",
 };
 
@@ -72,6 +74,7 @@ export function newQuestion(type: Kind): Question {
       ranking: "Rank these from most to least important",
       slider: "How many hours a day do you spend in meetings?",
       qna: "Ask us anything",
+      points100: "Allocate 100 points across what matters most to you",
       text: "What is one thing we could do better?",
       slide: "A quick word before we dive in",
     }[type],
@@ -98,7 +101,9 @@ export function newQuestion(type: Kind): Question {
             ? ["True", "False"]
             : type === "ranking"
               ? ["Speed", "Quality", "Cost", "Communication"]
-              : [],
+              : type === "points100"
+                ? ["Design", "Performance", "Reliability", "Cost"]
+                : [],
     correct: type === "quiz" ? 1 : type === "truefalse" ? 0 : null,
   };
 }
@@ -240,6 +245,7 @@ export function importSession(json: string): Session {
             "ranking",
             "slider",
             "qna",
+            "points100",
             "text",
           ] as string[]
         ).includes(question.type)
@@ -274,7 +280,7 @@ export function importSession(json: string): Session {
           )
         )
           throw new Error(prefix + "add exactly 2 nonempty options.");
-      } else if (["poll", "quiz", "ranking"].includes(question.type)) {
+      } else if (["poll", "quiz", "ranking", "points100"].includes(question.type)) {
         if (
           options.length < 2 ||
           options.length > 6 ||

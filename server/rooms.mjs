@@ -1,7 +1,7 @@
 import { randomInt, randomUUID } from "node:crypto";
 
 export const rooms = new Map();
-const kinds = new Set(["slide", "cloud", "poll", "quiz", "truefalse", "ranking", "slider", "qna", "text"]);
+const kinds = new Set(["slide", "cloud", "poll", "quiz", "truefalse", "ranking", "slider", "qna", "points100", "text"]);
 
 export function validateQuestions(input) {
   if (!Array.isArray(input) || !input.length || input.length > 30)
@@ -26,7 +26,7 @@ export function validateQuestions(input) {
     )
       throw new Error("A true-or-false question needs exactly 2 answer options.");
     if (
-      ["poll", "quiz", "ranking"].includes(question.type) &&
+      ["poll", "quiz", "ranking", "points100"].includes(question.type) &&
       (options.length < 2 ||
         options.length > 6 ||
         options.some((option) => !option || option.length > 100))
@@ -146,6 +146,14 @@ export function submitVote(room, token, questionId, value) {
       !order.every((index) => value.includes(index))
     )
       throw new Error("Rank every option exactly once.");
+  } else if (question.type === "points100") {
+    if (
+      !Array.isArray(value) ||
+      value.length !== question.options.length ||
+      value.some((points) => !Number.isInteger(points) || points < 0) ||
+      value.reduce((sum, points) => sum + points, 0) !== 100
+    )
+      throw new Error("Allocate exactly 100 points across the options.");
   } else if (question.type === "slider") {
     if (
       typeof value !== "number" ||
@@ -243,6 +251,16 @@ function results(room, question) {
     for (const value of values)
       value.forEach((optionIndex, position) => {
         points[optionIndex] += question.options.length - position;
+      });
+    return question.options
+      .map((text, index) => ({ text, count: points[index] }))
+      .sort((first, second) => second.count - first.count);
+  }
+  if (question.type === "points100") {
+    const points = new Array(question.options.length).fill(0);
+    for (const value of values)
+      value.forEach((allocation, index) => {
+        points[index] += allocation;
       });
     return question.options
       .map((text, index) => ({ text, count: points[index] }))

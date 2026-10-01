@@ -807,8 +807,12 @@ test("two audiences answer all types, reconnect, receive reveals, and finish wit
       .click();
     await expect(page.locator(".response-hidden")).toContainText("1");
     await expect(page.locator(".text-results")).toHaveCount(0);
+    // Before results are shown, the main button reveals them instead of moving on.
+    await expect(
+      page.getByRole("button", { name: "Finish session", exact: true }),
+    ).toHaveCount(0);
     await page
-      .getByRole("button", { name: "Reveal results", exact: true })
+      .getByRole("button", { name: "Show results", exact: true })
       .click();
     await expect(page.locator(".text-results")).toContainText(
       "More time to explore together.",

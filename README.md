@@ -58,6 +58,8 @@ Every question that collects responses (everything except title-and-description 
 - **Hide until done** (default for every type except word clouds): the host dashboard and participants see only how many people have responded. Click **Reveal results** to show the answers.
 - **Show on the fly** (default for word clouds): responses appear live as people answer, for both the host and the audience. Correct answers and leaderboard scores for quizzes still wait for **Reveal results**.
 
+While a question's results are still hidden, the host's main button reads **Show results**: the first click reveals them, and only then does it become **Next question** (or **Finish session** on the last question). This prevents skipping past a question before the audience has seen the answers. Slides and Q&A have nothing to reveal, so they go straight to the next question. The small arrow in the slide controls still jumps directly.
+
 The choice is stored per question as `revealMode` (`"live"` or `"onDone"`) in exported JSON.
 
 The editor's sample responses are labeled and never become live submissions. Live sessions always start empty. Quiz answers and audience results stay hidden from participants until the host reveals them. Participants and hosts can refresh and reconnect to their existing session.

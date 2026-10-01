@@ -2101,20 +2101,39 @@ function Host() {
                         {room.revealed ? "Results revealed" : "Reveal results"}
                       </button>
                     )}
-                    <button
-                      className="button primary"
-                      onClick={() =>
-                        currentIndex === questionList.length - 1
-                          ? setModal("end")
-                          : move(1)
-                      }
-                      disabled={busy}
-                    >
-                      {currentIndex === questionList.length - 1
-                        ? "Finish session"
-                        : "Next question"}
-                      <ArrowRight size={17} />
-                    </button>
+                    {(() => {
+                      const last = currentIndex === questionList.length - 1;
+                      // Questions with results show them first; the next click moves on.
+                      const showFirst =
+                        question.type !== "slide" &&
+                        question.type !== "qna" &&
+                        !room.revealed;
+                      return (
+                        <button
+                          className="button primary"
+                          onClick={() =>
+                            showFirst
+                              ? void control("reveal")
+                              : last
+                                ? setModal("end")
+                                : move(1)
+                          }
+                          disabled={busy}
+                        >
+                          {showFirst ? (
+                            <>
+                              <Eye size={17} />
+                              Show results
+                            </>
+                          ) : (
+                            <>
+                              {last ? "Finish session" : "Next question"}
+                              <ArrowRight size={17} />
+                            </>
+                          )}
+                        </button>
+                      );
+                    })()}
                   </div>
                 ) : (
                   <div className="question-details">

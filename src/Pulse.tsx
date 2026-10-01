@@ -22,6 +22,7 @@ import {
   FlaskConical,
   FolderOpen,
   Grid2x2,
+  Heart,
   GripVertical,
   LayoutGrid,
   Link,
@@ -67,7 +68,7 @@ import {
   hasRevealMode,
 } from "./model";
 import type { Kind, Question, Room, Session } from "./model";
-import { request, useLive } from "./live";
+import { onHeart, request, useLive } from "./live";
 import WordCloud from "./WordCloud";
 
 const icons: Record<Kind, LucideIcon> = {
@@ -176,6 +177,59 @@ function Modal({
       </div>
       {children}
     </dialog>
+  );
+}
+
+type FloatingHeart = {
+  id: number;
+  left: number;
+  drift: number;
+  size: number;
+  duration: number;
+};
+
+/** Hearts sent by participants pop up, float toward the top, and slowly fade away. */
+function HeartLayer() {
+  const [hearts, setHearts] = useState<FloatingHeart[]>([]);
+  const nextId = useRef(0);
+  useEffect(
+    () =>
+      onHeart(() => {
+        const id = nextId.current++;
+        setHearts((current) => [
+          ...current.slice(-39),
+          {
+            id,
+            left: 6 + Math.random() * 88,
+            drift: Math.round(Math.random() * 90 - 45),
+            size: 24 + Math.round(Math.random() * 22),
+            duration: 3.6 + Math.random() * 1.6,
+          },
+        ]);
+      }),
+    [],
+  );
+  return (
+    <div className="heart-layer" aria-hidden="true">
+      {hearts.map((heart) => (
+        <span
+          key={heart.id}
+          className="floating-heart"
+          style={{
+            left: `${heart.left}%`,
+            animationDuration: `${heart.duration}s`,
+            ["--heart-drift" as string]: `${heart.drift}px`,
+          }}
+          onAnimationEnd={() =>
+            setHearts((current) =>
+              current.filter((item) => item.id !== heart.id),
+            )
+          }
+        >
+          <Heart size={heart.size} fill="currentColor" strokeWidth={1.5} />
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -1830,6 +1884,7 @@ function Host() {
                 </aside>
               )}
               <div className="canvas-column">
+                {isLive && <HeartLayer />}
                 <div className="canvas-toolbar">
                   <div className="view-tabs">
                     <span className="selected">
@@ -2475,6 +2530,7 @@ function Participant() {
   const [answerQuestion, setAnswerQuestion] = useState("");
   const [upvoted, setUpvoted] = useState<Set<string>>(new Set());
   const [upvotedQuestion, setUpvotedQuestion] = useState("");
+  const [heartPulse, setHeartPulse] = useState(0);
   const live = useLive("audience", initialCode);
   const { room, connected, error, setError, submitted } = live;
   const question = room?.questions[room.active];
@@ -2586,6 +2642,14 @@ function Participant() {
       y: Math.max(-100, Math.min(100, Math.round(y))),
     });
     setAnswerQuestion(question.id);
+  }
+  async function sendHeart() {
+    setHeartPulse((count) => count + 1);
+    try {
+      await request("room:react", live.credentials() ?? {});
+    } catch {
+      // A dropped heart is harmless; the next tap tries again.
+    }
   }
   async function upvote(entrantId: string) {
     if (!question) return;
@@ -3099,6 +3163,20 @@ function Participant() {
                 <Users size={15} />
                 {room.participants} in the room
               </span>
+              <button
+                type="button"
+                className="heart-button"
+                aria-label="Send a heart"
+                onClick={() => void sendHeart()}
+                disabled={!connected}
+              >
+                <span
+                  key={heartPulse}
+                  className={heartPulse ? "heart-tapped" : ""}
+                >
+                  <Heart size={22} fill="currentColor" />
+                </span>
+              </button>
               <span>
                 <span className="live-dot" />
                 Live together

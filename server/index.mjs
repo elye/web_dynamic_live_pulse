@@ -10,6 +10,7 @@ import {
   createRoom,
   getRoom,
   joinRoom,
+  reactRoom,
   rooms,
   snapshot,
   submitUpvote,
@@ -43,7 +44,7 @@ export function createAppServer() {
   io.on("connection", (socket) => {
     let events = 0;
     let windowStart = Date.now();
-    const listen = (event, handler) =>
+    const listen = (event, handler, { counted = true } = {}) =>
       socket.on(event, (payload, ack) => {
         if (typeof ack !== "function") return;
         try {
@@ -51,7 +52,7 @@ export function createAppServer() {
             windowStart = Date.now();
             events = 0;
           }
-          if (++events > 120)
+          if (counted && ++events > 120)
             throw new Error("Too many requests. Please wait a moment.");
           if (!payload || typeof payload !== "object")
             throw new Error("Invalid request.");
@@ -103,6 +104,18 @@ export function createAppServer() {
       broadcast(room);
       return { upvoted };
     });
+    // Hearts are throttled per participant in reactRoom, so they must not
+    // consume the socket's general request budget (votes, upvotes, controls).
+    listen(
+      "room:react",
+      ({ code, token }) => {
+        const room = getRoom(code);
+        const sent = reactRoom(room, token);
+        if (sent) io.to(`host:${room.code}`).emit("room:heart", {});
+        return { sent };
+      },
+      { counted: false },
+    );
     listen("room:control", ({ code, token, action, index }) => {
       const room = getRoom(code);
       controlRoom(room, token, action, index);

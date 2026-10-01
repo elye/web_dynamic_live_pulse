@@ -102,6 +102,7 @@ export function createRoom(title, questions) {
     accepting: false,
     revealed: false,
     ended: false,
+    hearts: 0,
     participants: new Map(),
     votes: new Map(),
     upvotes: new Map(),
@@ -235,6 +236,19 @@ export function submitUpvote(room, token, questionId, entrantToken) {
     return false;
   }
   voters.add(token);
+  return true;
+}
+
+const heartGapMs = 200;
+
+/** Returns true when the heart should be shown to the host; false when throttled or the session is over. */
+export function reactRoom(room, token, now = Date.now()) {
+  const member = room.participants.get(token);
+  if (!member) throw new Error("Join the room before reacting.");
+  if (room.ended) return false;
+  if (member.lastHeart && now - member.lastHeart < heartGapMs) return false;
+  member.lastHeart = now;
+  room.hearts = (room.hearts || 0) + 1;
   return true;
 }
 

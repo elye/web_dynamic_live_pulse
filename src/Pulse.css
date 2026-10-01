@@ -837,6 +837,43 @@ button:not(:disabled):active {
 }
 .canvas-column {
   min-width: 0;
+  position: relative;
+}
+.heart-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 5;
+}
+.floating-heart {
+  position: absolute;
+  bottom: 8%;
+  color: #e0607e;
+  filter: drop-shadow(0 3px 6px #e0607e55);
+  animation: heart-float 4s ease-out forwards;
+  will-change: transform, opacity;
+}
+@keyframes heart-float {
+  0% {
+    transform: translate(0, 0) scale(0.2);
+    opacity: 0;
+  }
+  10% {
+    transform: translate(0, -24px) scale(1.25);
+    opacity: 1;
+  }
+  18% {
+    transform: translate(0, -46px) scale(1);
+    opacity: 1;
+  }
+  60% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translate(var(--heart-drift, 0), -380px) scale(0.9);
+    opacity: 0;
+  }
 }
 .canvas-toolbar {
   height: 39px;
@@ -2831,6 +2868,42 @@ textarea {
   align-items: center;
   gap: 7px;
 }
+.heart-button {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin: -14px 0;
+  border: 1px solid #f0cdd5;
+  border-radius: 50%;
+  background: #fdeef1;
+  color: #e0607e;
+  cursor: pointer;
+}
+.heart-button:hover:not(:disabled) {
+  background: #fbe0e6;
+}
+.heart-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.heart-button span {
+  display: grid;
+}
+.heart-tapped {
+  animation: heart-tap 0.35s ease-out;
+}
+@keyframes heart-tap {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.45);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
 .submitted-state {
   text-align: center;
   display: flex;
@@ -4207,6 +4280,9 @@ textarea {
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .heart-layer {
+    display: none;
+  }
   *,
   *:before,
   *:after {

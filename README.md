@@ -37,6 +37,10 @@ Add a **100 Points** question to have participants allocate 100 points across 2 
 
 Add a **2x2 Grid** question to have participants rate something across two axes at once, such as urgency versus impact. Set 4 axis labels in the question editor (x-axis low/high and y-axis low/high); participants tap anywhere on the grid to place a point and submit. Results show the average point plus every individual response plotted as a dot on the same grid. 2x2 Grid has no single correct answer, so it does not award leaderboard points.
 
+### Heart reactions
+
+Every participant has a heart button next to the room status. Each tap sends a heart to the host: a heart shape pops up on the live dashboard, floats toward the top of the stage, and slowly fades away. Hearts work on every question type, including slides (the button appears once the host starts the questions), and are shown to the host only (participants see just a small tap animation). The server limits each participant to about five hearts per second, and hearts never count toward votes, scores, or exported results. Hearts are not part of the session JSON. With reduced-motion settings, floating hearts are not shown.
+
 ### Reveal mode
 
 Every question that collects responses (everything except title-and-description slides and Q&A, which is always live) has a **When should responses show?** setting in the question editor:

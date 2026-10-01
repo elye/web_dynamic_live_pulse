@@ -7,6 +7,7 @@ import {
   submitUpvote,
   controlRoom,
   snapshot,
+  reactRoom,
   rooms,
 } from "./rooms.mjs";
 import { createAppServer } from "./index.mjs";
@@ -75,6 +76,54 @@ test("reveal mode defaults to onDone, hides results until reveal, and shows live
   assert.equal(snapshot(room).revealed, false);
   assert.equal(audience.correct, null);
   rooms.delete(room.code);
+});
+
+test("hearts are throttled per participant, need a joined member, and stop when the session ends", () => {
+  const room = createRoom("Hearts", questions);
+  const first = joinRoom(room, "Alex");
+  const second = joinRoom(room, "Sam");
+  assert.throws(() => reactRoom(room, "nobody"), /Join the room/);
+  assert.equal(reactRoom(room, first, 1000), true);
+  assert.equal(reactRoom(room, first, 1050), false);
+  assert.equal(reactRoom(room, second, 1050), true);
+  assert.equal(reactRoom(room, first, 1300), true);
+  assert.equal(room.hearts, 3);
+  assert.equal("hearts" in snapshot(room), false);
+  controlRoom(room, room.hostToken, "end");
+  assert.equal(reactRoom(room, first, 5000), false);
+  rooms.delete(room.code);
+});
+
+test("hearts reach only the host over websockets and do not use up the request budget", async () => {
+  const { http } = createAppServer();
+  await new Promise((resolve) => http.listen(0, resolve));
+  const url = `http://localhost:${http.address().port}`;
+  const host = connect(url, { transports: ["websocket"], forceNew: true });
+  const guest = connect(url, { transports: ["websocket"], forceNew: true });
+  try {
+    const created = await host.timeout(3000).emitWithAck("room:create", { title: "Hearts", questions });
+    const code = created.state.code;
+    const joined = await guest.timeout(3000).emitWithAck("room:join", { code, name: "Alex" });
+    let hostHearts = 0;
+    let guestHearts = 0;
+    host.on("room:heart", () => hostHearts++);
+    guest.on("room:heart", () => guestHearts++);
+    const reply = await guest.timeout(3000).emitWithAck("room:react", { code, token: joined.token });
+    assert.equal(reply.ok, true);
+    assert.equal(reply.sent, true);
+    const spam = await Promise.all(
+      Array.from({ length: 150 }, () => guest.timeout(3000).emitWithAck("room:react", { code, token: joined.token })),
+    );
+    assert.ok(spam.every((item) => item.ok));
+    assert.ok(spam.filter((item) => item.sent).length <= 1);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    assert.ok(hostHearts >= 1 && hostHearts <= 2);
+    assert.equal(guestHearts, 0);
+  } finally {
+    host.disconnect();
+    guest.disconnect();
+    await new Promise((resolve) => http.close(resolve));
+  }
 });
 
 test("one vote per participant, private answers, and server-calculated scores", () => {

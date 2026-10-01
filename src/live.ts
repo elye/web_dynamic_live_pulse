@@ -31,6 +31,14 @@ export async function request(event: string, payload: object): Promise<Reply> {
   return reply;
 }
 
+/** Subscribe to hearts sent by participants (delivered to the host only). */
+export function onHeart(handler: () => void) {
+  socket.on("room:heart", handler);
+  return () => {
+    socket.off("room:heart", handler);
+  };
+}
+
 export function useLive(
   role: "host" | "audience",
   code = "",

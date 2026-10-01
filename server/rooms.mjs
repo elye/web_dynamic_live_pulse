@@ -1,7 +1,7 @@
 import { randomInt, randomUUID } from "node:crypto";
 
 export const rooms = new Map();
-const kinds = new Set(["slide", "cloud", "poll", "quiz", "truefalse", "ranking", "text"]);
+const kinds = new Set(["slide", "cloud", "poll", "quiz", "truefalse", "ranking", "slider", "text"]);
 
 export function validateQuestions(input) {
   if (!Array.isArray(input) || !input.length || input.length > 30)
@@ -39,11 +39,27 @@ export function validateQuestions(input) {
         question.correct >= options.length)
     )
       throw new Error("Choose the correct answer.");
+    if (
+      question.type === "slider" &&
+      (typeof question.sliderMin !== "number" ||
+        typeof question.sliderMax !== "number" ||
+        typeof question.sliderStep !== "number" ||
+        !Number.isFinite(question.sliderMin) ||
+        !Number.isFinite(question.sliderMax) ||
+        !Number.isFinite(question.sliderStep) ||
+        question.sliderStep <= 0 ||
+        question.sliderMax <= question.sliderMin ||
+        (question.sliderMax - question.sliderMin) / question.sliderStep > 1000)
+    )
+      throw new Error("Add a valid slider minimum, maximum, and step.");
     return {
       id: randomUUID(),
       type: question.type,
       title: question.title.trim(),
       ...(question.type === "slide" ? { description: question.description.trim() } : {}),
+      ...(question.type === "slider"
+        ? { sliderMin: question.sliderMin, sliderMax: question.sliderMax, sliderStep: question.sliderStep }
+        : {}),
       options,
       correct: ["quiz", "truefalse"].includes(question.type) ? question.correct : null,
     };
@@ -126,6 +142,20 @@ export function submitVote(room, token, questionId, value) {
       !order.every((index) => value.includes(index))
     )
       throw new Error("Rank every option exactly once.");
+  } else if (question.type === "slider") {
+    if (
+      typeof value !== "number" ||
+      !Number.isFinite(value) ||
+      value < question.sliderMin ||
+      value > question.sliderMax ||
+      Math.abs(
+        Math.round((value - question.sliderMin) / question.sliderStep) *
+          question.sliderStep +
+          question.sliderMin -
+          value,
+      ) > 1e-9
+    )
+      throw new Error("Choose a value on the slider.");
   } else {
     if (
       typeof value !== "string" ||
@@ -188,6 +218,20 @@ function results(room, question) {
     return question.options
       .map((text, index) => ({ text, count: points[index] }))
       .sort((first, second) => second.count - first.count);
+  }
+  if (question.type === "slider") {
+    const average = values.length
+      ? values.reduce((sum, value) => sum + value, 0) / values.length
+      : 0;
+    const distribution = new Map();
+    for (const value of values)
+      distribution.set(value, (distribution.get(value) || 0) + 1);
+    return [
+      { text: `Average: ${Math.round(average * 100) / 100}`, count: values.length },
+      ...[...distribution]
+        .map(([value, count]) => ({ text: String(value), count }))
+        .sort((first, second) => Number(first.text) - Number(second.text)),
+    ];
   }
   const counts = new Map();
   for (const value of values) {

@@ -37,6 +37,7 @@ import {
   Send,
   Settings2,
   Shuffle,
+  SlidersHorizontal,
   Sparkles,
   Square,
   ToggleLeft,
@@ -72,6 +73,7 @@ const icons: Record<Kind, LucideIcon> = {
   quiz: Trophy,
   truefalse: ToggleLeft,
   ranking: ListOrdered,
+  slider: SlidersHorizontal,
   text: MessageCircle,
 };
 const kinds: Kind[] = [
@@ -81,6 +83,7 @@ const kinds: Kind[] = [
   "quiz",
   "truefalse",
   "ranking",
+  "slider",
   "text",
 ];
 const samples = [
@@ -184,10 +187,18 @@ function ResultsVisual({
             { text: "More time to explore ideas together.", count: 1 },
             { text: "The energy we bring as a team!", count: 1 },
           ]
-        : question.options.map((text, index) => ({
-            text,
-            count: [8, 14, 6, 10, 4, 5][index],
-          }))
+        : question.type === "slider"
+          ? [
+              { text: "Average: 6.4", count: 5 },
+              { text: String(question.sliderMin ?? 0), count: 1 },
+              { text: "4", count: 2 },
+              { text: "7", count: 1 },
+              { text: String(question.sliderMax ?? 10), count: 1 },
+            ]
+          : question.options.map((text, index) => ({
+              text,
+              count: [8, 14, 6, 10, 4, 5][index],
+            }))
     : question.results || [];
   const total = results.reduce((sum, item) => sum + item.count, 0);
   if (!preview && !total)
@@ -229,6 +240,29 @@ function ResultsVisual({
             </div>
           </div>
         ))}
+      </div>
+    );
+  }
+  if (question.type === "slider") {
+    const [summary, ...distribution] = results;
+    const peak = Math.max(1, ...distribution.map((item) => item.count));
+    return (
+      <div className="slider-results">
+        <div className="slider-average">
+          <SlidersHorizontal size={20} />
+          <strong>{summary?.text || "Average: 0"}</strong>
+        </div>
+        <div className="slider-histogram">
+          {distribution.map((item) => (
+            <div className="slider-bar" key={item.text}>
+              <div
+                className="slider-bar-fill"
+                style={{ height: `${(item.count / peak) * 100}%` }}
+              />
+              <small>{item.text}</small>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -375,10 +409,19 @@ function QuestionEditor({
   const [draft, setDraft] = useState(question);
   const isTrueFalse = draft.type === "truefalse";
   const isRanking = draft.type === "ranking";
+  const isSlider = draft.type === "slider";
   const isOptions =
     draft.type === "poll" || draft.type === "quiz" || isTrueFalse || isRanking;
   const hasCorrectAnswer = draft.type === "quiz" || isTrueFalse;
   const isSlide = draft.type === "slide";
+  const sliderRangeValid =
+    !isSlider ||
+    (typeof draft.sliderMin === "number" &&
+      typeof draft.sliderMax === "number" &&
+      typeof draft.sliderStep === "number" &&
+      draft.sliderStep > 0 &&
+      draft.sliderMax > draft.sliderMin &&
+      (draft.sliderMax - draft.sliderMin) / draft.sliderStep <= 1000);
   function submit(event: FormEvent) {
     event.preventDefault();
     onSave(draft);
@@ -437,6 +480,60 @@ function QuestionEditor({
               {(draft.description || "").length} / 280
             </small>
           </label>
+        )}
+        {isSlider && (
+          <fieldset className="slider-range-editor">
+            <legend>Slider range</legend>
+            <label>
+              Minimum
+              <input
+                type="number"
+                required
+                value={draft.sliderMin ?? 0}
+                onChange={(event) =>
+                  setDraft({
+                    ...draft,
+                    sliderMin: Number(event.target.value),
+                  })
+                }
+              />
+            </label>
+            <label>
+              Maximum
+              <input
+                type="number"
+                required
+                value={draft.sliderMax ?? 10}
+                onChange={(event) =>
+                  setDraft({
+                    ...draft,
+                    sliderMax: Number(event.target.value),
+                  })
+                }
+              />
+            </label>
+            <label>
+              Step
+              <input
+                type="number"
+                required
+                min={0.01}
+                value={draft.sliderStep ?? 1}
+                onChange={(event) =>
+                  setDraft({
+                    ...draft,
+                    sliderStep: Number(event.target.value),
+                  })
+                }
+              />
+            </label>
+            {!sliderRangeValid && (
+              <small className="field-error">
+                Maximum must be greater than minimum, step must be positive,
+                and the range can have at most 1,000 steps.
+              </small>
+            )}
+          </fieldset>
         )}
         {isOptions && (
           <fieldset>
@@ -522,7 +619,8 @@ function QuestionEditor({
             disabled={
               !draft.title.trim() ||
               (isOptions && draft.options.some((option) => !option.trim())) ||
-              (isSlide && !draft.description?.trim())
+              (isSlide && !draft.description?.trim()) ||
+              (isSlider && !sliderRangeValid)
             }
           >
             <Check size={16} />
@@ -1433,6 +1531,8 @@ function Host() {
                               <ToggleLeft size={32} strokeWidth={1.5} />
                             ) : item.type === "ranking" ? (
                               <ListOrdered size={32} strokeWidth={1.5} />
+                            ) : item.type === "slider" ? (
+                              <SlidersHorizontal size={32} strokeWidth={1.5} />
                             ) : item.type === "slide" ? (
                               <div className="mini-slide">
                                 <FileText size={26} />
@@ -1623,9 +1723,11 @@ function Host() {
                                   ? "A quick binary call: true or false."
                                   : question.type === "ranking"
                                     ? "Drag to sort what matters most."
-                                    : question.type === "slide"
-                                      ? "Just a title and description. No input needed."
-                                      : "Space for the longer answer."}
+                                    : question.type === "slider"
+                                      ? "Slide to estimate a number."
+                                      : question.type === "slide"
+                                        ? "Just a title and description. No input needed."
+                                        : "Space for the longer answer."}
                         </p>
                       </div>
                     </div>
@@ -1980,9 +2082,11 @@ function Host() {
                               ? "A binary choice: true or false"
                               : kind === "ranking"
                                 ? "Drag to sort items from most to least important"
-                                : kind === "slide"
-                                  ? "Just a title and description, no input needed"
-                                  : "Give every thought a little room"}
+                                : kind === "slider"
+                                  ? "Estimate a numeric value on a sliding scale"
+                                  : kind === "slide"
+                                    ? "Just a title and description, no input needed"
+                                    : "Give every thought a little room"}
                     </small>
                   </span>
                   <Plus size={19} />
@@ -2108,6 +2212,14 @@ function Participant() {
         ? currentAnswer
         : question.options.map((_, index) => index)
       : [];
+  const sliderValue =
+    question?.type === "slider"
+      ? typeof currentAnswer === "number"
+        ? currentAnswer
+        : Math.round(
+            ((question.sliderMin ?? 0) + (question.sliderMax ?? 10)) / 2,
+          )
+      : 0;
   const hasSubmitted = !!question && submitted.includes(question.id);
 
   async function join(event: FormEvent) {
@@ -2140,7 +2252,12 @@ function Participant() {
       await request("room:vote", {
         ...live.credentials(),
         questionId: question.id,
-        value: question.type === "ranking" ? rankingOrder : currentAnswer,
+        value:
+          question.type === "ranking"
+            ? rankingOrder
+            : question.type === "slider"
+              ? sliderValue
+              : currentAnswer,
       });
       live.setSubmitted((items) => [...items, question.id]);
     } catch (failure) {
@@ -2396,6 +2513,25 @@ function Participant() {
                       </div>
                     ))}
                   </div>
+                ) : question.type === "slider" ? (
+                  <div className="slider-input">
+                    <output>{sliderValue}</output>
+                    <input
+                      type="range"
+                      min={question.sliderMin ?? 0}
+                      max={question.sliderMax ?? 10}
+                      step={question.sliderStep ?? 1}
+                      value={sliderValue}
+                      onChange={(event) => {
+                        setAnswer(Number(event.target.value));
+                        setAnswerQuestion(question.id);
+                      }}
+                    />
+                    <div className="slider-bounds">
+                      <span>{question.sliderMin ?? 0}</span>
+                      <span>{question.sliderMax ?? 10}</span>
+                    </div>
+                  </div>
                 ) : (
                   <label>
                     {question.type === "cloud"
@@ -2427,7 +2563,7 @@ function Participant() {
                   disabled={
                     busy ||
                     !connected ||
-                    (question.type !== "ranking" &&
+                    (!["ranking", "slider"].includes(question.type) &&
                       (currentAnswer === "" ||
                         (typeof currentAnswer === "string" &&
                           !currentAnswer.trim())))

@@ -5,6 +5,7 @@ export type Kind =
   | "quiz"
   | "truefalse"
   | "ranking"
+  | "slider"
   | "text";
 export type Question = {
   id: string;
@@ -13,6 +14,9 @@ export type Question = {
   description?: string;
   options: string[];
   correct: number | null;
+  sliderMin?: number;
+  sliderMax?: number;
+  sliderStep?: number;
   responses?: number;
   results?: { text: string; count: number }[];
 };
@@ -44,6 +48,7 @@ export const labels: Record<Kind, string> = {
   quiz: "Quiz",
   truefalse: "True or false",
   ranking: "Ranking",
+  slider: "Slider",
   text: "Open response",
 };
 
@@ -63,6 +68,7 @@ export function newQuestion(type: Kind): Question {
       quiz: "Which planet has the most moons?",
       truefalse: "Octopuses have three hearts.",
       ranking: "Rank these from most to least important",
+      slider: "How many hours a day do you spend in meetings?",
       text: "What is one thing we could do better?",
       slide: "A quick word before we dive in",
     }[type],
@@ -71,6 +77,9 @@ export function newQuestion(type: Kind): Question {
           description:
             "Take a breath, get comfortable, and get ready to share.",
         }
+      : {}),
+    ...(type === "slider"
+      ? { sliderMin: 0, sliderMax: 10, sliderStep: 1 }
       : {}),
     options:
       type === "quiz"
@@ -153,12 +162,22 @@ export function serializeSession(session: Session): string {
       title: session.title,
       theme: session.theme,
       questions: session.questions.map(
-        ({ type, title, options, correct, description }) => ({
+        ({
+          type,
+          title,
+          options,
+          correct,
+          description,
+          sliderMin,
+          sliderMax,
+          sliderStep,
+        }) => ({
           type,
           title,
           options,
           correct,
           ...(type === "slide" ? { description } : {}),
+          ...(type === "slider" ? { sliderMin, sliderMax, sliderStep } : {}),
         }),
       ),
     },
@@ -216,6 +235,7 @@ export function importSession(json: string): Session {
             "quiz",
             "truefalse",
             "ranking",
+            "slider",
             "text",
           ] as string[]
         ).includes(question.type)
@@ -273,12 +293,36 @@ export function importSession(json: string): Session {
         throw new Error(
           prefix + "correct must be a valid zero-based option index.",
         );
+      if (question.type === "slider") {
+        const { sliderMin, sliderMax, sliderStep } = question;
+        if (
+          typeof sliderMin !== "number" ||
+          typeof sliderMax !== "number" ||
+          typeof sliderStep !== "number" ||
+          !Number.isFinite(sliderMin) ||
+          !Number.isFinite(sliderMax) ||
+          !Number.isFinite(sliderStep) ||
+          sliderStep <= 0 ||
+          sliderMax <= sliderMin ||
+          (sliderMax - sliderMin) / sliderStep > 1000
+        )
+          throw new Error(
+            prefix + "add a valid slider minimum, maximum, and step.",
+          );
+      }
       return {
         id: createId(),
         type: question.type as Kind,
         title: question.title.trim(),
         ...(question.type === "slide"
           ? { description: (question.description as string).trim() }
+          : {}),
+        ...(question.type === "slider"
+          ? {
+              sliderMin: question.sliderMin as number,
+              sliderMax: question.sliderMax as number,
+              sliderStep: question.sliderStep as number,
+            }
           : {}),
         options: options.map((option: string) => option.trim()),
         correct: ["quiz", "truefalse"].includes(question.type)

@@ -167,6 +167,48 @@ test("ranking questions collect a full permutation and score with Borda points",
   rooms.delete(room.code);
 });
 
+test("slider questions require a valid range and aggregate average plus distribution", () => {
+  const slider = {
+    type: "slider",
+    title: "How many hours a day do you spend in meetings?",
+    options: [],
+    correct: null,
+    sliderMin: 0,
+    sliderMax: 10,
+    sliderStep: 1,
+  };
+  assert.throws(
+    () => createRoom("Invalid", [{ ...slider, sliderMax: 0 }]),
+    /slider minimum/,
+  );
+  assert.throws(
+    () => createRoom("Invalid", [{ ...slider, sliderStep: 0 }]),
+    /slider minimum/,
+  );
+  const room = createRoom("Meeting load", [slider]);
+  const firstToken = joinRoom(room, "Alex");
+  const secondToken = joinRoom(room, "Sam");
+  controlRoom(room, room.hostToken, "start");
+  assert.throws(
+    () => submitVote(room, firstToken, room.questions[0].id, 11),
+    /slider/,
+  );
+  assert.throws(
+    () => submitVote(room, firstToken, room.questions[0].id, 4.5),
+    /slider/,
+  );
+  submitVote(room, firstToken, room.questions[0].id, 4);
+  submitVote(room, secondToken, room.questions[0].id, 8);
+  controlRoom(room, room.hostToken, "reveal");
+  assert.deepEqual(snapshot(room, true).questions[0].results, [
+    { text: "Average: 6", count: 2 },
+    { text: "4", count: 1 },
+    { text: "8", count: 1 },
+  ]);
+  assert.ok(snapshot(room).leaderboard.every((entry) => entry.score === 0));
+  rooms.delete(room.code);
+});
+
 test("websocket host and audience complete a live round and reconnect", async () => {
   const { http, io } = createAppServer();
   await new Promise((resolve) => http.listen(0, "127.0.0.1", resolve));

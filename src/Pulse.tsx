@@ -212,7 +212,10 @@ function ResultsVisual({
                 count: [8, 14, 6, 10, 4, 5][index],
               }))
     : question.results || [];
-  const total = results.reduce((sum, item) => sum + item.count, 0);
+  const total =
+    question.type === "qna"
+      ? results.length
+      : results.reduce((sum, item) => sum + item.count, 0);
   if (!preview && !total)
     return (
       <div className="response-empty">

@@ -2935,18 +2935,6 @@ function Participant() {
                   </div>
                 ) : question.type === "grid2x2" ? (
                   <div className="grid2x2-input">
-                    <span className="grid2x2-axis-label grid2x2-top">
-                      {question.options[3]}
-                    </span>
-                    <span className="grid2x2-axis-label grid2x2-bottom">
-                      {question.options[2]}
-                    </span>
-                    <span className="grid2x2-axis-label grid2x2-left">
-                      {question.options[0]}
-                    </span>
-                    <span className="grid2x2-axis-label grid2x2-right">
-                      {question.options[1]}
-                    </span>
                     <button
                       type="button"
                       className="grid2x2-pad"
@@ -2964,6 +2952,18 @@ function Participant() {
                         );
                       }}
                     >
+                      <span className="grid2x2-axis-label grid2x2-top">
+                        {question.options[3]}
+                      </span>
+                      <span className="grid2x2-axis-label grid2x2-bottom">
+                        {question.options[2]}
+                      </span>
+                      <span className="grid2x2-axis-label grid2x2-left">
+                        {question.options[0]}
+                      </span>
+                      <span className="grid2x2-axis-label grid2x2-right">
+                        {question.options[1]}
+                      </span>
                       <span className="grid2x2-quadrant-h" />
                       <span className="grid2x2-quadrant-v" />
                       {gridPoint && (

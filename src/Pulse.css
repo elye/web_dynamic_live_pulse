@@ -2653,29 +2653,31 @@ textarea {
   font-size: 11px;
   font-weight: 600;
   color: #71806a;
-  max-width: 46%;
+  max-width: 40%;
   text-align: center;
   overflow-wrap: anywhere;
+  z-index: 1;
 }
 .grid2x2-top {
-  top: -4px;
+  top: 6px;
   left: 50%;
-  transform: translate(-50%, -100%);
+  transform: translate(-50%, 0);
 }
 .grid2x2-bottom {
-  bottom: -4px;
+  bottom: 6px;
   left: 50%;
-  transform: translate(-50%, 100%);
+  transform: translate(-50%, 0);
 }
 .grid2x2-left {
   top: 50%;
-  left: -4px;
-  transform: translate(-100%, -50%);
+  left: 6px;
+  transform: translate(0, -50%);
 }
 .grid2x2-right {
   top: 50%;
-  right: -4px;
-  transform: translate(100%, -50%);
+  right: 6px;
+  transform: translate(0, -50%);
+  text-align: right;
 }
 .grid2x2-quadrant-h,
 .grid2x2-quadrant-v {

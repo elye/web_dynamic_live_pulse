@@ -324,18 +324,21 @@ test("session JSON backup restores a deleted draft from a file or pasted JSON", 
         options,
         correct,
         revealMode,
+        competitive,
       }: {
         type: string;
         title: string;
         options: string[];
         correct: number | null;
         revealMode?: string;
+        competitive?: boolean;
       }) => ({
         type,
         title,
         options,
         correct,
         ...(revealMode ? { revealMode } : {}),
+        ...(competitive !== undefined ? { competitive } : {}),
       }),
     ),
   ).toEqual(backup.questions);

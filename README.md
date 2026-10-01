@@ -41,6 +41,15 @@ Add a **2x2 Grid** question to have participants rate something across two axes 
 
 Every participant has a heart button next to the room status. Each tap sends a heart to the host: a heart shape pops up on the live dashboard, floats toward the top of the stage, and slowly fades away. Hearts work on every question type, including slides (the button appears once the host starts the questions), and are shown to the host only (participants see just a small tap animation). The server limits each participant to about five hearts per second, and hearts never count toward votes, scores, or exported results. Hearts are not part of the session JSON. With reduced-motion settings, floating hearts are not shown.
 
+### Competition mode
+
+Quiz and True or False questions have a **Competition mode** checkbox in the question editor (other types have no correct answer, so they can't compete). It is off by default and is stored per question as `"competitive": true` or `false` in exported JSON; the **The big team quiz** template starts with it on.
+
+- A competitive question scores **500 points for the right answer plus up to 500 for speed**. The speed bonus falls linearly to zero over 20 seconds, measured from when the question first opened to answers (pausing and resuming does not restart the clock). Wrong or missing answers score 0.
+- Quiz and True or False questions that are not competitive keep awarding a flat 1,000 points for a correct answer.
+- Scores are calculated on the server and appear on the leaderboard only after the host reveals results.
+- Response times are kept in memory for the live room only; they are never exported.
+
 ### Reveal mode
 
 Every question that collects responses (everything except title-and-description slides and Q&A, which is always live) has a **When should responses show?** setting in the question editor:
@@ -83,13 +92,15 @@ The versioned format is:
       "title": "Which planet has the most moons?",
       "options": ["Jupiter", "Saturn", "Neptune", "Mars"],
       "correct": 1,
+      "competitive": true,
       "revealMode": "onDone"
     },
     {
       "type": "truefalse",
       "title": "The sky is blue.",
       "options": ["True", "False"],
-      "correct": 0
+      "correct": 0,
+      "competitive": false
     },
     {
       "type": "ranking",

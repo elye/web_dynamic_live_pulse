@@ -66,6 +66,7 @@ import {
   readStored,
   store,
   hasRevealMode,
+  canCompete,
 } from "./model";
 import type { Kind, Question, Room, Session } from "./model";
 import { onHeart, request, useLive } from "./live";
@@ -761,6 +762,24 @@ function QuestionEditor({
               </small>
             )}
           </fieldset>
+        )}
+        {canCompete(draft.type) && (
+          <label className="competitive-toggle">
+            <input
+              type="checkbox"
+              checked={draft.competitive === true}
+              onChange={(event) =>
+                setDraft({ ...draft, competitive: event.target.checked })
+              }
+            />
+            <span>
+              <b>Competition mode</b>
+              <small>
+                Score this question: 500 points for the right answer plus up to 500
+                for answering fast. The final podium shows the top 3 players.
+              </small>
+            </span>
+          </label>
         )}
         {hasRevealMode(draft.type) && (
           <fieldset className="reveal-mode-editor">

@@ -4,6 +4,11 @@ export const rooms = new Map();
 const kinds = new Set(["slide", "cloud", "poll", "quiz", "truefalse", "ranking", "slider", "qna", "points100", "grid2x2", "text"]);
 
 const hasRevealMode = (type) => type !== "slide" && type !== "qna";
+/** Only questions with a correct answer can be competitive. */
+const canCompete = (type) => type === "quiz" || type === "truefalse";
+export const baseScore = 500;
+export const speedBonus = 500;
+export const speedWindowMs = 20000;
 
 export function validateQuestions(input) {
   if (!Array.isArray(input) || !input.length || input.length > 30)
@@ -66,6 +71,12 @@ export function validateQuestions(input) {
       !(question.revealMode === "live" || question.revealMode === "onDone")
     )
       throw new Error('Reveal mode must be "live" or "onDone".');
+    if (
+      question.competitive !== undefined &&
+      (typeof question.competitive !== "boolean" ||
+        (question.competitive && !canCompete(question.type)))
+    )
+      throw new Error("Only quiz and true-or-false questions can be competitive.");
     return {
       id: randomUUID(),
       type: question.type,
@@ -73,6 +84,7 @@ export function validateQuestions(input) {
       ...(hasRevealMode(question.type)
         ? { revealMode: question.revealMode ?? (question.type === "cloud" ? "live" : "onDone") }
         : {}),
+      ...(canCompete(question.type) ? { competitive: question.competitive === true } : {}),
       ...(question.type === "slide" ? { description: question.description.trim() } : {}),
       ...(question.type === "slider"
         ? { sliderMin: question.sliderMin, sliderMax: question.sliderMax, sliderStep: question.sliderStep }
@@ -106,9 +118,12 @@ export function createRoom(title, questions) {
     participants: new Map(),
     votes: new Map(),
     upvotes: new Map(),
+    openedAt: new Map(),
+    answeredAt: new Map(),
     createdAt: Date.now(),
   };
   room.questions.forEach((question) => {
+    room.answeredAt.set(question.id, new Map());
     room.votes.set(question.id, new Map());
     room.upvotes.set(question.id, new Map());
   });
@@ -140,7 +155,7 @@ export function joinRoom(room, name, token) {
   return memberToken;
 }
 
-export function submitVote(room, token, questionId, value) {
+export function submitVote(room, token, questionId, value, now = Date.now()) {
   if (!room.participants.has(token))
     throw new Error("Join the room before responding.");
   const question = room.questions[room.active];
@@ -212,6 +227,37 @@ export function submitVote(room, token, questionId, value) {
     value = value.trim();
   }
   votes.set(token, value);
+  room.answeredAt.get(question.id).set(token, now);
+}
+
+/** Remembers when a question first started accepting answers; later resumes keep the original time. */
+function markOpened(room, now) {
+  const question = room.questions[room.active];
+  if (room.accepting && !room.openedAt.has(question.id))
+    room.openedAt.set(question.id, now);
+}
+
+/**
+ * 0 for a wrong or missing answer. Regular quiz and true-or-false questions award a flat 1000.
+ * Competitive ones award 500 plus up to 500 for answering quickly (linear over 20 seconds).
+ */
+export function scoreAnswer(room, question, token) {
+  if (
+    !canCompete(question.type) ||
+    room.votes.get(question.id).get(token) !== question.correct
+  )
+    return 0;
+  if (!question.competitive) return 1000;
+  const opened = room.openedAt.get(question.id);
+  const answered = room.answeredAt.get(question.id).get(token);
+  const elapsed =
+    opened === undefined || answered === undefined
+      ? speedWindowMs
+      : Math.max(0, answered - opened);
+  return (
+    baseScore +
+    Math.round(speedBonus * Math.max(0, 1 - elapsed / speedWindowMs))
+  );
 }
 
 export function submitUpvote(room, token, questionId, entrantToken) {
@@ -252,7 +298,7 @@ export function reactRoom(room, token, now = Date.now()) {
   return true;
 }
 
-export function controlRoom(room, token, action, index) {
+export function controlRoom(room, token, action, index, now = Date.now()) {
   authorize(room, token);
   if (room.ended)
     throw new Error(
@@ -265,16 +311,19 @@ export function controlRoom(room, token, action, index) {
     room.started = true;
     room.active = 0;
     room.accepting = room.questions[room.active].type !== "slide";
+    markOpened(room, now);
   } else if (action === "select") {
     if (!Number.isInteger(index) || index < 0 || index >= room.questions.length)
       throw new Error("Question not found.");
     room.active = index;
     room.accepting = room.questions[room.active].type !== "slide";
     room.revealed = false;
+    markOpened(room, now);
   } else if (action === "toggle") {
     if (room.questions[room.active].type === "slide") throw new Error("This slide does not accept responses.");
     room.accepting = !room.accepting;
     if (room.accepting) room.revealed = false;
+    markOpened(room, now);
   } else if (action === "reveal") {
     if (room.questions[room.active].type === "slide") throw new Error("This slide has no results to reveal.");
     room.revealed = true;
@@ -370,12 +419,7 @@ export function snapshot(room, host = false) {
         .map(([token, member]) => ({
           name: member.name,
           score: room.questions.reduce(
-            (score, question) =>
-              score +
-              (["quiz", "truefalse"].includes(question.type) &&
-              room.votes.get(question.id).get(token) === question.correct
-                ? 1000
-                : 0),
+            (score, question) => score + scoreAnswer(room, question, token),
             0,
           ),
         }))
@@ -392,6 +436,7 @@ export function snapshot(room, host = false) {
     ended: room.ended,
     participants: room.participants.size,
     participantNames: [...room.participants.values()].map((member) => member.name),
+    competitive: room.questions.some((question) => question.competitive === true),
     leaderboard,
     questions: room.questions.map((question, index) => ({
       ...question,

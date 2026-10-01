@@ -78,6 +78,48 @@ test("reveal mode defaults to onDone, hides results until reveal, and shows live
   rooms.delete(room.code);
 });
 
+test("competition mode scores correctness plus speed and only applies to quiz and true-or-false", () => {
+  const base = { options: ["A", "B"], correct: 0 };
+  assert.throws(
+    () => createRoom("Bad", [{ type: "poll", title: "P", options: ["A", "B"], competitive: true }]),
+    /can be competitive/,
+  );
+  assert.throws(
+    () => createRoom("Bad", [{ type: "quiz", title: "Q", ...base, competitive: "yes" }]),
+    /can be competitive/,
+  );
+  const room = createRoom("Race", [
+    { type: "quiz", title: "Race", ...base, competitive: true },
+    { type: "truefalse", title: "Casual", ...base },
+  ]);
+  assert.equal(snapshot(room).competitive, true);
+  assert.equal(room.questions[0].competitive, true);
+  assert.equal(room.questions[1].competitive, false);
+  const fast = joinRoom(room, "Fast");
+  const slow = joinRoom(room, "Slow");
+  const wrong = joinRoom(room, "Wrong");
+  const late = joinRoom(room, "Late");
+  controlRoom(room, room.hostToken, "start", undefined, 1000);
+  const [race, casual] = room.questions;
+  submitVote(room, fast, race.id, 0, 3000);
+  submitVote(room, slow, race.id, 0, 11000);
+  submitVote(room, wrong, race.id, 1, 1500);
+  // Pausing and resuming must not restart the clock.
+  controlRoom(room, room.hostToken, "toggle", undefined, 12000);
+  controlRoom(room, room.hostToken, "toggle", undefined, 30000);
+  submitVote(room, late, race.id, 0, 90000);
+  controlRoom(room, room.hostToken, "reveal", undefined, 91000);
+  const scores = Object.fromEntries(snapshot(room).leaderboard.map((entry) => [entry.name, entry.score]));
+  assert.deepEqual(scores, { Fast: 950, Slow: 750, Late: 500, Wrong: 0 });
+  controlRoom(room, room.hostToken, "select", 1, 92000);
+  submitVote(room, slow, casual.id, 0, 93000);
+  assert.equal(snapshot(room, true).leaderboard.find((entry) => entry.name === "Slow").score, 1750);
+  rooms.delete(room.code);
+  const plain = createRoom("Plain", [{ type: "quiz", title: "Q", ...base }]);
+  assert.equal(snapshot(plain).competitive, false);
+  rooms.delete(plain.code);
+});
+
 test("hearts are throttled per participant, need a joined member, and stop when the session ends", () => {
   const room = createRoom("Hearts", questions);
   const first = joinRoom(room, "Alex");

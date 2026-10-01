@@ -20,6 +20,10 @@ export function hasRevealMode(type: Kind) {
 export function defaultRevealMode(type: Kind): RevealMode {
   return type === "cloud" ? "live" : "onDone";
 }
+/** Only questions with a correct answer can be played competitively. */
+export function canCompete(type: Kind) {
+  return type === "quiz" || type === "truefalse";
+}
 export type Question = {
   id: string;
   type: Kind;
@@ -31,6 +35,7 @@ export type Question = {
   sliderMax?: number;
   sliderStep?: number;
   revealMode?: RevealMode;
+  competitive?: boolean;
   responses?: number;
   results?: { text: string; count: number; id?: string }[];
 };
@@ -53,6 +58,7 @@ export type Room = {
   participants: number;
   participantNames: string[];
   questions: Question[];
+  competitive: boolean;
   leaderboard: { name: string; score: number }[];
 };
 export const labels: Record<Kind, string> = {
@@ -102,6 +108,7 @@ export function newQuestion(type: Kind): Question {
       ? { sliderMin: 0, sliderMax: 10, sliderStep: 1 }
       : {}),
     ...(hasRevealMode(type) ? { revealMode: defaultRevealMode(type) } : {}),
+    ...(canCompete(type) ? { competitive: false } : {}),
     options:
       type === "quiz"
         ? ["Jupiter", "Saturn", "Neptune", "Mars"]
@@ -129,12 +136,13 @@ export function newSession(template = "checkin"): Session {
   const questions =
     template === "trivia"
       ? [
-          newQuestion("quiz"),
+          { ...newQuestion("quiz"), competitive: true },
           {
             ...newQuestion("quiz"),
             title: "How many hearts does an octopus have?",
             options: ["One", "Two", "Three", "Four"],
             correct: 2,
+            competitive: true,
           },
           newQuestion("cloud"),
         ]
@@ -197,11 +205,13 @@ export function serializeSession(session: Session): string {
           sliderMax,
           sliderStep,
           revealMode,
+          competitive,
         }) => ({
           type,
           title,
           options,
           correct,
+          ...(canCompete(type) ? { competitive: competitive === true } : {}),
           ...(type === "slide" ? { description } : {}),
           ...(type === "slider" ? { sliderMin, sliderMax, sliderStep } : {}),
           ...(hasRevealMode(type)
@@ -359,10 +369,21 @@ export function importSession(json: string): Session {
         !(revealModes as unknown[]).includes(question.revealMode)
       )
         throw new Error(prefix + 'revealMode must be "live" or "onDone".');
+      if (
+        question.competitive !== undefined &&
+        (typeof question.competitive !== "boolean" ||
+          (question.competitive && !canCompete(question.type as Kind)))
+      )
+        throw new Error(
+          prefix + "only quiz and truefalse questions can set competitive to true.",
+        );
       return {
         id: createId(),
         type: question.type as Kind,
         title: question.title.trim(),
+        ...(canCompete(question.type as Kind)
+          ? { competitive: question.competitive === true }
+          : {}),
         ...(question.type === "slide"
           ? { description: (question.description as string).trim() }
           : {}),

@@ -2278,6 +2278,32 @@ textarea {
   font-size: 11px;
   opacity: 0.65;
 }
+.competitive-toggle {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 11px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.competitive-toggle input[type="checkbox"] {
+  accent-color: #c08a1d;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.competitive-toggle span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.competitive-toggle small {
+  font-size: 11px;
+  opacity: 0.65;
+}
 .empty-rings {
   display: grid;
   place-items: center;

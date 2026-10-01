@@ -1081,6 +1081,7 @@ function ResultsPage({ room }: { room: Room | null }) {
               <strong>{room.questions.length}</strong>
             </div>
           </div>
+          <Podium room={room} />
           {room.questions
             .filter((question) => question.type !== "slide")
             .map((question, index) => (
@@ -1099,6 +1100,89 @@ function ResultsPage({ room }: { room: Room | null }) {
         </>
       )}
     </div>
+  );
+}
+
+const confettiColors = ["#f2c14e", "#e0607e", "#6fb58a", "#6aa6d9", "#9b7fd1", "#f29d5c"];
+
+type ConfettiPiece = {
+  left: number;
+  delay: number;
+  duration: number;
+  color: string;
+  width: number;
+  spin: number;
+  sway: number;
+};
+
+/** A full-screen burst of falling confetti that removes itself after a few seconds. */
+function Confetti() {
+  const [pieces] = useState<ConfettiPiece[]>(() =>
+    Array.from({ length: 90 }, (_, index) => ({
+      left: Math.random() * 100,
+      delay: Math.random() * 1.6,
+      duration: 3.2 + Math.random() * 2.4,
+      color: confettiColors[index % confettiColors.length],
+      width: 6 + Math.round(Math.random() * 7),
+      spin: Math.round(Math.random() * 720 + 360),
+      sway: Math.round(Math.random() * 160 - 80),
+    })),
+  );
+  const [done, setDone] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setDone(true), 7500);
+    return () => clearTimeout(timer);
+  }, []);
+  if (done) return null;
+  return (
+    <div className="confetti" aria-hidden="true">
+      {pieces.map((piece, index) => (
+        <i
+          key={index}
+          style={{
+            left: `${piece.left}%`,
+            width: piece.width,
+            height: piece.width * 1.6,
+            background: piece.color,
+            animationDelay: `${piece.delay}s`,
+            animationDuration: `${piece.duration}s`,
+            ["--confetti-spin" as string]: `${piece.spin}deg`,
+            ["--confetti-sway" as string]: `${piece.sway}px`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+const medals = ["gold", "silver", "bronze"] as const;
+
+/** Kahoot-style podium for the top three players of a competitive session, with confetti. */
+function Podium({ room }: { room: Room }) {
+  const winners = room.leaderboard.slice(0, 3).filter((entry) => entry.score > 0);
+  if (!room.ended || !room.competitive || !winners.length) return null;
+  // Visual order on the podium: silver, gold, bronze.
+  const order = [1, 0, 2].filter((index) => winners[index]);
+  return (
+    <section className="podium-section" aria-label="Final podium">
+      <Confetti />
+      <Trophy size={32} className="podium-trophy" />
+      <h2>And the winners are…</h2>
+      <div className="podium">
+        {order.map((index) => (
+          <div className={`podium-place place-${index + 1}`} key={index}>
+            <span className={`medal medal-${medals[index]}`} aria-label={`${medals[index]} medal`}>
+              {index + 1}
+            </span>
+            <strong className="podium-name">{winners[index].name}</strong>
+            <span className="podium-score">
+              {winners[index].score.toLocaleString()} pts
+            </span>
+            <div className="podium-block" />
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -2793,6 +2877,7 @@ function Participant() {
             when you show up.
           </h1>
           <p>Thanks for being part of {room.title}.</p>
+          <Podium room={room} />
           {room.leaderboard.some((entry) => entry.score > 0) && (
             <Leaderboard room={room} />
           )}

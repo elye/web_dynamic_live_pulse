@@ -49,6 +49,7 @@ Quiz and True or False questions have a **Competition mode** checkbox in the que
 - Quiz and True or False questions that are not competitive keep awarding a flat 1,000 points for a correct answer.
 - Scores are calculated on the server and appear on the leaderboard only after the host reveals results.
 - Response times are kept in memory for the live room only; they are never exported.
+- **Final podium:** when at least one question in the session is competitive and someone scored, ending the session shows a Kahoot-style podium with the top 3 players (gold, silver, and bronze medals, names, and points) and a confetti burst. It appears on every participant's wrap-up screen and at the top of the host's **Results** page, above the full leaderboard. Sessions without a competitive question keep the plain leaderboard and no confetti. With reduced-motion settings, the confetti and podium animations are turned off.
 
 ### Reveal mode
 

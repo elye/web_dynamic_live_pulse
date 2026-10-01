@@ -3104,6 +3104,134 @@ textarea {
   color: #6d8e58;
   font-size: 12px;
 }
+.podium-section {
+  max-width: 640px;
+  margin: 30px auto;
+  padding: 26px 16px 10px;
+  text-align: center;
+}
+.podium-trophy {
+  color: #d9a93b;
+}
+.podium-section h2 {
+  font-size: 26px;
+  margin: 12px 0 28px;
+}
+.podium {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 10px;
+}
+.podium-place {
+  flex: 1;
+  max-width: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: podium-rise 0.8s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+.podium-place.place-1 {
+  animation-delay: 0.9s;
+}
+.podium-place.place-2 {
+  animation-delay: 0.5s;
+}
+.podium-place.place-3 {
+  animation-delay: 0.1s;
+}
+@keyframes podium-rise {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.medal {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+  border: 3px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+.place-1 .medal {
+  width: 68px;
+  height: 68px;
+  font-size: 28px;
+}
+.medal-gold {
+  background: radial-gradient(circle at 30% 25%, #fde58a, #e0a81e 70%);
+}
+.medal-silver {
+  background: radial-gradient(circle at 30% 25%, #f2f4f7, #a2abb8 70%);
+}
+.medal-bronze {
+  background: radial-gradient(circle at 30% 25%, #f0bf93, #b06a30 70%);
+}
+.podium-name {
+  margin-top: 10px;
+  font-size: 15px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.podium-score {
+  margin: 2px 0 10px;
+  font-size: 12px;
+  color: #6d8e58;
+  font-weight: 700;
+}
+.podium-block {
+  width: 100%;
+  border-radius: 10px 10px 0 0;
+}
+.place-1 .podium-block {
+  height: 130px;
+  background: linear-gradient(#f3d679, #e0a81e);
+}
+.place-2 .podium-block {
+  height: 92px;
+  background: linear-gradient(#dde2e9, #a2abb8);
+}
+.place-3 .podium-block {
+  height: 64px;
+  background: linear-gradient(#e8b98f, #b06a30);
+}
+.confetti {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 50;
+}
+.confetti i {
+  position: absolute;
+  top: -24px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: confetti-fall linear forwards;
+}
+@keyframes confetti-fall {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--confetti-sway, 0), 105vh) rotate(var(--confetti-spin, 540deg));
+  }
+}
 .spin {
   animation: spin 1s linear infinite;
 }
@@ -4306,8 +4434,12 @@ textarea {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .heart-layer {
+  .heart-layer,
+  .confetti {
     display: none;
+  }
+  .podium-place {
+    animation: none !important;
   }
   *,
   *:before,

@@ -116,7 +116,7 @@ export function newQuestion(type: Kind): Question {
       ? { sliderMin: 0, sliderMax: 10, sliderStep: 1 }
       : {}),
     ...(hasRevealMode(type) ? { revealMode: defaultRevealMode(type) } : {}),
-    ...(canCompete(type) ? { competitive: false, showRanking: true } : {}),
+    ...(canCompete(type) ? { competitive: true, showRanking: true } : {}),
     options:
       type === "quiz"
         ? ["Jupiter", "Saturn", "Neptune", "Mars"]
@@ -222,7 +222,7 @@ export function serializeSession(session: Session): string {
           correct,
           ...(canCompete(type)
             ? {
-                competitive: competitive === true,
+                competitive: competitive !== false,
                 showRanking: showRanking !== false,
               }
             : {}),
@@ -402,7 +402,7 @@ export function importSession(json: string): Session {
         title: question.title.trim(),
         ...(canCompete(question.type as Kind)
           ? {
-              competitive: question.competitive === true,
+              competitive: question.competitive !== false,
               showRanking: question.showRanking !== false,
             }
           : {}),

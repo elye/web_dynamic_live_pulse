@@ -89,7 +89,7 @@ export function validateQuestions(input) {
         ? { revealMode: question.revealMode ?? defaultRevealMode(question.type) }
         : {}),
       ...(canCompete(question.type)
-        ? { competitive: question.competitive === true, showRanking: question.showRanking !== false }
+        ? { competitive: question.competitive !== false, showRanking: question.showRanking !== false }
         : {}),
       ...(question.type === "slide" ? { description: question.description.trim() } : {}),
       ...(question.type === "slider"

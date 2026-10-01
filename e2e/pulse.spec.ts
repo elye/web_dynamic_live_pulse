@@ -804,7 +804,7 @@ test("two audiences answer all types, reconnect, receive reveals, and finish wit
     await page
       .getByRole("button", { name: "Show ranking", exact: true })
       .click();
-    await expect(page.locator(".leaderboard.compact")).toContainText("1,000 pts");
+    await expect(page.locator(".leaderboard.compact")).toContainText(/9\d\d pts/);
     await expect(audience.locator(".leaderboard.compact")).toContainText("Alex");
     await page
       .getByRole("button", { name: "Next question", exact: true })
@@ -838,7 +838,7 @@ test("two audiences answer all types, reconnect, receive reveals, and finish wit
       .getByRole("dialog")
       .getByRole("button", { name: "End session", exact: true })
       .click();
-    await expect(audience.locator(".leaderboard")).toContainText("1,000 pts");
+    await expect(audience.locator(".leaderboard")).toContainText(/9\d\d pts/);
     await expect(
       page.getByRole("heading", {
         name: "Every response counts.",

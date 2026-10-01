@@ -859,16 +859,17 @@ function QuestionEditor({
           <label className="competitive-toggle">
             <input
               type="checkbox"
-              checked={draft.competitive === true}
+              checked={draft.competitive !== false}
               onChange={(event) =>
                 setDraft({ ...draft, competitive: event.target.checked })
               }
             />
             <span>
-              <b>Competition mode</b>
+              <b>Faster answers score more</b>
               <small>
-                Score this question: 500 points for the right answer plus up to 500
-                for answering fast. The final podium shows the top 3 players.
+                500 points for the right answer plus up to 500 for answering
+                fast (less time, more points). Untick for a flat 1,000 points.
+                The final podium shows the top 3 players.
               </small>
             </span>
           </label>
@@ -2825,8 +2826,8 @@ function Host() {
             </p>
             <h3>You set the pace</h3>
             <p>
-              Pause responses, reveal results, and advance questions. Quiz
-              answers earn 1,000 points each. Export responses from Results.
+              Pause responses, reveal results, and advance questions. Correct
+              answers earn up to 1,000 points, and faster answers earn more. Export responses from Results.
             </p>
             <h3>A note on storage</h3>
             <p>

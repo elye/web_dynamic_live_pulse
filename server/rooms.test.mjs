@@ -90,7 +90,7 @@ test("competition mode scores correctness plus speed and only applies to quiz an
   );
   const room = createRoom("Race", [
     { type: "quiz", title: "Race", ...base, competitive: true },
-    { type: "truefalse", title: "Casual", ...base },
+    { type: "truefalse", title: "Casual", ...base, competitive: false },
   ]);
   assert.equal(snapshot(room).competitive, true);
   assert.equal(room.questions[0].competitive, true);
@@ -115,8 +115,10 @@ test("competition mode scores correctness plus speed and only applies to quiz an
   submitVote(room, slow, casual.id, 0, 93000);
   assert.equal(snapshot(room, true).leaderboard.find((entry) => entry.name === "Slow").score, 1750);
   rooms.delete(room.code);
+  // Speed-based scoring is the default; it must be switched off explicitly.
   const plain = createRoom("Plain", [{ type: "quiz", title: "Q", ...base }]);
-  assert.equal(snapshot(plain).competitive, false);
+  assert.equal(snapshot(plain).competitive, true);
+  assert.equal(plain.questions[0].competitive, true);
   rooms.delete(plain.code);
 });
 
@@ -138,7 +140,8 @@ test("questions with answers default to hidden, ranking and podium steps are con
   controlRoom(room, room.hostToken, "ranking");
   let state = snapshot(room);
   assert.equal(state.ranking, true);
-  assert.equal(state.leaderboard[0].score, 1000);
+  // Answered one second into the 20 second window: 500 + 500 * (1 - 1/20).
+  assert.equal(state.leaderboard[0].score, 975);
   controlRoom(room, room.hostToken, "select", 1, 3000);
   state = snapshot(room);
   assert.equal(state.ranking, false);
@@ -222,7 +225,8 @@ test("one vote per participant, private answers, and server-calculated scores", 
   assert.throws(() => controlRoom(room, token, "reveal"), /host/);
   controlRoom(room, room.hostToken, "reveal");
   assert.equal(snapshot(room).questions[0].correct, 1);
-  assert.equal(snapshot(room).leaderboard[0].score, 1000);
+  // Real clock: an instant answer scores just under the 1000 maximum.
+  assert.ok(snapshot(room).leaderboard[0].score >= 990);
   assert.throws(
     () => submitVote(room, joinRoom(room, "Sam"), room.questions[0].id, 0),
     /no longer/,
@@ -291,7 +295,7 @@ test("true-or-false questions score like quizzes and require exactly two options
     { text: "True", count: 1 },
     { text: "False", count: 0 },
   ]);
-  assert.equal(snapshot(room).leaderboard[0].score, 1000);
+  assert.ok(snapshot(room).leaderboard[0].score >= 990);
   rooms.delete(room.code);
 });
 
@@ -567,7 +571,7 @@ test("websocket host and audience complete a live round and reconnect", async ()
       token: created.token,
       action: "reveal",
     });
-    assert.equal((await revealed).leaderboard[0].score, 1000);
+    assert.ok((await revealed).leaderboard[0].score >= 900);
     const restored = await request(audience, "room:join", {
       code,
       name: "Taylor",

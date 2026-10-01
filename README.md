@@ -20,12 +20,12 @@ Open http://localhost:5173. The command starts Vite and the live server together
 3. Select **Present live** to open the welcome screen. The QR code, room code, and selectable participant URL are always visible beside the live participant roster. Use the copy icon to copy the URL, or select the field to copy it manually.
   Select **Start questions** when everyone is ready. Participants wait in the welcome lobby until then.
 4. Participants visit `/join`, enter the room code and a display name, and submit one response per question.
-5. Pause or reopen voting, reveal results, and advance questions. Each correct quiz or true-or-false answer earns 1,000 points.
+5. Pause or reopen voting, reveal results, and advance questions. Each correct quiz or true-or-false answer earns up to 1,000 points: the faster the answer, the more points.
 6. End the session to view the summary and leaderboard. Export aggregated responses to CSV before stopping the server or starting another room.
 
 Add a **Title & description** question when you just need to show participants a title and a longer description without collecting any response, such as a welcome slide or a break announcement. Participants see only the title and description text and cannot submit anything; hosts see **Next question**/**Finish session** but no pause or reveal controls, since there is nothing to collect. Slide questions are skipped in the results summary.
 
-Add a **True or false** question for a quick binary call. It behaves like a quiz with exactly two fixed options ("True"/"False", editable), a correct answer, and a 1,000-point reward for a correct response.
+Add a **True or false** question for a quick binary call. It behaves like a quiz with exactly two fixed options ("True"/"False", editable), a correct answer, and up to 1,000 points for a correct response (faster answers score more).
 
 Add a **Ranking** question to have participants drag (or use the up/down controls) to sort 2 to 6 items from most to least important. Each participant submits a full ordering; results are aggregated with Borda-count scoring (an item earns more points the higher it's ranked) and shown sorted from highest to lowest. Ranking has no single correct answer, so it does not award leaderboard points.
 
@@ -43,10 +43,10 @@ Every participant has a heart button next to the room status. Each tap sends a h
 
 ### Competition mode
 
-Quiz and True or False questions have a **Competition mode** checkbox in the question editor (other types have no correct answer, so they can't compete). It is off by default and is stored per question as `"competitive": true` or `false` in exported JSON; the **The big team quiz** template starts with it on.
+Quiz and True or False questions have a **Faster answers score more** checkbox in the question editor (other types have no correct answer, so they can't compete). It is **on by default** and is stored per question as `"competitive": true` or `false` in exported JSON; a missing value counts as on.
 
 - A competitive question scores **500 points for the right answer plus up to 500 for speed**. The speed bonus falls linearly to zero over 20 seconds, measured from when the question first opened to answers (pausing and resuming does not restart the clock). Wrong or missing answers score 0.
-- Quiz and True or False questions that are not competitive keep awarding a flat 1,000 points for a correct answer.
+- If the box is unticked, the question awards a flat 1,000 points for a correct answer regardless of speed.
 - Scores are calculated on the server and appear on the leaderboard only after the host reveals results.
 - Response times are kept in memory for the live room only; they are never exported.
 - **Final podium:** when the session has at least one question with an answer and someone scored, the host's last step before **Finish session** is **Show podium**: a Kahoot-style podium of the top 3 players (gold, silver, and bronze medals, names, and points) with large names, revealed one place at a time (3rd, then 2nd, then 1st) before the confetti bursts, shown on the host stage and every participant's screen. It also appears on the wrap-up screen and at the top of the host's **Results** page, above the full leaderboard. Sessions with no answered questions keep the plain leaderboard and no confetti. With reduced-motion settings, the confetti and podium animations are turned off.

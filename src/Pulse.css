@@ -2187,6 +2187,60 @@ textarea {
   font-size: 11px;
   opacity: 0.65;
 }
+.response-hidden {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 230px;
+  flex: 1;
+  text-align: center;
+}
+.response-hidden strong {
+  font-size: 84px;
+  line-height: 1;
+  font-weight: 700;
+}
+.response-hidden h3 {
+  font-size: 19px;
+  font-weight: 650;
+}
+.response-hidden p {
+  font-size: 11px;
+  opacity: 0.65;
+}
+.reveal-mode-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.reveal-mode-editor label {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 11px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.reveal-mode-editor input[type="radio"] {
+  accent-color: #386a4e;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.reveal-mode-editor span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.reveal-mode-editor small {
+  font-size: 11px;
+  opacity: 0.65;
+}
 .empty-rings {
   display: grid;
   place-items: center;

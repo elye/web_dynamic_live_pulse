@@ -10,6 +10,12 @@ export type Kind =
   | "points100"
   | "grid2x2"
   | "text";
+export type RevealMode = "live" | "onDone";
+export const revealModes: RevealMode[] = ["live", "onDone"];
+/** Slides collect nothing and Q&A is always live, so neither has a reveal mode. */
+export function hasRevealMode(type: Kind) {
+  return type !== "slide" && type !== "qna";
+}
 export type Question = {
   id: string;
   type: Kind;
@@ -20,6 +26,7 @@ export type Question = {
   sliderMin?: number;
   sliderMax?: number;
   sliderStep?: number;
+  revealMode?: RevealMode;
   responses?: number;
   results?: { text: string; count: number; id?: string }[];
 };
@@ -90,6 +97,7 @@ export function newQuestion(type: Kind): Question {
     ...(type === "slider"
       ? { sliderMin: 0, sliderMax: 10, sliderStep: 1 }
       : {}),
+    ...(hasRevealMode(type) ? { revealMode: "onDone" as RevealMode } : {}),
     options:
       type === "quiz"
         ? ["Jupiter", "Saturn", "Neptune", "Mars"]
@@ -184,6 +192,7 @@ export function serializeSession(session: Session): string {
           sliderMin,
           sliderMax,
           sliderStep,
+          revealMode,
         }) => ({
           type,
           title,
@@ -191,6 +200,9 @@ export function serializeSession(session: Session): string {
           correct,
           ...(type === "slide" ? { description } : {}),
           ...(type === "slider" ? { sliderMin, sliderMax, sliderStep } : {}),
+          ...(hasRevealMode(type)
+            ? { revealMode: revealMode ?? "onDone" }
+            : {}),
         }),
       ),
     },
@@ -337,6 +349,12 @@ export function importSession(json: string): Session {
             prefix + "add a valid slider minimum, maximum, and step.",
           );
       }
+      if (
+        hasRevealMode(question.type as Kind) &&
+        question.revealMode !== undefined &&
+        !(revealModes as unknown[]).includes(question.revealMode)
+      )
+        throw new Error(prefix + 'revealMode must be "live" or "onDone".');
       return {
         id: createId(),
         type: question.type as Kind,
@@ -350,6 +368,9 @@ export function importSession(json: string): Session {
               sliderMax: question.sliderMax as number,
               sliderStep: question.sliderStep as number,
             }
+          : {}),
+        ...(hasRevealMode(question.type as Kind)
+          ? { revealMode: (question.revealMode as RevealMode) ?? "onDone" }
           : {}),
         options: options.map((option: string) => option.trim()),
         correct: ["quiz", "truefalse"].includes(question.type)

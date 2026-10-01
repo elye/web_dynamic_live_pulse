@@ -37,6 +37,15 @@ Add a **100 Points** question to have participants allocate 100 points across 2 
 
 Add a **2x2 Grid** question to have participants rate something across two axes at once, such as urgency versus impact. Set 4 axis labels in the question editor (x-axis low/high and y-axis low/high); participants tap anywhere on the grid to place a point and submit. Results show the average point plus every individual response plotted as a dot on the same grid. 2x2 Grid has no single correct answer, so it does not award leaderboard points.
 
+### Reveal mode
+
+Every question that collects responses (everything except title-and-description slides and Q&A, which is always live) has a **When should responses show?** setting in the question editor:
+
+- **Hide until done** (default): the host dashboard and participants see only how many people have responded. Click **Reveal results** to show the answers.
+- **Show on the fly**: responses appear live as people answer, for both the host and the audience. Correct answers and leaderboard scores for quizzes still wait for **Reveal results**.
+
+The choice is stored per question as `revealMode` (`"live"` or `"onDone"`) in exported JSON.
+
 The editor's sample responses are labeled and never become live submissions. Live sessions always start empty. Quiz answers and audience results stay hidden from participants until the host reveals them. Participants and hosts can refresh and reconnect to their existing session.
 
 Word clouds use WordCloud2's canvas glyph-occupancy layout: frequent responses appear larger, smaller words pack around them with occasional vertical rotations, and the finished cloud is centered in its frame. The renderer adapts to screen size and high-DPI displays, uses a bundled Manrope font to keep measurement and drawing consistent, and provides hover counts plus an accessible text list.
@@ -69,7 +78,8 @@ The versioned format is:
       "type": "quiz",
       "title": "Which planet has the most moons?",
       "options": ["Jupiter", "Saturn", "Neptune", "Mars"],
-      "correct": 1
+      "correct": 1,
+      "revealMode": "onDone"
     },
     {
       "type": "truefalse",
@@ -114,7 +124,7 @@ The versioned format is:
 }
 ```
 
-Supported types are `slide`, `cloud`, `poll`, `quiz`, `truefalse`, `ranking`, `slider`, `qna`, `points100`, `grid2x2`, and `text`; supported themes are `mint`, `peach`, `lilac`, and `sky`. `correct` is a zero-based option index for quizzes and true-or-false questions, and `null` otherwise (including for ranking, slider, Q&A, 100 Points, and 2x2 Grid, which have no single correct answer). Word clouds, open responses, Q&A, and slides use an empty `options` array; true-or-false questions require exactly 2 options; polls, quizzes, ranking, and 100 Points require 2 to 6; 2x2 Grid questions require exactly 4 options, used as axis labels in a fixed order (x-axis low, x-axis high, y-axis low, y-axis high) up to 40 characters each rather than selectable choices; slider questions also use an empty `options` array and instead require `sliderMin`, `sliderMax`, and `sliderStep` (`sliderMax` must exceed `sliderMin`, `sliderStep` must be positive, and the range must divide into at most 1000 steps). Slide questions require a non-empty `description` (up to 280 characters); other types omit it. Existing question and option limits apply to imports.
+Supported types are `slide`, `cloud`, `poll`, `quiz`, `truefalse`, `ranking`, `slider`, `qna`, `points100`, `grid2x2`, and `text`; supported themes are `mint`, `peach`, `lilac`, and `sky`. `correct` is a zero-based option index for quizzes and true-or-false questions, and `null` otherwise (including for ranking, slider, Q&A, 100 Points, and 2x2 Grid, which have no single correct answer). Word clouds, open responses, Q&A, and slides use an empty `options` array; true-or-false questions require exactly 2 options; polls, quizzes, ranking, and 100 Points require 2 to 6; 2x2 Grid questions require exactly 4 options, used as axis labels in a fixed order (x-axis low, x-axis high, y-axis low, y-axis high) up to 40 characters each rather than selectable choices; slider questions also use an empty `options` array and instead require `sliderMin`, `sliderMax`, and `sliderStep` (`sliderMax` must exceed `sliderMin`, `sliderStep` must be positive, and the range must divide into at most 1000 steps). Slide questions require a non-empty `description` (up to 280 characters); other types omit it. Every type except `slide` and `qna` carries `revealMode`: `"onDone"` hides results (showing only the response count) until the host clicks Reveal results, and `"live"` shows responses as they arrive. It is optional on import and defaults to `"onDone"`; any other value is rejected. Existing question and option limits apply to imports.
 
 Newly hosted rooms are tracked with their source session, even across multiple runs. For sessions hosted before this feature, the currently recoverable host room is linked when its title and questions match the draft; older rooms whose host credentials were not retained cannot be recovered or deleted through the library and expire normally.
 

@@ -3,6 +3,8 @@ import { randomInt, randomUUID } from "node:crypto";
 export const rooms = new Map();
 const kinds = new Set(["slide", "cloud", "poll", "quiz", "truefalse", "ranking", "slider", "qna", "points100", "grid2x2", "text"]);
 
+const hasRevealMode = (type) => type !== "slide" && type !== "qna";
+
 export function validateQuestions(input) {
   if (!Array.isArray(input) || !input.length || input.length > 30)
     throw new Error("Add between 1 and 30 questions.");
@@ -58,10 +60,19 @@ export function validateQuestions(input) {
         (question.sliderMax - question.sliderMin) / question.sliderStep > 1000)
     )
       throw new Error("Add a valid slider minimum, maximum, and step.");
+    if (
+      hasRevealMode(question.type) &&
+      question.revealMode !== undefined &&
+      !(question.revealMode === "live" || question.revealMode === "onDone")
+    )
+      throw new Error('Reveal mode must be "live" or "onDone".');
     return {
       id: randomUUID(),
       type: question.type,
       title: question.title.trim(),
+      ...(hasRevealMode(question.type)
+        ? { revealMode: question.revealMode ?? "onDone" }
+        : {}),
       ...(question.type === "slide" ? { description: question.description.trim() } : {}),
       ...(question.type === "slider"
         ? { sliderMin: question.sliderMin, sliderMax: question.sliderMax, sliderStep: question.sliderStep }
@@ -378,6 +389,7 @@ export function snapshot(room, host = false) {
       results:
         host ||
         question.type === "qna" ||
+        (question.revealMode === "live" && index === room.active) ||
         (room.revealed && (index === room.active || room.ended))
           ? results(room, question)
           : [],

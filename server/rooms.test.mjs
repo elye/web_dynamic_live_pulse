@@ -43,6 +43,39 @@ test("title and description slides never accept responses and preserve content",
   rooms.delete(room.code);
 });
 
+test("reveal mode defaults to onDone, hides results until reveal, and shows live results on the fly", () => {
+  const room = createRoom("Modes", [
+    { type: "poll", title: "Hidden?", options: ["A", "B"] },
+    { type: "poll", title: "Live?", options: ["A", "B"], revealMode: "live" },
+    { type: "qna", title: "Ask", options: [] },
+    { type: "slide", title: "Hi", description: "Welcome", options: [] },
+  ]);
+  assert.deepEqual(
+    room.questions.map((question) => question.revealMode),
+    ["onDone", "live", undefined, undefined],
+  );
+  assert.throws(
+    () => createRoom("Bad", [{ type: "poll", title: "x", options: ["A", "B"], revealMode: "soon" }]),
+    /Reveal mode/,
+  );
+  const token = joinRoom(room, "Alex");
+  controlRoom(room, room.hostToken, "start");
+  submitVote(room, token, room.questions[0].id, 0);
+  let audience = snapshot(room).questions[0];
+  assert.equal(audience.responses, 1);
+  assert.deepEqual(audience.results, []);
+  controlRoom(room, room.hostToken, "reveal");
+  assert.equal(snapshot(room).questions[0].results[0].count, 1);
+  controlRoom(room, room.hostToken, "select", 1);
+  assert.deepEqual(snapshot(room).questions[1].results.map((item) => item.count), [0, 0]);
+  submitVote(room, token, room.questions[1].id, 1);
+  audience = snapshot(room).questions[1];
+  assert.deepEqual(audience.results.map((item) => item.count), [0, 1]);
+  assert.equal(snapshot(room).revealed, false);
+  assert.equal(audience.correct, null);
+  rooms.delete(room.code);
+});
+
 test("one vote per participant, private answers, and server-calculated scores", () => {
   const room = createRoom("Team check-in", questions);
   const token = joinRoom(room, "Alex");

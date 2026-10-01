@@ -64,6 +64,7 @@ import {
   newSession,
   readStored,
   store,
+  hasRevealMode,
 } from "./model";
 import type { Kind, Question, Room, Session } from "./model";
 import { request, useLive } from "./live";
@@ -498,7 +499,21 @@ function QuestionStage({
           <p className="stage-slide-description">{question.description}</p>
         )}
       </div>
-      <ResultsVisual question={question} preview={preview} reveal={reveal} />
+      {!preview &&
+      code &&
+      hasRevealMode(question.type) &&
+      question.revealMode !== "live" &&
+      !reveal ? (
+        <div className="response-hidden">
+          <strong>{question.responses || 0}</strong>
+          <h3>
+            {question.responses === 1 ? "person has" : "people have"} responded
+          </h3>
+          <p>Results stay hidden until the host clicks Reveal results.</p>
+        </div>
+      ) : (
+        <ResultsVisual question={question} preview={preview} reveal={reveal} />
+      )}
       <div className="stage-bottom">
         <span className="stage-brand">
           <Zap size={16} fill="currentColor" /> pulse.
@@ -691,6 +706,38 @@ function QuestionEditor({
                 and the range can have at most 1,000 steps.
               </small>
             )}
+          </fieldset>
+        )}
+        {hasRevealMode(draft.type) && (
+          <fieldset className="reveal-mode-editor">
+            <legend>When should responses show?</legend>
+            <label>
+              <input
+                type="radio"
+                name="reveal-mode"
+                checked={draft.revealMode !== "live"}
+                onChange={() => setDraft({ ...draft, revealMode: "onDone" })}
+              />
+              <span>
+                <b>Hide until done</b>
+                <small>
+                  Show only how many people responded, then reveal the answers
+                  when you click Reveal results.
+                </small>
+              </span>
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="reveal-mode"
+                checked={draft.revealMode === "live"}
+                onChange={() => setDraft({ ...draft, revealMode: "live" })}
+              />
+              <span>
+                <b>Show on the fly</b>
+                <small>Responses appear live as people answer.</small>
+              </span>
+            </label>
           </fieldset>
         )}
         {isGrid2x2 && (
@@ -2780,6 +2827,19 @@ function Participant() {
                 )}
                 <p className="waiting-note">
                   A moment to take it in. Your host will continue shortly.
+                </p>
+              </div>
+            ) : question.revealMode === "live" &&
+              (hasSubmitted || !room.accepting) ? (
+              <div className="participant-reveal">
+                <span className="result-tag">
+                  <BarChart3 size={15} />
+                  Live results
+                </span>
+                <ResultsVisual question={question} />
+                <p className="waiting-note">
+                  {hasSubmitted ? "Your voice is in. " : ""}Results update as
+                  people answer.
                 </p>
               </div>
             ) : hasSubmitted ? (

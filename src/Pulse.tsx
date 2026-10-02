@@ -36,6 +36,7 @@ import {
   Percent,
   Play,
   Plus,
+  QrCode,
   Radio,
   Search,
   Send,
@@ -590,6 +591,7 @@ function QuestionStage({
   index = 0,
   total = 4,
   reveal = false,
+  showQr = false,
 }: {
   question: Question;
   preview?: boolean;
@@ -598,10 +600,14 @@ function QuestionStage({
   index?: number;
   total?: number;
   reveal?: boolean;
+  showQr?: boolean;
 }) {
   const Icon = icons[question.type];
   return (
-    <section className={`question-stage theme-${theme}`}>
+    <section
+      className={`question-stage theme-${theme} ${code && showQr ? "has-qr" : ""}`}
+    >
+      {code && showQr && <JoinQr code={code} />}
       <div className="stage-top">
         <span className="stage-kind">
           <Icon size={15} />
@@ -1139,11 +1145,9 @@ function ShareModal({ code, onClose }: { code: string; onClose: () => void }) {
   return <Modal title="Bring everyone together" onClose={onClose}><ShareDetails code={code} /></Modal>;
 }
 
-function ShareDetails({ code, inline = false }: { code: string; inline?: boolean }) {
+/** The participant join link; on localhost it uses the LAN address so phones can reach it. */
+function useJoinUrl(code: string) {
   const [origin, setOrigin] = useState(window.location.origin);
-  const [copied, setCopied] = useState(false);
-  const [copyError, setCopyError] = useState("");
-  const linkInput = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (["localhost", "127.0.0.1"].includes(window.location.hostname))
       fetch("/api/network")
@@ -1156,7 +1160,28 @@ function ShareDetails({ code, inline = false }: { code: string; inline?: boolean
         })
         .catch(() => {});
   }, []);
-  const url = `${origin}/join?code=${code}`;
+  return `${origin}/join?code=${code}`;
+}
+
+/** Small join QR pinned to the top right of a live slide. */
+function JoinQr({ code }: { code: string }) {
+  const url = useJoinUrl(code);
+  return (
+    <div className="join-qr" title={`Join at ${code.slice(0, 3)} ${code.slice(3)}`}>
+      <QRCodeSVG value={url} size={96} marginSize={1} title="Join session QR code" fgColor="#183d35" level="M" />
+      <span>Scan to join</span>
+      <strong>
+        {code.slice(0, 3)} {code.slice(3)}
+      </strong>
+    </div>
+  );
+}
+
+function ShareDetails({ code, inline = false }: { code: string; inline?: boolean }) {
+  const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState("");
+  const linkInput = useRef<HTMLInputElement>(null);
+  const url = useJoinUrl(code);
   async function copy() {
     setCopyError("");
     try {
@@ -1372,9 +1397,12 @@ function Podium({ room }: { room: Room }) {
 }
 
 /** The host's full-slide ranking of the top 10 players, or the final podium. */
-function ScoreStage({ room, theme }: { room: Room; theme: string }) {
+function ScoreStage({ room, theme, showQr = false }: { room: Room; theme: string; showQr?: boolean }) {
   return (
-    <section className={`question-stage score-stage theme-${theme}`}>
+    <section
+      className={`question-stage score-stage theme-${theme} ${showQr ? "has-qr" : ""}`}
+    >
+      {showQr && <JoinQr code={room.code} />}
       {room.podium ? (
         room.leaderboard.some((entry) => entry.score > 0) ? (
           <Podium room={room} />
@@ -2246,6 +2274,18 @@ function Host() {
                       </button>
                     )}
                     <IconButton
+                      icon={QrCode}
+                      className={session.showQr !== false ? "toggle-on" : ""}
+                      label={
+                        session.showQr !== false
+                          ? "Hide join QR code on slides"
+                          : "Show join QR code on slides"
+                      }
+                      onClick={() =>
+                        updateSession({ showQr: session.showQr === false })
+                      }
+                    />
+                    <IconButton
                       icon={Expand}
                       label={
                         presenting ? "Exit presentation view" : "Expand preview"
@@ -2255,7 +2295,7 @@ function Host() {
                   </div>
                 </div>
                 {modal === "simulate" && <CloudSimulator question={question} theme={session.theme} onClose={() => setModal(null)} />}
-                {inLobby ? <WelcomeLobby room={room} theme={session.theme} host disabled={busy || !connected} onStart={() => void control("start")} /> : isLive && (room.ranking || room.podium) ? <ScoreStage room={room} theme={session.theme} /> : <QuestionStage
+                {inLobby ? <WelcomeLobby room={room} theme={session.theme} host disabled={busy || !connected} onStart={() => void control("start")} /> : isLive && (room.ranking || room.podium) ? <ScoreStage room={room} theme={session.theme} showQr={session.showQr !== false} /> : <QuestionStage
                   question={question}
                   preview={!isLive}
                   theme={session.theme}
@@ -2263,6 +2303,7 @@ function Host() {
                   index={currentIndex}
                   total={questionList.length}
                   reveal={room?.revealed}
+                  showQr={session.showQr !== false}
                 />}
                 <div className="canvas-footer" hidden={inLobby}>
                   {isLive ? (

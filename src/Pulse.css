@@ -579,6 +579,59 @@ button:not(:disabled):active {
   background: #e8eee7;
   color: #2a5740;
 }
+.icon-button.toggle-on {
+  background: #dcecd8;
+  color: #2a5740;
+}
+/* Join QR pinned to the top right of every live slide. */
+.join-qr {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 5px 5px 4px;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px #1d3a2a24;
+  color: #315239;
+}
+.join-qr svg {
+  display: block;
+  width: 72px;
+  height: 72px;
+}
+.join-qr span {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.presenting .join-qr svg {
+  width: 96px;
+  height: 96px;
+}
+.presenting .join-qr span {
+  font-size: 10px;
+}
+/* The room code sits under the QR, so drop the duplicate in the header row. */
+.join-qr strong {
+  font-family: "Manrope", sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+  padding-bottom: 1px;
+}
+.presenting .join-qr strong {
+  font-size: 17px;
+}
+.question-stage.has-qr .stage-top > span:last-child {
+  display: none;
+}
 .muted {
   color: var(--muted);
 }

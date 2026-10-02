@@ -45,6 +45,8 @@ export type Session = {
   id: string;
   title: string;
   theme: string;
+  /** Show the join QR code in the corner of every live slide (default on). */
+  showQr?: boolean;
   questions: Question[];
   updated: number;
   hostedRooms?: { code: string; token: string }[];
@@ -202,6 +204,7 @@ export function serializeSession(session: Session): string {
       version: 1,
       title: session.title,
       theme: session.theme,
+      showQr: session.showQr !== false,
       questions: session.questions.map(
         ({
           type,
@@ -266,6 +269,8 @@ export function importSession(json: string): Session {
     !["mint", "peach", "lilac", "sky"].includes(data.theme)
   )
     throw new Error("Choose a supported theme: mint, peach, lilac, or sky.");
+  if (data.showQr !== undefined && typeof data.showQr !== "boolean")
+    throw new Error("showQr must be true or false.");
   if (
     !Array.isArray(data.questions) ||
     !data.questions.length ||
@@ -434,6 +439,7 @@ export function importSession(json: string): Session {
     id: createId(),
     title: data.title.trim(),
     theme: data.theme,
+    showQr: data.showQr !== false,
     questions,
     updated: Date.now(),
   };

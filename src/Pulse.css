@@ -1135,6 +1135,10 @@ button:not(:disabled):active {
 .lobby-empty { min-height: 145px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; opacity: .65; font-size: 13px; }
 .lobby-footer { display: flex; justify-content: space-between; align-items: center; gap: 16px; font-size: 11px; }
 .participant-lobby { width: min(850px, 100%); padding: 20px; margin: 0 auto 30px; }
+/* Keep the reaction row on screen below the lobby card on phones. */
+.participant-lobby .welcome-lobby { min-height: 0; gap: 16px; }
+.participant-lobby .lobby-people { min-height: 130px; }
+.participant-lobby .reaction-bar { margin-top: 18px; padding-bottom: 0; }
 .welcome-lobby .lobby-body { display: grid; gap: 24px; }
 .welcome-lobby .lobby-roster { min-width: 0; display: flex; flex-direction: column; gap: 24px; }
 .welcome-lobby .lobby-count { display: flex; flex-wrap: wrap; justify-content: center; gap: 9px; }

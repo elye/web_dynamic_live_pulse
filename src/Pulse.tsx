@@ -201,6 +201,46 @@ const reactionOptions = [
   { kind: "tada", label: "Celebrate", emoji: "🎉", color: "#8a63d2" },
 ] as const;
 
+/** The audience's row of reaction buttons, shown in the lobby and during questions. */
+function ReactionBar({
+  tap,
+  disabled,
+  onSend,
+}: {
+  tap: { kind: string; count: number };
+  disabled: boolean;
+  onSend: (kind: string) => void;
+}) {
+  return (
+    <div className="reaction-bar" role="group" aria-label="Send a reaction">
+      {reactionOptions.map((option) => (
+        <button
+          type="button"
+          key={option.kind}
+          className={`heart-button reaction-${option.kind}`}
+          aria-label={
+            option.kind === "heart" ? "Send a heart" : `Send ${option.label}`
+          }
+          onClick={() => onSend(option.kind)}
+          disabled={disabled}
+          style={{ ["--reaction-color" as string]: option.color }}
+        >
+          <span
+            key={tap.kind === option.kind ? tap.count : 0}
+            className={tap.kind === option.kind ? "heart-tapped" : ""}
+          >
+            {option.kind === "heart" ? (
+              <Heart size={24} fill="currentColor" />
+            ) : (
+              <span className="reaction-emoji">{option.emoji}</span>
+            )}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 type FloatingHeart = {
   id: number;
   kind: string;
@@ -3242,7 +3282,14 @@ function Participant() {
           </a>
         </main>
       ) : !room.started ? (
-        <main className="participant-lobby"><WelcomeLobby room={room} /></main>
+        <main className="participant-lobby">
+          <WelcomeLobby room={room} />
+          <ReactionBar
+            tap={reactionTap}
+            disabled={!connected}
+            onSend={(kind) => void sendHeart(kind)}
+          />
+        </main>
       ) : (
         question && (
           <main className="participant-session">
@@ -3640,30 +3687,11 @@ function Participant() {
                 </button>
               </form>
             )}
-            <div className="reaction-bar" role="group" aria-label="Send a reaction">
-              {reactionOptions.map((option) => (
-                <button
-                  type="button"
-                  key={option.kind}
-                  className={`heart-button reaction-${option.kind}`}
-                  aria-label={option.kind === "heart" ? "Send a heart" : `Send ${option.label}`}
-                  onClick={() => void sendHeart(option.kind)}
-                  disabled={!connected}
-                  style={{ ["--reaction-color" as string]: option.color }}
-                >
-                  <span
-                    key={reactionTap.kind === option.kind ? reactionTap.count : 0}
-                    className={reactionTap.kind === option.kind ? "heart-tapped" : ""}
-                  >
-                    {option.kind === "heart" ? (
-                      <Heart size={24} fill="currentColor" />
-                    ) : (
-                      <span className="reaction-emoji">{option.emoji}</span>
-                    )}
-                  </span>
-                </button>
-              ))}
-            </div>
+            <ReactionBar
+              tap={reactionTap}
+              disabled={!connected}
+              onSend={(kind) => void sendHeart(kind)}
+            />
             <div className="participant-bottom">
               <span>
                 <Users size={15} />

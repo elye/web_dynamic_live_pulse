@@ -2151,11 +2151,11 @@ textarea {
   flex-direction: column;
   gap: 12px;
   width: 100%;
-  max-width: 600px;
+  max-width: 760px;
   margin: 30px auto;
   flex: 1;
   justify-content: center;
-  max-height: 330px;
+  max-height: 400px;
   overflow: auto;
 }
 .text-response {
@@ -2166,8 +2166,8 @@ textarea {
   padding: 17px;
   border: 1px solid #ffffff90;
   border-radius: 5px;
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: 19px;
+  line-height: 1.5;
   flex-shrink: 0;
 }
 .text-response svg {
@@ -2184,11 +2184,11 @@ textarea {
   flex-direction: column;
   gap: 12px;
   width: 100%;
-  max-width: 600px;
+  max-width: 760px;
   margin: 0 auto;
   flex: 1;
   justify-content: flex-start;
-  max-height: 400px;
+  max-height: 440px;
   overflow: auto;
 }
 .qna-entry {
@@ -2199,8 +2199,8 @@ textarea {
   padding: 14px 17px;
   border: 1px solid #ffffff90;
   border-radius: 5px;
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: 18px;
+  line-height: 1.5;
   flex-shrink: 0;
 }
 .qna-entry svg {
@@ -3136,6 +3136,11 @@ textarea {
 .participant-reveal .text-response {
   background: white;
   border-color: #e1e8db;
+  font-size: 13px;
+}
+.participant-reveal .qna-entry,
+.qna-session .qna-entry {
+  font-size: 13px;
 }
 .participant-reveal .bar-track {
   background: #e9eee4;
@@ -4568,6 +4573,9 @@ textarea {
     font-size: 10px;
     padding: 13px;
   }
+  .qna-entry {
+    font-size: 12px;
+  }
   .participant-header {
     height: 82px;
     padding: 22px 25px;
@@ -4579,7 +4587,8 @@ textarea {
     margin: 15px auto 40px;
   }
   .join-page h1 {
-    font-size: 45px;
+    font-size: 30px;
+    margin: 12px 0;
   }
   .join-decoration {
     transform: scale(0.9);
@@ -4589,7 +4598,24 @@ textarea {
     font-size: 8px;
   }
   .join-form {
-    max-width: 320px;
+    max-width: 360px;
+    gap: 24px;
+  }
+  .join-form label {
+    font-size: 13px;
+  }
+  .join-form input {
+    font-size: 18px;
+    padding: 18px;
+    min-height: 64px;
+  }
+  .join-form .code-input {
+    font-size: 32px;
+    height: 80px;
+  }
+  .join-form .button {
+    font-size: 17px;
+    min-height: 64px;
   }
   .participant-session {
     margin-top: 14px;

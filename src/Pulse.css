@@ -2728,6 +2728,68 @@ textarea {
 .poll-results.two-col .poll-row small {
   margin-left: 0;
 }
+/* Stage results: one shared font size, fitted to the available space. All
+   sizes below are em so they scale together with the JS-fitted font-size. */
+.poll-fit {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+.poll-fit .poll-results,
+.poll-fit .poll-results.two-col {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  max-width: 1000px;
+  margin: 0;
+  flex: none;
+  gap: 0.6em 1.4em;
+  font-size: 20px;
+}
+.poll-fit .poll-results:not(.two-col) {
+  gap: 0.6em;
+}
+.poll-fit .poll-row,
+.poll-fit .poll-results.two-col .poll-row {
+  margin: 0;
+  padding: 0.4em 0.5em;
+  box-sizing: border-box;
+}
+.poll-fit .poll-results.two-col .poll-row {
+  flex: 0 0 calc(50% - 0.7em);
+}
+.poll-fit .poll-label,
+.poll-fit .poll-results.two-col .poll-label,
+.poll-fit .poll-label strong,
+.poll-fit .poll-results.two-col .poll-label strong {
+  font-size: 1em;
+}
+.poll-fit .poll-label > span {
+  gap: 0.6em;
+}
+.poll-fit .poll-label .option-letter {
+  width: 1.9em;
+  height: 1.9em;
+  font-size: 0.8em;
+  flex-shrink: 0;
+}
+.poll-fit .bar-track {
+  height: 0.6em;
+  margin: 0.3em 0;
+}
+.poll-fit .poll-row small,
+.poll-fit .poll-results.two-col .poll-row small {
+  font-size: 0.65em;
+  margin-left: 0;
+}
+.poll-fit .answer-badge {
+  font-size: 0.7em;
+  gap: 0.3em;
+}
 .participant-reveal .poll-results.two-col {
   gap: 12px 14px;
 }

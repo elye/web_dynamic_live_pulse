@@ -248,12 +248,14 @@ function ResultsVisual({
   question,
   preview = false,
   reveal = false,
+  fit = false,
   onUpvote,
   upvotedIds,
 }: {
   question: Question;
   preview?: boolean;
   reveal?: boolean;
+  fit?: boolean;
   onUpvote?: (entrantId: string) => void;
   upvotedIds?: Set<string>;
 }) {
@@ -489,7 +491,47 @@ function ResultsVisual({
       </div>
     );
   return (
-    <div className={`poll-results ${results.length >= 4 ? "two-col" : ""}`}>
+    <PollResults
+      question={question}
+      results={results}
+      total={total}
+      reveal={reveal}
+      fit={fit}
+    />
+  );
+}
+
+/**
+ * Poll/quiz bars. With `fit`, every option shares one font size: as large as
+ * the space allows for short options, smaller only when the text is long.
+ */
+function PollResults({
+  question,
+  results,
+  total,
+  reveal,
+  fit,
+}: {
+  question: Question;
+  results: { text: string; count: number }[];
+  total: number;
+  reveal: boolean;
+  fit: boolean;
+}) {
+  const box = useRef<HTMLDivElement>(null);
+  const list = useRef<HTMLDivElement>(null);
+  useFitFont(
+    box,
+    list,
+    11,
+    38,
+    results.map((item) => item.text).join("\n") + (reveal ? "r" : "") + fit,
+  );
+  const content = (
+    <div
+      ref={list}
+      className={`poll-results ${results.length >= 4 ? "two-col" : ""}`}
+    >
       {results.map((item, index) => {
         const isAnswer =
           reveal &&
@@ -530,6 +572,13 @@ function ResultsVisual({
         );
       })}
     </div>
+  );
+  return fit ? (
+    <div className="poll-fit" ref={box}>
+      {content}
+    </div>
+  ) : (
+    content
   );
 }
 
@@ -591,7 +640,12 @@ function QuestionStage({
           <p>Results stay hidden until the host clicks Reveal results.</p>
         </div>
       ) : (
-        <ResultsVisual question={question} preview={preview} reveal={reveal} />
+        <ResultsVisual
+          question={question}
+          preview={preview}
+          reveal={reveal}
+          fit
+        />
       )}
       <div className="stage-bottom">
         <span className="stage-brand">

@@ -2291,11 +2291,11 @@ textarea {
   text-align: center;
 }
 .response-empty h3 {
-  font-size: 19px;
+  font-size: 24px;
   font-weight: 650;
 }
 .response-empty p {
-  font-size: 11px;
+  font-size: 15px;
   opacity: 0.65;
 }
 .response-hidden {
@@ -2314,11 +2314,11 @@ textarea {
   font-weight: 700;
 }
 .response-hidden h3 {
-  font-size: 19px;
+  font-size: 24px;
   font-weight: 650;
 }
 .response-hidden p {
-  font-size: 11px;
+  font-size: 15px;
   opacity: 0.65;
 }
 .reveal-mode-editor {

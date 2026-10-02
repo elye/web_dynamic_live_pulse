@@ -293,6 +293,9 @@ export function submitUpvote(room, token, questionId, entrantToken) {
   return true;
 }
 
+/** Reactions a participant can send; the host sees each as a floating emoji. */
+export const reactionKinds = ["heart", "clap", "smile", "star", "tada"];
+
 const heartGapMs = 200;
 
 /** Returns true when the heart should be shown to the host; false when throttled or the session is over. */

@@ -32,7 +32,7 @@ export async function request(event: string, payload: object): Promise<Reply> {
 }
 
 /** Subscribe to hearts sent by participants (delivered to the host only). */
-export function onHeart(handler: () => void) {
+export function onHeart(handler: (payload: { kind?: string }) => void) {
   socket.on("room:heart", handler);
   return () => {
     socket.off("room:heart", handler);

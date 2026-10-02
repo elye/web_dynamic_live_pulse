@@ -192,8 +192,18 @@ function Modal({
   );
 }
 
+/** Reactions audiences can send. The heart stays in the middle of the picker. */
+const reactionOptions = [
+  { kind: "clap", label: "Clap", emoji: "👏", color: "#e0a53a" },
+  { kind: "smile", label: "Smile", emoji: "😊", color: "#e8b421" },
+  { kind: "heart", label: "Heart", emoji: "", color: "#e0607e" },
+  { kind: "star", label: "Star", emoji: "⭐", color: "#e8a317" },
+  { kind: "tada", label: "Celebrate", emoji: "🎉", color: "#8a63d2" },
+] as const;
+
 type FloatingHeart = {
   id: number;
+  kind: string;
   left: number;
   drift: number;
   size: number;
@@ -206,12 +216,13 @@ function HeartLayer() {
   const nextId = useRef(0);
   useEffect(
     () =>
-      onHeart(() => {
+      onHeart((payload) => {
         const id = nextId.current++;
         setHearts((current) => [
           ...current.slice(-39),
           {
             id,
+            kind: payload?.kind ?? "heart",
             left: 6 + Math.random() * 88,
             drift: Math.round(Math.random() * 90 - 45),
             size: 24 + Math.round(Math.random() * 22),
@@ -238,7 +249,16 @@ function HeartLayer() {
             )
           }
         >
-          <Heart size={heart.size} fill="currentColor" strokeWidth={1.5} />
+          {heart.kind === "heart" ? (
+            <Heart size={heart.size} fill="currentColor" strokeWidth={1.5} />
+          ) : (
+            <span
+              className="floating-emoji"
+              style={{ fontSize: `${heart.size}px` }}
+            >
+              {reactionOptions.find((item) => item.kind === heart.kind)?.emoji}
+            </span>
+          )}
         </span>
       ))}
     </div>
@@ -2965,7 +2985,7 @@ function Participant() {
   const [answerQuestion, setAnswerQuestion] = useState("");
   const [upvoted, setUpvoted] = useState<Set<string>>(new Set());
   const [upvotedQuestion, setUpvotedQuestion] = useState("");
-  const [heartPulse, setHeartPulse] = useState(0);
+  const [reactionTap, setReactionTap] = useState({ kind: "", count: 0 });
   const live = useLive("audience", initialCode);
   const { room, connected, error, setError, submitted } = live;
   const question = room?.questions[room.active];
@@ -3081,10 +3101,10 @@ function Participant() {
     });
     setAnswerQuestion(question.id);
   }
-  async function sendHeart() {
-    setHeartPulse((count) => count + 1);
+  async function sendHeart(kind = "heart") {
+    setReactionTap((current) => ({ kind, count: current.count + 1 }));
     try {
-      await request("room:react", live.credentials() ?? {});
+      await request("room:react", { ...(live.credentials() ?? {}), kind });
     } catch {
       // A dropped heart is harmless; the next tap tries again.
     }
@@ -3620,25 +3640,35 @@ function Participant() {
                 </button>
               </form>
             )}
+            <div className="reaction-bar" role="group" aria-label="Send a reaction">
+              {reactionOptions.map((option) => (
+                <button
+                  type="button"
+                  key={option.kind}
+                  className={`heart-button reaction-${option.kind}`}
+                  aria-label={option.kind === "heart" ? "Send a heart" : `Send ${option.label}`}
+                  onClick={() => void sendHeart(option.kind)}
+                  disabled={!connected}
+                  style={{ ["--reaction-color" as string]: option.color }}
+                >
+                  <span
+                    key={reactionTap.kind === option.kind ? reactionTap.count : 0}
+                    className={reactionTap.kind === option.kind ? "heart-tapped" : ""}
+                  >
+                    {option.kind === "heart" ? (
+                      <Heart size={24} fill="currentColor" />
+                    ) : (
+                      <span className="reaction-emoji">{option.emoji}</span>
+                    )}
+                  </span>
+                </button>
+              ))}
+            </div>
             <div className="participant-bottom">
               <span>
                 <Users size={15} />
                 {room.participants} in the room
               </span>
-              <button
-                type="button"
-                className="heart-button"
-                aria-label="Send a heart"
-                onClick={() => void sendHeart()}
-                disabled={!connected}
-              >
-                <span
-                  key={heartPulse}
-                  className={heartPulse ? "heart-tapped" : ""}
-                >
-                  <Heart size={22} fill="currentColor" />
-                </span>
-              </button>
               <span>
                 <span className="live-dot" />
                 Live together

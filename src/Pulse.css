@@ -3157,20 +3157,36 @@ textarea {
   align-items: center;
   gap: 7px;
 }
+.reaction-bar {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 26px;
+  padding-bottom: 14px;
+}
 .heart-button {
+  --reaction-color: #e0607e;
   display: grid;
   place-items: center;
-  width: 46px;
-  height: 46px;
-  margin: -14px 0;
-  border: 1px solid #f0cdd5;
+  flex: 0 1 52px;
+  min-width: 0;
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in srgb, var(--reaction-color) 35%, white);
   border-radius: 50%;
-  background: #fdeef1;
-  color: #e0607e;
+  background: color-mix(in srgb, var(--reaction-color) 13%, white);
+  color: var(--reaction-color);
   cursor: pointer;
 }
 .heart-button:hover:not(:disabled) {
-  background: #fbe0e6;
+  background: color-mix(in srgb, var(--reaction-color) 24%, white);
+}
+.reaction-emoji {
+  font-size: 24px;
+  line-height: 1;
+}
+.floating-emoji {
+  display: block;
+  line-height: 1;
 }
 .heart-button:disabled {
   opacity: 0.5;

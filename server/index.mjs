@@ -10,6 +10,7 @@ import {
   createRoom,
   getRoom,
   joinRoom,
+  reactionKinds,
   reactRoom,
   rooms,
   snapshot,
@@ -108,10 +109,11 @@ export function createAppServer() {
     // consume the socket's general request budget (votes, upvotes, controls).
     listen(
       "room:react",
-      ({ code, token }) => {
+      ({ code, token, kind = "heart" }) => {
+        if (!reactionKinds.includes(kind)) throw new Error("Unknown reaction.");
         const room = getRoom(code);
         const sent = reactRoom(room, token);
-        if (sent) io.to(`host:${room.code}`).emit("room:heart", {});
+        if (sent) io.to(`host:${room.code}`).emit("room:heart", { kind });
         return { sent };
       },
       { counted: false },

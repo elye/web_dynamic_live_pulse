@@ -490,17 +490,30 @@ function ResultsVisual({
     );
   return (
     <div className="poll-results">
-      {results.map((item, index) => (
-        <div className="poll-row" key={index}>
+      {results.map((item, index) => {
+        const isAnswer =
+          reveal &&
+          ["quiz", "truefalse"].includes(question.type) &&
+          question.correct === index;
+        const hasAnswer =
+          reveal && ["quiz", "truefalse"].includes(question.type);
+        return (
+        <div
+          className={`poll-row ${isAnswer ? "is-answer" : hasAnswer ? "not-answer" : ""}`}
+          key={index}
+        >
           <div className="poll-label">
             <span>
               <b className={`option-letter color-${index % 4}`}>
                 {String.fromCharCode(65 + index)}
               </b>
               {item.text}
-              {reveal &&
-                ["quiz", "truefalse"].includes(question.type) &&
-                question.correct === index && <Check size={18} />}
+              {isAnswer && (
+                <em className="answer-badge">
+                  <Check size={18} strokeWidth={3} />
+                  Correct
+                </em>
+              )}
             </span>
             <strong>
               {total ? Math.round((item.count / total) * 100) : 0}%
@@ -514,7 +527,8 @@ function ResultsVisual({
           </div>
           <small>{item.count} responses</small>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

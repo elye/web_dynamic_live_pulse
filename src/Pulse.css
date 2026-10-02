@@ -2677,6 +2677,80 @@ textarea {
   flex-direction: column;
   gap: 12px;
 }
+/* 4+ options: two columns; an odd last item is centred between them. */
+.answer-options.two-col {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.answer-options.two-col .answer-option {
+  position: relative;
+  flex: 0 0 calc(50% - 5px);
+  box-sizing: border-box;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+  padding: 14px 10px;
+  min-height: 96px;
+  font-size: 13px;
+}
+.answer-options.two-col .answer-option > span:nth-child(2) {
+  flex: 0 1 auto;
+}
+.answer-options.two-col .answer-option > svg {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+.poll-results.two-col {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  max-width: 900px;
+  gap: 14px 24px;
+}
+.poll-results.two-col .poll-row {
+  flex: 0 0 calc(50% - 12px);
+  box-sizing: border-box;
+  min-width: 0;
+  margin: 0;
+}
+.poll-results.two-col .poll-label {
+  font-size: 15px;
+}
+.poll-results.two-col .poll-label strong {
+  font-size: 15px;
+}
+.poll-results.two-col .poll-row small {
+  margin-left: 0;
+}
+.participant-reveal .poll-results.two-col {
+  gap: 12px 14px;
+}
+.participant-reveal .poll-results.two-col .poll-row {
+  flex-basis: calc(50% - 7px);
+  padding: 8px;
+}
+.participant-reveal .poll-results.two-col .poll-label {
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  font-size: 12px;
+}
+.participant-reveal .poll-results.two-col .poll-label strong {
+  font-size: 12px;
+}
+.participant-reveal .poll-results.two-col .poll-label > span {
+  gap: 8px;
+}
+.participant-reveal .poll-results.two-col .option-letter {
+  width: 24px;
+  height: 24px;
+  font-size: 11px;
+}
 .answer-option {
   display: flex;
   align-items: center;

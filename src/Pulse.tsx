@@ -489,7 +489,7 @@ function ResultsVisual({
       </div>
     );
   return (
-    <div className="poll-results">
+    <div className={`poll-results ${results.length >= 4 ? "two-col" : ""}`}>
       {results.map((item, index) => {
         const isAnswer =
           reveal &&
@@ -1338,10 +1338,12 @@ function Leaderboard({
   room,
   compact = false,
   title = "The leaderboard",
+  maxFont = 64,
 }: {
   room: Room;
   compact?: boolean;
   title?: string;
+  maxFont?: number;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const list = useRef<HTMLDivElement>(null);
@@ -1349,8 +1351,8 @@ function Leaderboard({
     box,
     list,
     11,
-    64,
-    JSON.stringify(room.leaderboard) + (compact ? "c" : ""),
+    maxFont,
+    JSON.stringify(room.leaderboard) + (compact ? "c" : "") + maxFont,
   );
   if (compact)
     return (
@@ -3158,7 +3160,12 @@ function Participant() {
             ) : room.ranking ? (
               <div className="participant-reveal">
                 <div className="participant-ranking">
-                  <Leaderboard room={room} compact title="Top 10 players" />
+                  <Leaderboard
+                    room={room}
+                    compact
+                    title="Top 10 players"
+                    maxFont={16}
+                  />
                 </div>
                 <p className="waiting-note">
                   Your host will continue to the next question shortly.
@@ -3287,7 +3294,9 @@ function Participant() {
             ) : (
               <form onSubmit={vote} className="answer-form">
                 {["poll", "quiz", "truefalse"].includes(question.type) ? (
-                  <div className="answer-options">
+                  <div
+                    className={`answer-options ${question.options.length >= 4 ? "two-col" : ""}`}
+                  >
                     {question.options.map((option, index) => (
                       <button
                         type="button"

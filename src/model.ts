@@ -63,6 +63,8 @@ export type Room = {
   started: boolean;
   accepting: boolean;
   revealed: boolean;
+  /** The host has hidden the live responses of an on-the-fly question. */
+  hidden?: boolean;
   /** The host is showing the top-10 ranking. */
   ranking: boolean;
   /** The host is showing the final podium. */

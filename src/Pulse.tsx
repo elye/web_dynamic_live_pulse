@@ -24,6 +24,7 @@ import {
   Expand,
   ExternalLink,
   Eye,
+  EyeOff,
   FileText,
   FlaskConical,
   FolderOpen,
@@ -823,6 +824,7 @@ function QuestionStage({
   index = 0,
   total = 4,
   reveal = false,
+  hidden = false,
   showQr = false,
 }: {
   question: Question;
@@ -832,6 +834,8 @@ function QuestionStage({
   index?: number;
   total?: number;
   reveal?: boolean;
+  /** The host hid this on-the-fly question's responses. */
+  hidden?: boolean;
   showQr?: boolean;
 }) {
   const Icon = icons[question.type];
@@ -877,7 +881,7 @@ function QuestionStage({
       {!preview &&
       code &&
       hasRevealMode(question.type) &&
-      question.revealMode !== "live" &&
+      (question.revealMode !== "live" || hidden) &&
       !reveal ? (
         optionKinds.includes(question.type) ? (
           <>
@@ -892,8 +896,10 @@ function QuestionStage({
             <p className="response-hidden-note">
               <strong>{question.responses || 0}</strong>{" "}
               {question.responses === 1 ? "person has" : "people have"}{" "}
-              responded. Results stay hidden until the host clicks Reveal
-              results.
+              responded.{" "}
+              {hidden
+                ? "The host has hidden the responses for now."
+                : "Results stay hidden until the host clicks Reveal results."}
             </p>
           </>
         ) : frameKinds.includes(question.type) ? (
@@ -902,8 +908,10 @@ function QuestionStage({
             <p className="response-hidden-note">
               <strong>{question.responses || 0}</strong>{" "}
               {question.responses === 1 ? "person has" : "people have"}{" "}
-              responded. Results stay hidden until the host clicks Reveal
-              results.
+              responded.{" "}
+              {hidden
+                ? "The host has hidden the responses for now."
+                : "Results stay hidden until the host clicks Reveal results."}
             </p>
           </>
         ) : (
@@ -913,7 +921,11 @@ function QuestionStage({
               {question.responses === 1 ? "person has" : "people have"}{" "}
               responded
             </h3>
-            <p>Results stay hidden until the host clicks Reveal results.</p>
+            <p>
+              {hidden
+                ? "The host has hidden the responses for now."
+                : "Results stay hidden until the host clicks Reveal results."}
+            </p>
           </div>
         )
       ) : (
@@ -2921,6 +2933,7 @@ function Host() {
                   index={currentIndex}
                   total={questionList.length}
                   reveal={room?.revealed}
+                  hidden={isLive && room?.hidden}
                   showQr={session.showQr !== false}
                 />}
                 <div className="canvas-footer" hidden={inLobby}>
@@ -2989,16 +3002,35 @@ function Host() {
                         {room.accepting ? "Pause responses" : "Reopen responses"}
                       </button>
                     )}
-                    {question.type !== "slide" && question.type !== "qna" && (
-                      <button
-                        className="button secondary"
-                        onClick={() => void control("reveal")}
-                        disabled={room.revealed || busy}
-                      >
-                        <Eye size={17} />
-                        {room.revealed ? "Results revealed" : "Reveal results"}
-                      </button>
-                    )}
+                    {question.type !== "slide" &&
+                      question.type !== "qna" &&
+                      (question.revealMode === "live" && !room.revealed ? (
+                        <button
+                          className="button secondary"
+                          onClick={() =>
+                            void control(room.hidden ? "show" : "hide")
+                          }
+                          disabled={busy}
+                        >
+                          {room.hidden ? (
+                            <Eye size={17} />
+                          ) : (
+                            <EyeOff size={17} />
+                          )}
+                          {room.hidden ? "Show responses" : "Hide responses"}
+                        </button>
+                      ) : (
+                        <button
+                          className="button secondary"
+                          onClick={() => void control("reveal")}
+                          disabled={room.revealed || busy}
+                        >
+                          <Eye size={17} />
+                          {room.revealed
+                            ? "Results revealed"
+                            : "Reveal results"}
+                        </button>
+                      ))}
                     {(() => {
                       const last = currentIndex === questionList.length - 1;
                       // Each click advances one step: show results, then the top 10
@@ -4102,6 +4134,7 @@ function Participant() {
                 </p>
               </div>
             ) : question.revealMode === "live" &&
+              !room.hidden &&
               (hasSubmitted || !room.accepting) ? (
               <div className="participant-reveal">
                 <span className="result-tag">

@@ -144,6 +144,8 @@ export function createRoom(title, questions, crowdKind) {
     started: false,
     accepting: false,
     revealed: false,
+    /** The host has hidden the live responses of an on-the-fly question. */
+    hidden: false,
     ranking: false,
     podium: false,
     ended: false,
@@ -429,6 +431,7 @@ export function controlRoom(room, token, action, index, now = Date.now()) {
     room.active = index;
     room.accepting = room.questions[room.active].type !== "slide";
     room.revealed = false;
+    room.hidden = false;
     room.ranking = false;
     room.podium = false;
     markOpened(room, now);
@@ -441,9 +444,15 @@ export function controlRoom(room, token, action, index, now = Date.now()) {
       room.podium = false;
     }
     markOpened(room, now);
+  } else if (action === "hide" || action === "show") {
+    const current = room.questions[room.active];
+    if (current.type === "slide" || current.type === "qna")
+      throw new Error("This question has no responses to hide.");
+    room.hidden = action === "hide";
   } else if (action === "reveal") {
     if (room.questions[room.active].type === "slide") throw new Error("This slide has no results to reveal.");
     room.revealed = true;
+    room.hidden = false;
     room.accepting = false;
   } else if (action === "ranking") {
     if (!room.questions.some((question) => canCompete(question.type)))
@@ -564,6 +573,7 @@ export function snapshot(room, host = false) {
     started: room.started,
     accepting: room.accepting,
     revealed: room.revealed,
+    hidden: room.hidden,
     ranking: room.ranking,
     podium: room.podium,
     ended: room.ended,
@@ -596,7 +606,7 @@ export function snapshot(room, host = false) {
       results:
         host ||
         question.type === "qna" ||
-        (question.revealMode === "live" && index === room.active) ||
+        (question.revealMode === "live" && index === room.active && !room.hidden) ||
         (room.revealed && (index === room.active || room.ended))
           ? results(room, question)
           : [],

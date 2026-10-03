@@ -15,6 +15,7 @@ import {
   Cloud,
   Copy,
   Download,
+  Drama,
   Expand,
   ExternalLink,
   Eye,
@@ -68,6 +69,7 @@ import {
   store,
   hasRevealMode,
   canCompete,
+  twoTruthsTitle,
 } from "./model";
 import type { Kind, Question, Room, Session } from "./model";
 import { onHeart, request, useLive } from "./live";
@@ -79,6 +81,7 @@ const icons: Record<Kind, LucideIcon> = {
   poll: BarChart3,
   quiz: Trophy,
   truefalse: ToggleLeft,
+  twotruths: Drama,
   ranking: ListOrdered,
   slider: SlidersHorizontal,
   qna: MessageCircleQuestion,
@@ -106,7 +109,7 @@ const kindGroups: { title: string; hint: string; kinds: Kind[] }[] = [
   {
     title: "With an answer",
     hint: "Score players. Responses stay hidden and a top 10 ranking follows.",
-    kinds: ["quiz", "truefalse"],
+    kinds: ["quiz", "truefalse", "twotruths"],
   },
 ];
 /** Question types a player can write themselves (everything that collects a response). */
@@ -120,6 +123,7 @@ const kindHints: Record<Kind, string> = {
   poll: "Let everyone pick their favorite",
   quiz: "A correct answer and a little competition",
   truefalse: "A binary choice: true or false",
+  twotruths: "Two true statements and one lie. Spot the lie",
   ranking: "Drag to sort items from most to least important",
   slider: "Estimate a numeric value on a sliding scale",
   qna: "Participants submit and upvote live questions",
@@ -609,15 +613,12 @@ function PollResults({
   const content = (
     <div
       ref={list}
-      className={`poll-results ${results.length >= 4 ? "two-col" : ""}`}
+      className={`poll-results ${results.length >= 4 && question.type !== "twotruths" ? "two-col" : ""}`}
     >
       {results.map((item, index) => {
         const isAnswer =
-          reveal &&
-          ["quiz", "truefalse"].includes(question.type) &&
-          question.correct === index;
-        const hasAnswer =
-          reveal && ["quiz", "truefalse"].includes(question.type);
+          reveal && canCompete(question.type) && question.correct === index;
+        const hasAnswer = reveal && canCompete(question.type);
         return (
         <div
           className={`poll-row ${isAnswer ? "is-answer" : hasAnswer ? "not-answer" : ""}`}
@@ -632,7 +633,7 @@ function PollResults({
               {isAnswer && (
                 <em className="answer-badge">
                   <Check size={18} strokeWidth={3} />
-                  Correct
+                  {question.type === "twotruths" ? "The lie" : "Correct"}
                 </em>
               )}
             </span>
@@ -899,12 +900,14 @@ function blankAuthored(kind: Kind): Authored {
     options:
       kind === "truefalse"
         ? ["True", "False"]
+        : kind === "twotruths"
+          ? ["", "", ""]
         : kind === "grid2x2"
           ? ["", "", "", ""]
           : ["poll", "quiz", "ranking", "points100"].includes(kind)
             ? ["", ""]
             : [],
-    correct: kind === "quiz" || kind === "truefalse" ? 0 : null,
+    correct: canCompete(kind) ? 0 : null,
     ...(kind === "slider" ? { sliderMin: 0, sliderMax: 10, sliderStep: 1 } : {}),
   };
 }
@@ -914,6 +917,7 @@ function AuthorQuestion({ kind, sent, busy, disabled, onSubmit }: { kind: Kind; 
   const [draft, setDraft] = useState<Authored>(() => blankAuthored(kind));
   const isOptions = ["poll", "quiz", "ranking", "points100"].includes(kind);
   const isTrueFalse = kind === "truefalse";
+  const isTwoTruths = kind === "twotruths";
   const isGrid = kind === "grid2x2";
   const isSlider = kind === "slider";
   const hasCorrect = kind === "quiz" || isTrueFalse;
@@ -926,9 +930,9 @@ function AuthorQuestion({ kind, sent, busy, disabled, onSubmit }: { kind: Kind; 
       draft.sliderMax > draft.sliderMin &&
       (draft.sliderMax - draft.sliderMin) / draft.sliderStep <= 1000);
   const valid =
-    !!draft.title.trim() &&
+    (isTwoTruths || !!draft.title.trim()) &&
     sliderOk &&
-    (!(isOptions || isGrid) || draft.options.every((option) => option.trim())) &&
+    (!(isOptions || isGrid || isTwoTruths) || draft.options.every((option) => option.trim())) &&
     (!isOptions || (draft.options.length >= 2 && draft.options.length <= 6));
   const setOption = (index: number, text: string) =>
     setDraft({ ...draft, options: draft.options.map((value, position) => (position === index ? text : value)) });
@@ -938,7 +942,7 @@ function AuthorQuestion({ kind, sent, busy, disabled, onSubmit }: { kind: Kind; 
       className="answer-form author-form"
       onSubmit={(event) => {
         event.preventDefault();
-        onSubmit({ ...draft, title: draft.title.trim(), options: draft.options.map((option) => option.trim()) });
+        onSubmit({ ...draft, title: isTwoTruths ? twoTruthsTitle : draft.title.trim(), options: draft.options.map((option) => option.trim()) });
       }}
     >
       <div>
@@ -947,11 +951,26 @@ function AuthorQuestion({ kind, sent, busy, disabled, onSubmit }: { kind: Kind; 
         <p className="author-note">Everyone writes one. All questions are played in random order and show who asked them.</p>
       </div>
       {sent && <div className="qna-submitted-note"><CheckCheck size={20} />Your question is in. You can still edit it until the host starts the game.</div>}
-      <label>
-        {isSlider ? "What should people estimate?" : isTrueFalse ? "Your true-or-false statement" : "Your question"}
-        <textarea required rows={3} maxLength={200} value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} placeholder="Type your question..." />
-        <small className="character-count">{draft.title.length} / 200</small>
-      </label>
+      {isTwoTruths ? (
+        <p className="fixed-question">{twoTruthsTitle}</p>
+      ) : (
+        <label>
+          {isSlider ? "What should people estimate?" : isTrueFalse ? "Your true-or-false statement" : "Your question"}
+          <textarea required rows={3} maxLength={200} value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} placeholder="Type your question..." />
+          <small className="character-count">{draft.title.length} / 200</small>
+        </label>
+      )}
+      {isTwoTruths && (
+        <fieldset className="author-options two-truths-options">
+          <legend>Write two truths and one lie<span> · Select the lie</span></legend>
+          {draft.options.map((option, index) => (
+            <div className="option-editor" key={index}>
+              <input aria-label={`Statement ${index + 1} is the lie`} type="radio" name="author-correct" checked={draft.correct === index} onChange={() => setDraft({ ...draft, correct: index })} />
+              <input aria-label={`Statement ${index + 1}`} required maxLength={200} value={option} onChange={(event) => setOption(index, event.target.value)} placeholder={draft.correct === index ? "The lie" : "A true statement"} />
+            </div>
+          ))}
+        </fieldset>
+      )}
       {isTrueFalse && (
         <fieldset className="author-options">
           <legend>Which is correct?</legend>
@@ -1043,6 +1062,7 @@ function QuestionEditor({
 }) {
   const [draft, setDraft] = useState(question);
   const isTrueFalse = draft.type === "truefalse";
+  const isTwoTruths = draft.type === "twotruths";
   const isRanking = draft.type === "ranking";
   const isPoints100 = draft.type === "points100";
   const isGrid2x2 = draft.type === "grid2x2";
@@ -1051,9 +1071,10 @@ function QuestionEditor({
     draft.type === "poll" ||
     draft.type === "quiz" ||
     isTrueFalse ||
+    isTwoTruths ||
     isRanking ||
     isPoints100;
-  const hasCorrectAnswer = draft.type === "quiz" || isTrueFalse;
+  const hasCorrectAnswer = canCompete(draft.type);
   const isSlide = draft.type === "slide";
   const sliderRangeValid =
     !isSlider ||
@@ -1088,7 +1109,7 @@ function QuestionEditor({
               setDraft({
                 ...newQuestion(type),
                 id: draft.id,
-                title: draft.title,
+                title: type === "twotruths" ? twoTruthsTitle : draft.title,
               });
             }}
           >
@@ -1103,19 +1124,26 @@ function QuestionEditor({
             ))}
           </select>
         </label>
-        <label>
-          {isSlide ? "Title" : "Your question"}
-          <textarea
-            autoFocus
-            required
-            maxLength={200}
-            value={draft.title}
-            onChange={(event) =>
-              setDraft({ ...draft, title: event.target.value })
-            }
-            rows={3}
-          />
-        </label>
+        {isTwoTruths ? (
+          <div className="fixed-question">
+            <span>Question</span>
+            <p>{twoTruthsTitle}</p>
+          </div>
+        ) : (
+          <label>
+            {isSlide ? "Title" : "Your question"}
+            <textarea
+              autoFocus
+              required
+              maxLength={200}
+              value={draft.title}
+              onChange={(event) =>
+                setDraft({ ...draft, title: event.target.value })
+              }
+              rows={3}
+            />
+          </label>
+        )}
         {isSlide && (
           <label>
             Description
@@ -1305,14 +1333,24 @@ function QuestionEditor({
                 ? "Items to rank"
                 : isPoints100
                   ? "Options to allocate points across"
-                  : "Answer options"}{" "}
-              {hasCorrectAnswer && <span>· Select the correct answer</span>}
+                  : isTwoTruths
+                    ? "Two truths and one lie"
+                    : "Answer options"}{" "}
+              {hasCorrectAnswer && (
+                <span>
+                  · Select {isTwoTruths ? "the lie" : "the correct answer"}
+                </span>
+              )}
             </legend>
             {draft.options.map((option, index) => (
               <div className="option-editor" key={index}>
                 {hasCorrectAnswer ? (
                   <input
-                    aria-label={`Option ${index + 1} is correct`}
+                    aria-label={
+                      isTwoTruths
+                        ? `Option ${index + 1} is the lie`
+                        : `Option ${index + 1} is correct`
+                    }
                     type="radio"
                     name="correct"
                     checked={draft.correct === index}
@@ -1326,7 +1364,14 @@ function QuestionEditor({
                 <input
                   aria-label={`Option ${index + 1}`}
                   required
-                  maxLength={100}
+                  maxLength={isTwoTruths ? 200 : 100}
+                  placeholder={
+                    isTwoTruths
+                      ? draft.correct === index
+                        ? "The lie"
+                        : "A true statement"
+                      : undefined
+                  }
                   value={option}
                   onChange={(event) =>
                     setDraft({
@@ -1337,7 +1382,7 @@ function QuestionEditor({
                     })
                   }
                 />
-                {!isTrueFalse && (
+                {!isTrueFalse && !isTwoTruths && (
                   <IconButton
                     icon={X}
                     label={`Remove option ${index + 1}`}
@@ -1362,7 +1407,7 @@ function QuestionEditor({
                 )}
               </div>
             ))}
-            {!isTrueFalse && draft.options.length < 6 && (
+            {!isTrueFalse && !isTwoTruths && draft.options.length < 6 && (
               <button
                 type="button"
                 className="text-button"
@@ -2500,6 +2545,8 @@ function Host() {
                               <Trophy size={32} strokeWidth={1.5} />
                             ) : item.type === "truefalse" ? (
                               <ToggleLeft size={32} strokeWidth={1.5} />
+                            ) : item.type === "twotruths" ? (
+                              <Drama size={32} strokeWidth={1.5} />
                             ) : item.type === "ranking" ? (
                               <ListOrdered size={32} strokeWidth={1.5} />
                             ) : item.type === "slider" ? (
@@ -2758,6 +2805,8 @@ function Host() {
                                 ? "A little friendly competition."
                                 : question.type === "truefalse"
                                   ? "A quick binary call: true or false."
+                                  : question.type === "twotruths"
+                                    ? "Two truths and a lie. Who can spot it?"
                                   : question.type === "ranking"
                                     ? "Drag to sort what matters most."
                                     : question.type === "slider"
@@ -3127,6 +3176,8 @@ function Host() {
                             ? "A correct answer and a little competition"
                             : kind === "truefalse"
                               ? "A binary choice: true or false"
+                              : kind === "twotruths"
+                                ? kindHints.twotruths
                               : kind === "ranking"
                                 ? "Drag to sort items from most to least important"
                                 : kind === "slider"
@@ -3745,10 +3796,11 @@ function Participant() {
                   The results are in
                 </span>
                 <ResultsVisual question={question} reveal />
-                {["quiz", "truefalse"].includes(question.type) && (
+                {canCompete(question.type) && (
                   <div className="correct-answer">
                     <Check size={20} />
-                    Correct answer: {question.options[question.correct!]}
+                    {question.type === "twotruths" ? "The lie" : "Correct answer"}:{" "}
+                    {question.options[question.correct!]}
                   </div>
                 )}
                 <p className="waiting-note">
@@ -3790,9 +3842,9 @@ function Participant() {
               </div>
             ) : (
               <form onSubmit={vote} className="answer-form">
-                {["poll", "quiz", "truefalse"].includes(question.type) ? (
+                {question.type === "poll" || canCompete(question.type) ? (
                   <div
-                    className={`answer-options ${question.options.length >= 4 ? "two-col" : ""}`}
+                    className={`answer-options ${question.options.length >= 4 && question.type !== "twotruths" ? "two-col" : ""}`}
                   >
                     {question.options.map((option, index) => (
                       <button

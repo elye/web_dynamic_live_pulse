@@ -1,15 +1,17 @@
 import { randomInt, randomUUID } from "node:crypto";
 
 export const rooms = new Map();
-const kinds = new Set(["slide", "cloud", "poll", "quiz", "truefalse", "ranking", "slider", "qna", "points100", "grid2x2", "text"]);
+const kinds = new Set(["slide", "cloud", "poll", "quiz", "truefalse", "twotruths", "ranking", "slider", "qna", "points100", "grid2x2", "text"]);
+/** Two truths and a lie always asks the same question. */
+export const twoTruthsTitle = "Pick the one that is not true.";
 
 /** Question types players can write themselves (everything that collects a response). */
 export const crowdKinds = [...kinds].filter((kind) => kind !== "slide");
-const optionKinds = ["poll", "quiz", "truefalse", "ranking", "points100", "grid2x2"];
+const optionKinds = ["poll", "quiz", "truefalse", "twotruths", "ranking", "points100", "grid2x2"];
 
 const hasRevealMode = (type) => type !== "slide" && type !== "qna";
 /** Only questions with a correct answer can be competitive. */
-const canCompete = (type) => type === "quiz" || type === "truefalse";
+const canCompete = (type) => type === "quiz" || type === "truefalse" || type === "twotruths";
 /** Questions with a correct answer hide responses until revealed; all others show them live. */
 const defaultRevealMode = (type) => (canCompete(type) ? "onDone" : "live");
 export const baseScore = 500;
@@ -19,7 +21,9 @@ export const speedWindowMs = 20000;
 export function validateQuestions(input) {
   if (!Array.isArray(input) || !input.length || input.length > 30)
     throw new Error("Add between 1 and 30 questions.");
-  return input.map((question) => {
+  return input.map((raw) => {
+    const question =
+      raw?.type === "twotruths" ? { ...raw, title: twoTruthsTitle } : raw;
     if (
       !kinds.has(question.type) ||
       typeof question.title !== "string" ||
@@ -39,6 +43,12 @@ export function validateQuestions(input) {
     )
       throw new Error("A true-or-false question needs exactly 2 answer options.");
     if (
+      question.type === "twotruths" &&
+      (options.length !== 3 ||
+        options.some((option) => !option || option.length > 200))
+    )
+      throw new Error("Two truths and a lie needs exactly 3 statements, up to 200 characters each.");
+    if (
       question.type === "grid2x2" &&
       (options.length !== 4 ||
         options.some((option) => !option || option.length > 40))
@@ -52,7 +62,7 @@ export function validateQuestions(input) {
     )
       throw new Error("Add 2 to 6 answer options, up to 100 characters each.");
     if (
-      ["quiz", "truefalse"].includes(question.type) &&
+      canCompete(question.type) &&
       (!Number.isInteger(question.correct) ||
         question.correct < 0 ||
         question.correct >= options.length)
@@ -82,7 +92,7 @@ export function validateQuestions(input) {
       (typeof question.competitive !== "boolean" ||
         (question.competitive && !canCompete(question.type)))
     )
-      throw new Error("Only quiz and true-or-false questions can be competitive.");
+      throw new Error("Only quiz, true-or-false and two-truths questions can be competitive.");
     if (question.showRanking !== undefined && typeof question.showRanking !== "boolean")
       throw new Error("Show ranking must be true or false.");
     return {
@@ -100,7 +110,7 @@ export function validateQuestions(input) {
         ? { sliderMin: question.sliderMin, sliderMax: question.sliderMax, sliderStep: question.sliderStep }
         : {}),
       options,
-      correct: ["quiz", "truefalse"].includes(question.type) ? question.correct : null,
+      correct: canCompete(question.type) ? question.correct : null,
     };
   });
 }
@@ -231,7 +241,7 @@ export function submitVote(room, token, questionId, value, now = Date.now()) {
     throw new Error("This question is no longer accepting responses.");
   const votes = room.votes.get(question.id);
   if (votes.has(token)) throw new Error("Your response is already in.");
-  if (["poll", "quiz", "truefalse"].includes(question.type)) {
+  if (question.type === "poll" || canCompete(question.type)) {
     if (
       !Number.isInteger(value) ||
       value < 0 ||
@@ -444,7 +454,7 @@ export function controlRoom(room, token, action, index, now = Date.now()) {
 
 function results(room, question) {
   const values = [...room.votes.get(question.id).values()];
-  if (["poll", "quiz", "truefalse"].includes(question.type))
+  if (question.type === "poll" || canCompete(question.type))
     return question.options.map((text, index) => ({
       text,
       count: values.filter((value) => value === index).length,

@@ -1,6 +1,6 @@
 # Pulse
 
-A real-time audience app for live word clouds, multiple-choice polls, quizzes, true-or-false questions, ranking exercises, slider estimates, live Q&A, 100-point allocations, 2x2 grid placements, open responses, and title-and-description slides. Built with React, TypeScript, Vite, Express, and Socket.IO.
+A real-time audience app for live word clouds, multiple-choice polls, quizzes, true-or-false questions, two-truths-and-a-lie rounds, ranking exercises, slider estimates, live Q&A, 100-point allocations, 2x2 grid placements, open responses, and title-and-description slides. Built with React, TypeScript, Vite, Express, and Socket.IO.
 
 ## Run Locally
 
@@ -22,6 +22,10 @@ Open http://localhost:5173. The command starts Vite and the live server together
 4. Participants visit `/join`, enter the room code and a display name, and submit one response per question.
 5. Pause or reopen voting, reveal results, and advance questions. Each correct quiz or true-or-false answer earns up to 1,000 points: the faster the answer, the more points.
 6. End the session to view the summary and leaderboard. Export aggregated responses to CSV before stopping the server or starting another room.
+
+### Two truths and a lie
+
+Add a **Two truths and a lie** question from the **With an answer** group. The question is fixed ("Pick the one that is not true."); you write three statements and select which one is the lie. Statements can be up to 200 characters and are always shown in a single column. Players pick the statement they think is the lie, and it scores like a quiz (speed scoring applies unless you turn it off). On reveal, the lie is highlighted. In player-made sessions, each player writes their own two truths and a lie.
 
 ### Player-made questions
 
@@ -162,7 +166,7 @@ The versioned format is:
 }
 ```
 
-Supported types are `slide`, `cloud`, `poll`, `quiz`, `truefalse`, `ranking`, `slider`, `qna`, `points100`, `grid2x2`, and `text`; supported themes are `mint`, `peach`, `lilac`, and `sky`. `correct` is a zero-based option index for quizzes and true-or-false questions, and `null` otherwise (including for ranking, slider, Q&A, 100 Points, and 2x2 Grid, which have no single correct answer). Word clouds, open responses, Q&A, and slides use an empty `options` array; true-or-false questions require exactly 2 options; polls, quizzes, ranking, and 100 Points require 2 to 6; 2x2 Grid questions require exactly 4 options, used as axis labels in a fixed order (x-axis low, x-axis high, y-axis low, y-axis high) up to 40 characters each rather than selectable choices; slider questions also use an empty `options` array and instead require `sliderMin`, `sliderMax`, and `sliderStep` (`sliderMax` must exceed `sliderMin`, `sliderStep` must be positive, and the range must divide into at most 1000 steps). Slide questions require a non-empty `description` (up to 280 characters); other types omit it. Every type except `slide` and `qna` carries `revealMode`: `"onDone"` hides results (showing only the response count) until the host clicks Reveal results, and `"live"` shows responses as they arrive. It is optional on import and defaults to `"live"` for word clouds and `"onDone"` otherwise; any other value is rejected. Existing question and option limits apply to imports.
+Supported types are `slide`, `cloud`, `poll`, `quiz`, `truefalse`, `twotruths`, `ranking`, `slider`, `qna`, `points100`, `grid2x2`, and `text`; supported themes are `mint`, `peach`, `lilac`, and `sky`. `correct` is a zero-based option index for quizzes, true-or-false questions, and two-truths-and-a-lie questions (where it points at the lie), and `null` otherwise (including for ranking, slider, Q&A, 100 Points, and 2x2 Grid, which have no single correct answer). Word clouds, open responses, Q&A, and slides use an empty `options` array; true-or-false questions require exactly 2 options; two-truths-and-a-lie questions require exactly 3 statements (up to 200 characters each) and always use the title "Pick the one that is not true.", whatever title is supplied; polls, quizzes, ranking, and 100 Points require 2 to 6; 2x2 Grid questions require exactly 4 options, used as axis labels in a fixed order (x-axis low, x-axis high, y-axis low, y-axis high) up to 40 characters each rather than selectable choices; slider questions also use an empty `options` array and instead require `sliderMin`, `sliderMax`, and `sliderStep` (`sliderMax` must exceed `sliderMin`, `sliderStep` must be positive, and the range must divide into at most 1000 steps). Slide questions require a non-empty `description` (up to 280 characters); other types omit it. Every type except `slide` and `qna` carries `revealMode`: `"onDone"` hides results (showing only the response count) until the host clicks Reveal results, and `"live"` shows responses as they arrive. It is optional on import and defaults to `"live"` for word clouds and `"onDone"` otherwise; any other value is rejected. Existing question and option limits apply to imports.
 
 Newly hosted rooms are tracked with their source session, even across multiple runs. For sessions hosted before this feature, the currently recoverable host room is linked when its title and questions match the draft; older rooms whose host credentials were not retained cannot be recovered or deleted through the library and expire normally.
 

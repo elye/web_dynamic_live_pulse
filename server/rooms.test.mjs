@@ -10,6 +10,7 @@ import {
   snapshot,
   reactRoom,
   rooms,
+  twoTruthsTitle,
 } from "./rooms.mjs";
 import { createAppServer } from "./index.mjs";
 import { io as connect } from "socket.io-client";
@@ -297,6 +298,37 @@ test("true-or-false questions score like quizzes and require exactly two options
     { text: "False", count: 0 },
   ]);
   assert.ok(snapshot(room).leaderboard[0].score >= 990);
+  rooms.delete(room.code);
+});
+
+test("two truths and a lie has a fixed question, exactly 3 statements, and scores like a quiz", () => {
+  const twotruths = {
+    type: "twotruths",
+    title: "ignored",
+    options: ["I ran a marathon.", "I own a parrot.", "I was born in Mars."],
+    correct: 2,
+  };
+  assert.throws(
+    () => createRoom("Invalid", [{ ...twotruths, options: ["A", "B"] }]),
+    /exactly 3/,
+  );
+  assert.throws(
+    () => createRoom("Invalid", [{ ...twotruths, options: ["A", "B", ""] }]),
+    /exactly 3/,
+  );
+  assert.throws(() => createRoom("Invalid", [{ ...twotruths, correct: 3 }]), /correct/);
+  const room = createRoom("Icebreaker", [twotruths]);
+  assert.equal(room.questions[0].title, twoTruthsTitle);
+  const right = joinRoom(room, "Alex");
+  const wrong = joinRoom(room, "Sam");
+  controlRoom(room, room.hostToken, "start");
+  submitVote(room, right, room.questions[0].id, 2);
+  submitVote(room, wrong, room.questions[0].id, 0);
+  controlRoom(room, room.hostToken, "reveal");
+  assert.equal(snapshot(room).questions[0].correct, 2);
+  const board = snapshot(room).leaderboard;
+  assert.equal(board[0].name, "Alex");
+  assert.ok(board[0].score >= 990);
   rooms.delete(room.code);
 });
 

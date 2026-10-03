@@ -339,6 +339,64 @@ function HeartLayer() {
   );
 }
 
+/** A slider track showing every participant's value as a dot, with the average as a larger, brighter circle. */
+function SliderResults({
+  min,
+  max,
+  summary,
+  values,
+  average,
+}: {
+  min: number;
+  max: number;
+  summary: string;
+  values: { value: number; count: number }[];
+  average: number | null;
+}) {
+  const span = max - min || 1;
+  const toPercent = (value: number) =>
+    Math.min(100, Math.max(0, ((value - min) / span) * 100));
+  const tallest = Math.max(1, ...values.map((item) => item.count));
+  const step = Math.min(18, 110 / tallest);
+  return (
+    <div className="slider-results">
+      <div className="slider-average">
+        <SlidersHorizontal size={20} />
+        <strong>{summary}</strong>
+      </div>
+      <div className="slider-visual">
+        <div className="slider-dots">
+          {values.map((item) =>
+            Array.from({ length: item.count }, (_, stack) => (
+              <span
+                key={`${item.value}-${stack}`}
+                className="slider-dot"
+                style={{
+                  left: `${toPercent(item.value)}%`,
+                  bottom: `${stack * step}px`,
+                }}
+              />
+            )),
+          )}
+        </div>
+        <div className="slider-track">
+          {average !== null && (
+            <span
+              className="slider-average-dot"
+              style={{ left: `${toPercent(average)}%` }}
+              title={`Average ${average}`}
+            />
+          )}
+        </div>
+        <div className="slider-scale">
+          <span>{min}</span>
+          <span>{max}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** 2×2 grid axis title: as large as its box allows, smaller only when the text is long. */
 function GridAxisLabel({
   side,
@@ -423,14 +481,13 @@ function ResultsVisual({
       : results.reduce((sum, item) => sum + item.count, 0);
   if (concealed && question.type === "slider")
     return (
-      <div className="slider-results">
-        <div className="slider-average">
-          <SlidersHorizontal size={20} />
-          <strong>
-            {question.sliderMin ?? 0} to {question.sliderMax ?? 10}
-          </strong>
-        </div>
-      </div>
+      <SliderResults
+        min={question.sliderMin ?? 0}
+        max={question.sliderMax ?? 10}
+        summary={`${question.sliderMin ?? 0} to ${question.sliderMax ?? 10}`}
+        values={[]}
+        average={null}
+      />
     );
   if (
     !preview &&
@@ -510,25 +567,17 @@ function ResultsVisual({
   }
   if (question.type === "slider") {
     const [summary, ...distribution] = results;
-    const peak = Math.max(1, ...distribution.map((item) => item.count));
+    const average = Number(summary?.text.replace("Average: ", ""));
     return (
-      <div className="slider-results">
-        <div className="slider-average">
-          <SlidersHorizontal size={20} />
-          <strong>{summary?.text || "Average: 0"}</strong>
-        </div>
-        <div className="slider-histogram">
-          {distribution.map((item) => (
-            <div className="slider-bar" key={item.text}>
-              <div
-                className="slider-bar-fill"
-                style={{ height: `${(item.count / peak) * 100}%` }}
-              />
-              <small>{item.text}</small>
-            </div>
-          ))}
-        </div>
-      </div>
+      <SliderResults
+        min={question.sliderMin ?? 0}
+        max={question.sliderMax ?? 10}
+        summary={summary?.text || "Average: 0"}
+        values={distribution
+          .map((item) => ({ value: Number(item.text), count: item.count }))
+          .filter((item) => Number.isFinite(item.value))}
+        average={summary?.count && Number.isFinite(average) ? average : null}
+      />
     );
   }
   if (question.type === "grid2x2") {

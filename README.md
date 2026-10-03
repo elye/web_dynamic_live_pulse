@@ -71,7 +71,7 @@ Quiz and True or False questions have a **Faster answers score more** checkbox i
 The question picker and the editor's type menu split question types in two groups:
 
 1. **Without an answer** (title & description, word cloud, multiple choice, ranking, slider, Q&A, 100 Points, 2x2 Grid, open response): responses default to **Show on the fly** and nothing is scored.
-2. **With an answer** (Quiz, True or False): responses default to **Hide until done**, players are scored, and after **Show results** the host can click **Show ranking** to show the top 10 players to everyone before the next question. Untick **Show the top 10 ranking** in the editor to skip that step for a question (stored as `showRanking` in exported JSON; the ranking is never shown after the final question, which goes to the podium instead).
+2. **With an answer** (Quiz, True or False, Two truths and a lie): responses default to **Hide until done**, players are scored, and after **Show results** the host can click **Show ranking** to show the top 10 players to everyone before the next question. Untick **Show the top 10 ranking** in the editor to skip that step for a question (stored as `showRanking` in exported JSON; the ranking is never shown after the final question, which goes to the podium instead).
 
 The host's main button therefore steps through: **Show results** → **Show ranking** → **Next question**, and at the end **Show podium** → **Finish session**. Steps that don't apply to a question are skipped.
 
@@ -79,10 +79,10 @@ The host's main button therefore steps through: **Show results** → **Show rank
 
 Every question that collects responses (everything except title-and-description slides and Q&A, which is always live) has a **When should responses show?** setting in the question editor:
 
-- **Hide until done** (default for questions with an answer: Quiz and True or False): the host dashboard and participants see only how many people have responded. Click **Reveal results** to show the answers.
+- **Hide until done** (default for questions with an answer: Quiz, True or False, and Two truths and a lie): the host dashboard and participants see only how many people have responded. On the host slide, the answer options stay visible (for choice-based questions) but without percentages, bars, or counts. Click **Reveal results** to show the answers.
 - **Show on the fly** (default for every other type): responses appear live as people answer, for both the host and the audience. Correct answers and leaderboard scores for quizzes still wait for **Reveal results**.
 
-While a question's results are still hidden, the host's main button reads **Show results**: the first click reveals them, and only then does it become **Next question** (or **Finish session** on the last question). This prevents skipping past a question before the audience has seen the answers. Slides, Q&A, and questions set to **Show on the fly** have nothing left to reveal, so they go straight to the next question. The exception is Quiz and True or False, whose correct answer and scores still wait for **Show results** even in live mode. The small arrow in the slide controls still jumps directly.
+While a question's results are still hidden, the host's main button reads **Show results**: the first click reveals them, and only then does it become **Next question** (or **Finish session** on the last question). This prevents skipping past a question before the audience has seen the answers. Slides, Q&A, and questions set to **Show on the fly** have nothing left to reveal, so they go straight to the next question. The exception is Quiz, True or False, and Two truths and a lie, whose correct answer and scores still wait for **Show results** even in live mode. The small arrow in the slide controls still jumps directly.
 
 The choice is stored per question as `revealMode` (`"live"` or `"onDone"`) in exported JSON.
 

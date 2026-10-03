@@ -23,6 +23,17 @@ Open http://localhost:5173. The command starts Vite and the live server together
 5. Pause or reopen voting, reveal results, and advance questions. Each correct quiz or true-or-false answer earns up to 1,000 points: the faster the answer, the more points.
 6. End the session to view the summary and leaderboard. Export aggregated responses to CSV before stopping the server or starting another room.
 
+### Player-made questions
+
+Instead of building the questions yourself, select **New session**, then **Players write the questions**, and pick a question type (any type that collects a response, such as multiple choice, quiz, word cloud, or slider). Then:
+
+1. Players join the lobby as usual.
+2. Select **Ask players to write questions**. Every player's screen switches to a form for that question type (the quiz form includes the correct answer, the slider form the range, and so on). Players can edit their question until the game starts.
+3. The host sees how many questions are in and who is still writing. Select **Start game** once at least one question is in. Players who have not submitted are skipped.
+4. The submitted questions play in random order, like a normal session, with everyone answering. Each question shows the name of the player who wrote it on the stage, on participants' screens, and in the results. The host's usual controls (reveal, ranking, podium) all apply.
+
+A quiz or true-or-false author does not earn points for their own question. Player-made rooms are not drawn from the saved session: the studio questions are ignored, and JSON backups are unaffected.
+
 Add a **Title & description** question when you just need to show participants a title and a longer description without collecting any response, such as a welcome slide or a break announcement. Participants see only the title and description text and cannot submit anything; hosts see **Next question**/**Finish session** but no pause or reveal controls, since there is nothing to collect. Slide questions are skipped in the results summary.
 
 Add a **True or false** question for a quick binary call. It behaves like a quiz with exactly two fixed options ("True"/"False", editable), a correct answer, and up to 1,000 points for a correct response (faster answers score more).

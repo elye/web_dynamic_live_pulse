@@ -38,6 +38,8 @@ export type Question = {
   competitive?: boolean;
   /** Show the top-10 ranking after this question's results (answered questions only). */
   showRanking?: boolean;
+  /** Name of the player who wrote this question (player-made sessions only). */
+  author?: string;
   responses?: number;
   results?: { text: string; count: number; id?: string }[];
 };
@@ -69,6 +71,16 @@ export type Room = {
   competitive: boolean;
   /** At least one question has a correct answer, so players earn points. */
   scored: boolean;
+  /** Set when players write the questions themselves. */
+  crowd: {
+    kind: Kind;
+    /** The host has opened question writing. */
+    authoring: boolean;
+    /** Questions submitted so far (or in play, once started). */
+    submitted: number;
+    /** Names of players who have not submitted yet. */
+    waiting: string[];
+  } | null;
   leaderboard: { name: string; score: number }[];
 };
 export const labels: Record<Kind, string> = {

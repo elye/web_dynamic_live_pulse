@@ -3,6 +3,10 @@ import { randomInt, randomUUID } from "node:crypto";
 export const rooms = new Map();
 const kinds = new Set(["slide", "cloud", "poll", "quiz", "truefalse", "ranking", "slider", "qna", "points100", "grid2x2", "text"]);
 
+/** Question types players can write themselves (everything that collects a response). */
+export const crowdKinds = [...kinds].filter((kind) => kind !== "slide");
+const optionKinds = ["poll", "quiz", "truefalse", "ranking", "points100", "grid2x2"];
+
 const hasRevealMode = (type) => type !== "slide" && type !== "qna";
 /** Only questions with a correct answer can be competitive. */
 const canCompete = (type) => type === "quiz" || type === "truefalse";
@@ -101,9 +105,15 @@ export function validateQuestions(input) {
   });
 }
 
-export function createRoom(title, questions) {
+/**
+ * With `crowdKind`, players write the questions: the room starts with none, collects one
+ * question of that type from each player, then plays them in random order.
+ */
+export function createRoom(title, questions, crowdKind) {
   if (rooms.size >= 1000)
     throw new Error("The server is full. Please try again later.");
+  if (crowdKind !== undefined && !crowdKinds.includes(crowdKind))
+    throw new Error("Choose a question type for players to write.");
   let code;
   do {
     code = String(randomInt(100000, 1000000));
@@ -114,7 +124,12 @@ export function createRoom(title, questions) {
     title: String(title || "Untitled session")
       .trim()
       .slice(0, 100),
-    questions: validateQuestions(questions),
+    questions: crowdKind ? [] : validateQuestions(questions),
+    crowd: crowdKind
+      ? { kind: crowdKind, authoring: false, pending: new Map() }
+      : null,
+    /** Question id -> token of the player who wrote it. */
+    authors: new Map(),
     active: 0,
     started: false,
     accepting: false,
@@ -161,6 +176,50 @@ export function joinRoom(room, name, token) {
   const memberToken = randomUUID();
   room.participants.set(memberToken, { name: name.trim() });
   return memberToken;
+}
+
+/** Stores (or replaces) a player's own question while the host is collecting them. */
+export function submitAuthored(room, token, input) {
+  if (!room.participants.has(token))
+    throw new Error("Join the room before writing a question.");
+  if (!room.crowd)
+    throw new Error("This session does not use player-made questions.");
+  if (room.ended || room.started)
+    throw new Error("The questions are already in play.");
+  if (!room.crowd.authoring)
+    throw new Error("Wait for the host to open question writing.");
+  if (!input || typeof input !== "object" || Array.isArray(input))
+    throw new Error("Write your question first.");
+  const kind = room.crowd.kind;
+  const [question] = validateQuestions([
+    {
+      type: kind,
+      title: input.title,
+      options: optionKinds.includes(kind) ? input.options : [],
+      correct: input.correct,
+      sliderMin: input.sliderMin,
+      sliderMax: input.sliderMax,
+      sliderStep: input.sliderStep,
+    },
+  ]);
+  room.crowd.pending.set(token, question);
+}
+
+/** Turns the collected questions into the playable list, shuffled, each tagged with its author's name. */
+function buildCrowdQuestions(room) {
+  const entries = [...room.crowd.pending];
+  for (let index = entries.length - 1; index > 0; index--) {
+    const other = randomInt(index + 1);
+    [entries[index], entries[other]] = [entries[other], entries[index]];
+  }
+  room.questions = entries.map(([token, question]) => {
+    room.authors.set(question.id, token);
+    room.answeredAt.set(question.id, new Map());
+    room.votes.set(question.id, new Map());
+    room.upvotes.set(question.id, new Map());
+    return { ...question, author: room.participants.get(token).name };
+  });
+  room.crowd.pending.clear();
 }
 
 export function submitVote(room, token, questionId, value, now = Date.now()) {
@@ -252,6 +311,7 @@ function markOpened(room, now) {
 export function scoreAnswer(room, question, token) {
   if (
     !canCompete(question.type) ||
+    room.authors.get(question.id) === token ||
     room.votes.get(question.id).get(token) !== question.correct
   )
     return 0;
@@ -315,10 +375,26 @@ export function controlRoom(room, token, action, index, now = Date.now()) {
     throw new Error(
       "This session has ended. Start a new session to play again.",
     );
-  if (!room.started && !["start", "end"].includes(action))
+  if (!room.started && !["start", "end", "collect"].includes(action))
     throw new Error("Start the questions before changing or revealing them.");
-  if (action === "start") {
+  if (action === "collect") {
+    if (!room.crowd)
+      throw new Error("This session does not use player-made questions.");
     if (room.started) throw new Error("The questions have already started.");
+    if (room.crowd.authoring)
+      throw new Error("Players are already writing their questions.");
+    if (!room.participants.size)
+      throw new Error("Wait for players to join first.");
+    room.crowd.authoring = true;
+  } else if (action === "start") {
+    if (room.started) throw new Error("The questions have already started.");
+    if (room.crowd) {
+      if (!room.crowd.authoring)
+        throw new Error("Ask players to write their questions first.");
+      if (!room.crowd.pending.size)
+        throw new Error("Wait for at least one player to submit a question.");
+      buildCrowdQuestions(room);
+    }
     room.started = true;
     room.active = 0;
     room.accepting = room.questions[room.active].type !== "slide";
@@ -471,6 +547,20 @@ export function snapshot(room, host = false) {
     participantNames: [...room.participants.values()].map((member) => member.name),
     competitive: room.questions.some((question) => question.competitive === true),
     scored: room.questions.some((question) => canCompete(question.type)),
+    crowd: room.crowd
+      ? {
+          kind: room.crowd.kind,
+          authoring: room.crowd.authoring,
+          submitted: room.started
+            ? room.questions.length
+            : room.crowd.pending.size,
+          waiting: room.started
+            ? []
+            : [...room.participants]
+                .filter(([token]) => !room.crowd.pending.has(token))
+                .map(([, member]) => member.name),
+        }
+      : null,
     leaderboard,
     questions: room.questions.map((question, index) => ({
       ...question,

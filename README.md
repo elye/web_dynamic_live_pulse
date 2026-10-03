@@ -99,7 +99,7 @@ Select a word-cloud question in the studio and click the flask icon (**Simulate 
 ## Back Up, Restore, and Delete Sessions
 
 - **Export:** Select the download icon on a session in **My sessions**, or **Export session JSON** in the studio. This downloads a `.pulse.json` file containing the session title, theme, questions, choices, and correct quiz answers. Keep this file private if quiz answers are sensitive.
-- **Import:** In **My sessions**, select **Import JSON**, choose an exported file or paste its contents, then select **Import session**. Each import creates a new editable draft with new IDs, without replacing existing sessions. Import is disabled while hosting a live session.
+- **Import:** In **My sessions**, select **Import JSON**, choose an exported file or paste its contents, then select **Import session**. Each import creates a new editable draft with new IDs, without replacing existing sessions. Import is disabled while hosting a live session. To have an AI write the JSON for you, see [Generate a Session with AI](#generate-a-session-with-ai).
 - **Delete:** Select the trash icon on a session card or **Delete session** in the studio. The confirmation includes an **Export JSON** button for making a backup first. Confirming deletes all questions and linked hosted rooms, including live or ended rooms and their responses. Participants in deleted rooms are notified and can no longer submit or rejoin. Deleting the last session leaves an empty library, including after refresh.
 - Deleting a hosted session requires a connection to the server; if deletion fails, the local session is kept. Already expired or missing rooms do not prevent deletion. Draft-only sessions can be deleted without a server connection.
 
@@ -169,6 +169,32 @@ The versioned format is:
 Supported types are `slide`, `cloud`, `poll`, `quiz`, `truefalse`, `twotruths`, `ranking`, `slider`, `qna`, `points100`, `grid2x2`, and `text`; supported themes are `mint`, `peach`, `lilac`, and `sky`. `correct` is a zero-based option index for quizzes, true-or-false questions, and two-truths-and-a-lie questions (where it points at the lie), and `null` otherwise (including for ranking, slider, Q&A, 100 Points, and 2x2 Grid, which have no single correct answer). Word clouds, open responses, Q&A, and slides use an empty `options` array; true-or-false questions require exactly 2 options; two-truths-and-a-lie questions require exactly 3 statements (up to 200 characters each) and always use the title "Pick the one that is not true.", whatever title is supplied; polls, quizzes, ranking, and 100 Points require 2 to 6; 2x2 Grid questions require exactly 4 options, used as axis labels in a fixed order (x-axis low, x-axis high, y-axis low, y-axis high) up to 40 characters each rather than selectable choices; slider questions also use an empty `options` array and instead require `sliderMin`, `sliderMax`, and `sliderStep` (`sliderMax` must exceed `sliderMin`, `sliderStep` must be positive, and the range must divide into at most 1000 steps). Slide questions require a non-empty `description` (up to 280 characters); other types omit it. Every type except `slide` and `qna` carries `revealMode`: `"onDone"` hides results (showing only the response count) until the host clicks Reveal results, and `"live"` shows responses as they arrive. It is optional on import and defaults to `"live"` for word clouds and `"onDone"` otherwise; any other value is rejected. Existing question and option limits apply to imports.
 
 Newly hosted rooms are tracked with their source session, even across multiple runs. For sessions hosted before this feature, the currently recoverable host room is linked when its title and questions match the draft; older rooms whose host credentials were not retained cannot be recovered or deleted through the library and expire normally.
+
+## Generate a Session with AI
+
+Instead of building every question by hand, let any AI assistant write the session JSON for you. Pulse never calls an AI service itself: it only prepares the prompt, so there are no API keys, accounts, or costs inside the app.
+
+1. In **My sessions**, select **Generate with AI** (next to **Import JSON**). It is disabled while hosting a live session.
+2. Describe the session, or click an example to start from: **Survey**, **Quiz**, or **Survey + quiz**.
+   - A **survey** has no right answers and collects opinions, feelings, or ideas (word cloud, multiple choice, slider, ranking, Q&A, 100 Points, 2x2 Grid, open response).
+   - A **quiz** has correct answers, is scored, and feeds the leaderboard (Quiz, True or False, Two truths and a lie).
+   - You can combine both in one session, for example an onboarding survey followed by a short knowledge-check quiz. Title-and-description slides work in either.
+3. Select **Copy AI prompt**. The clipboard now holds a system prompt followed by your request. If the browser blocks clipboard access (for example on a plain-HTTP LAN address), the prompt appears in a read-only box to copy by hand.
+4. Paste it into any AI assistant (ChatGPT, Gemini, Claude, Google AI Studio, and so on). It should reply with only JSON.
+5. Copy that JSON, then select **Import JSON** (also linked from the confirmation message), paste it, and select **Import session**. The usual import validation applies, so a malformed reply shows an error instead of creating a session. If it fails, paste the error message back into the AI and ask it to fix the JSON.
+
+The generated JSON is an ordinary draft. Review and edit it in the studio before presenting.
+
+### How the prompt stays current
+
+The prompt is built in `src/aiPrompt.ts` and always lists every slide type the app supports, with its purpose, field rules, and an example JSON document containing one question of each type (generated from `newQuestion()`, so it follows the app's real defaults).
+
+When you add a new slide type:
+
+1. Add it to `Kind`, `labels`, and `newQuestion` in `src/model.ts`, and to the validation in `importSession` (and the server validation in `server/rooms.mjs`).
+2. Add an entry for it to `slideSpecs` in `src/aiPrompt.ts`. `slideSpecs` is typed as `Record<Kind, SlideSpec>`, so `tsc` and `npm run build` fail until you do. Describe when to use it and the exact field rules the importer enforces.
+
+The survey and quiz groups in the prompt come from `canCompete()`, so a type that can be scored is automatically described as a quiz type. `server/ai-prompt.test.mjs` checks that every type appears in the prompt, that every type is classified as survey, quiz, or slide, that the embedded example imports successfully, and that the user's request is appended.
 
 ## Join From Phones
 

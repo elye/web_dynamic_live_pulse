@@ -14,6 +14,8 @@ import {
   reactRoom,
   rooms,
   snapshot,
+  submitAuthored,
+  authoredDraft,
   submitUpvote,
   submitVote,
 } from "./rooms.mjs";
@@ -66,8 +68,8 @@ export function createAppServer() {
       for (const channel of socket.rooms)
         if (channel !== socket.id) socket.leave(channel);
     };
-    listen("room:create", ({ title, questions }) => {
-      const room = createRoom(title, questions);
+    listen("room:create", ({ title, questions, crowdKind }) => {
+      const room = createRoom(title, questions, crowdKind);
       leaveRooms();
       socket.join(`host:${room.code}`);
       return { token: room.hostToken, state: snapshot(room, true) };
@@ -88,10 +90,20 @@ export function createAppServer() {
       return {
         token: memberToken,
         state: snapshot(room),
-        submitted: room.questions
-          .filter((question) => room.votes.get(question.id).has(memberToken))
-          .map((question) => question.id),
+        submitted: [
+          ...room.questions
+            .filter((question) => room.votes.get(question.id).has(memberToken))
+            .map((question) => question.id),
+          ...(room.crowd?.pending.has(memberToken) ? ["crowd-authored"] : []),
+        ],
+        authored: authoredDraft(room, memberToken),
       };
+    });
+    listen("room:author", ({ code, token, question }) => {
+      const room = getRoom(code);
+      submitAuthored(room, token, question);
+      broadcast(room);
+      return {};
     });
     listen("room:vote", ({ code, token, questionId, value }) => {
       const room = getRoom(code);

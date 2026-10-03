@@ -1,6 +1,6 @@
 # Pulse
 
-A real-time audience app for live word clouds, multiple-choice polls, quizzes, true-or-false questions, ranking exercises, slider estimates, live Q&A, 100-point allocations, 2x2 grid placements, open responses, and title-and-description slides. Built with React, TypeScript, Vite, Express, and Socket.IO.
+A real-time audience app for live word clouds, multiple-choice polls, quizzes, true-or-false questions, two-truths-and-a-lie rounds, ranking exercises, slider estimates, live Q&A, 100-point allocations, 2x2 grid placements, open responses, and title-and-description slides. Built with React, TypeScript, Vite, Express, and Socket.IO.
 
 ## Run Locally
 
@@ -22,6 +22,21 @@ Open http://localhost:5173. The command starts Vite and the live server together
 4. Participants visit `/join`, enter the room code and a display name, and submit one response per question.
 5. Pause or reopen voting, reveal results, and advance questions. Each correct quiz or true-or-false answer earns up to 1,000 points: the faster the answer, the more points.
 6. End the session to view the summary and leaderboard. Export aggregated responses to CSV before stopping the server or starting another room.
+
+### Two truths and a lie
+
+Add a **Two truths and a lie** question from the **With an answer** group. The question is fixed ("Pick the one that is not true."); you write three statements and select which one is the lie. Statements can be up to 200 characters and are always shown in a single column. Players pick the statement they think is the lie, and it scores like a quiz (speed scoring applies unless you turn it off). On reveal, the lie is highlighted. In player-made sessions, each player writes their own two truths and a lie.
+
+### Player-made questions
+
+Instead of building the questions yourself, select **New session**, then **Players write the questions**, and pick a question type (any type that collects a response, such as multiple choice, quiz, word cloud, or slider). Then:
+
+1. Players join the lobby as usual.
+2. Select **Ask players to write questions**. Every player's screen switches to a form for that question type (the quiz form includes the correct answer, the slider form the range, and so on). Players can edit their question until the game starts.
+3. The host sees how many questions are in and who is still writing. Select **Start game** once at least one question is in. Players who have not submitted are skipped.
+4. The submitted questions play in random order, like a normal session, with everyone answering. Each question shows the name of the player who wrote it on the stage, on participants' screens, and in the results. The host's usual controls (reveal, ranking, podium) all apply.
+
+A quiz or true-or-false author does not earn points for their own question. Player-made rooms are not drawn from the saved session: the studio questions are ignored, and JSON backups are unaffected.
 
 Add a **Title & description** question when you just need to show participants a title and a longer description without collecting any response, such as a welcome slide or a break announcement. Participants see only the title and description text and cannot submit anything; hosts see **Next question**/**Finish session** but no pause or reveal controls, since there is nothing to collect. Slide questions are skipped in the results summary.
 
@@ -56,7 +71,7 @@ Quiz and True or False questions have a **Faster answers score more** checkbox i
 The question picker and the editor's type menu split question types in two groups:
 
 1. **Without an answer** (title & description, word cloud, multiple choice, ranking, slider, Q&A, 100 Points, 2x2 Grid, open response): responses default to **Show on the fly** and nothing is scored.
-2. **With an answer** (Quiz, True or False): responses default to **Hide until done**, players are scored, and after **Show results** the host can click **Show ranking** to show the top 10 players to everyone before the next question. Untick **Show the top 10 ranking** in the editor to skip that step for a question (stored as `showRanking` in exported JSON; the ranking is never shown after the final question, which goes to the podium instead).
+2. **With an answer** (Quiz, True or False, Two truths and a lie): responses default to **Hide until done**, players are scored, and after **Show results** the host can click **Show ranking** to show the top 10 players to everyone before the next question. Untick **Show the top 10 ranking** in the editor to skip that step for a question (stored as `showRanking` in exported JSON; the ranking is never shown after the final question, which goes to the podium instead).
 
 The host's main button therefore steps through: **Show results** → **Show ranking** → **Next question**, and at the end **Show podium** → **Finish session**. Steps that don't apply to a question are skipped.
 
@@ -64,10 +79,10 @@ The host's main button therefore steps through: **Show results** → **Show rank
 
 Every question that collects responses (everything except title-and-description slides and Q&A, which is always live) has a **When should responses show?** setting in the question editor:
 
-- **Hide until done** (default for questions with an answer: Quiz and True or False): the host dashboard and participants see only how many people have responded. Click **Reveal results** to show the answers.
+- **Hide until done** (default for questions with an answer: Quiz, True or False, and Two truths and a lie): the host dashboard and participants see only how many people have responded. On the host slide, the answer options stay visible (for choice-based questions) but without percentages, bars, or counts. Click **Reveal results** to show the answers.
 - **Show on the fly** (default for every other type): responses appear live as people answer, for both the host and the audience. Correct answers and leaderboard scores for quizzes still wait for **Reveal results**.
 
-While a question's results are still hidden, the host's main button reads **Show results**: the first click reveals them, and only then does it become **Next question** (or **Finish session** on the last question). This prevents skipping past a question before the audience has seen the answers. Slides, Q&A, and questions set to **Show on the fly** have nothing left to reveal, so they go straight to the next question. The exception is Quiz and True or False, whose correct answer and scores still wait for **Show results** even in live mode. The small arrow in the slide controls still jumps directly.
+While a question's results are still hidden, the host's main button reads **Show results**: the first click reveals them, and only then does it become **Next question** (or **Finish session** on the last question). This prevents skipping past a question before the audience has seen the answers. Slides, Q&A, and questions set to **Show on the fly** have nothing left to reveal, so they go straight to the next question. The exception is Quiz, True or False, and Two truths and a lie, whose correct answer and scores still wait for **Show results** even in live mode. The small arrow in the slide controls still jumps directly.
 
 The choice is stored per question as `revealMode` (`"live"` or `"onDone"`) in exported JSON.
 
@@ -151,7 +166,7 @@ The versioned format is:
 }
 ```
 
-Supported types are `slide`, `cloud`, `poll`, `quiz`, `truefalse`, `ranking`, `slider`, `qna`, `points100`, `grid2x2`, and `text`; supported themes are `mint`, `peach`, `lilac`, and `sky`. `correct` is a zero-based option index for quizzes and true-or-false questions, and `null` otherwise (including for ranking, slider, Q&A, 100 Points, and 2x2 Grid, which have no single correct answer). Word clouds, open responses, Q&A, and slides use an empty `options` array; true-or-false questions require exactly 2 options; polls, quizzes, ranking, and 100 Points require 2 to 6; 2x2 Grid questions require exactly 4 options, used as axis labels in a fixed order (x-axis low, x-axis high, y-axis low, y-axis high) up to 40 characters each rather than selectable choices; slider questions also use an empty `options` array and instead require `sliderMin`, `sliderMax`, and `sliderStep` (`sliderMax` must exceed `sliderMin`, `sliderStep` must be positive, and the range must divide into at most 1000 steps). Slide questions require a non-empty `description` (up to 280 characters); other types omit it. Every type except `slide` and `qna` carries `revealMode`: `"onDone"` hides results (showing only the response count) until the host clicks Reveal results, and `"live"` shows responses as they arrive. It is optional on import and defaults to `"live"` for word clouds and `"onDone"` otherwise; any other value is rejected. Existing question and option limits apply to imports.
+Supported types are `slide`, `cloud`, `poll`, `quiz`, `truefalse`, `twotruths`, `ranking`, `slider`, `qna`, `points100`, `grid2x2`, and `text`; supported themes are `mint`, `peach`, `lilac`, and `sky`. `correct` is a zero-based option index for quizzes, true-or-false questions, and two-truths-and-a-lie questions (where it points at the lie), and `null` otherwise (including for ranking, slider, Q&A, 100 Points, and 2x2 Grid, which have no single correct answer). Word clouds, open responses, Q&A, and slides use an empty `options` array; true-or-false questions require exactly 2 options; two-truths-and-a-lie questions require exactly 3 statements (up to 200 characters each) and always use the title "Pick the one that is not true.", whatever title is supplied; polls, quizzes, ranking, and 100 Points require 2 to 6; 2x2 Grid questions require exactly 4 options, used as axis labels in a fixed order (x-axis low, x-axis high, y-axis low, y-axis high) up to 40 characters each rather than selectable choices; slider questions also use an empty `options` array and instead require `sliderMin`, `sliderMax`, and `sliderStep` (`sliderMax` must exceed `sliderMin`, `sliderStep` must be positive, and the range must divide into at most 1000 steps). Slide questions require a non-empty `description` (up to 280 characters); other types omit it. Every type except `slide` and `qna` carries `revealMode`: `"onDone"` hides results (showing only the response count) until the host clicks Reveal results, and `"live"` shows responses as they arrive. It is optional on import and defaults to `"live"` for word clouds and `"onDone"` otherwise; any other value is rejected. Existing question and option limits apply to imports.
 
 Newly hosted rooms are tracked with their source session, even across multiple runs. For sessions hosted before this feature, the currently recoverable host room is linked when its title and questions match the draft; older rooms whose host credentials were not retained cannot be recovered or deleted through the library and expire normally.
 

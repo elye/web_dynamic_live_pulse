@@ -16,6 +16,17 @@ type Reply = {
   state?: Room;
   token?: string;
   submitted?: string[];
+  authored?: AuthoredQuestion;
+};
+
+/** A player-written question as the player's form holds it. */
+export type AuthoredQuestion = {
+  title: string;
+  options: string[];
+  correct: number | null;
+  sliderMin?: number;
+  sliderMax?: number;
+  sliderStep?: number;
 };
 
 export async function request(event: string, payload: object): Promise<Reply> {
@@ -48,6 +59,7 @@ export function useLive(
   const [connected, setConnected] = useState(socket.connected);
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState<string[]>([]);
+  const [authored, setAuthored] = useState<AuthoredQuestion | undefined>();
   const key = role === "host" ? "pulse:host" : `pulse:participant:${code}`;
   const notifyRestored = useEffectEvent((restoredRoom: Room) =>
     onRestored?.(restoredRoom),
@@ -64,6 +76,7 @@ export function useLive(
         );
         setRoom(reply.state!);
         setSubmitted(reply.submitted || []);
+        setAuthored(reply.authored);
         notifyRestored(reply.state!);
       } catch (failure) {
         setError((failure as Error).message);
@@ -111,6 +124,7 @@ export function useLive(
     setError,
     submitted,
     setSubmitted,
+    authored,
     credentials: () => readStored<Credentials | null>(key, null),
     saveCredentials: (credentials: Credentials | null) =>
       store(key, credentials),

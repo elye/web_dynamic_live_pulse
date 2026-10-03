@@ -15,6 +15,7 @@ import {
   Cloud,
   Copy,
   Download,
+  Drama,
   Expand,
   ExternalLink,
   Eye,
@@ -68,6 +69,7 @@ import {
   store,
   hasRevealMode,
   canCompete,
+  twoTruthsTitle,
 } from "./model";
 import type { Kind, Question, Room, Session } from "./model";
 import { onHeart, request, useLive } from "./live";
@@ -79,6 +81,7 @@ const icons: Record<Kind, LucideIcon> = {
   poll: BarChart3,
   quiz: Trophy,
   truefalse: ToggleLeft,
+  twotruths: Drama,
   ranking: ListOrdered,
   slider: SlidersHorizontal,
   qna: MessageCircleQuestion,
@@ -86,6 +89,8 @@ const icons: Record<Kind, LucideIcon> = {
   grid2x2: Grid2x2,
   text: MessageCircle,
 };
+/** Question types whose options are shown on the stage even while responses are hidden. */
+const optionKinds: Kind[] = ["poll", "quiz", "truefalse", "twotruths"];
 /** Questions without a right answer show responses live; questions with one are scored and ranked. */
 const kindGroups: { title: string; hint: string; kinds: Kind[] }[] = [
   {
@@ -106,9 +111,28 @@ const kindGroups: { title: string; hint: string; kinds: Kind[] }[] = [
   {
     title: "With an answer",
     hint: "Score players. Responses stay hidden and a top 10 ranking follows.",
-    kinds: ["quiz", "truefalse"],
+    kinds: ["quiz", "truefalse", "twotruths"],
   },
 ];
+/** Question types a player can write themselves (everything that collects a response). */
+const crowdGroups = kindGroups.map((group) => ({
+  ...group,
+  kinds: group.kinds.filter((kind) => kind !== "slide"),
+}));
+const kindHints: Record<Kind, string> = {
+  slide: "Just a title and description, no input needed",
+  cloud: "One word, a whole room of perspectives",
+  poll: "Let everyone pick their favorite",
+  quiz: "A correct answer and a little competition",
+  truefalse: "A binary choice: true or false",
+  twotruths: "Two true statements and one lie. Spot the lie",
+  ranking: "Drag to sort items from most to least important",
+  slider: "Estimate a numeric value on a sliding scale",
+  qna: "Participants submit and upvote live questions",
+  points100: "Allocate 100 points across a set of options to show priorities",
+  grid2x2: "Rate items across a two-axis graph",
+  text: "Give every thought a little room",
+};
 const samples = [
   { text: "excited", count: 12 },
   { text: "curious", count: 9 },
@@ -572,12 +596,15 @@ function PollResults({
   total,
   reveal,
   fit,
+  hideCounts = false,
 }: {
   question: Question;
   results: { text: string; count: number }[];
   total: number;
   reveal: boolean;
   fit: boolean;
+  /** Show the options only, without percentages, bars, or counts. */
+  hideCounts?: boolean;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const list = useRef<HTMLDivElement>(null);
@@ -586,20 +613,20 @@ function PollResults({
     list,
     11,
     38,
-    results.map((item) => item.text).join("\n") + (reveal ? "r" : "") + fit,
+    results.map((item) => item.text).join("\n") +
+      (reveal ? "r" : "") +
+      (hideCounts ? "h" : "") +
+      fit,
   );
   const content = (
     <div
       ref={list}
-      className={`poll-results ${results.length >= 4 ? "two-col" : ""}`}
+      className={`poll-results ${hideCounts ? "counts-hidden" : ""} ${results.length >= 4 && question.type !== "twotruths" ? "two-col" : ""}`}
     >
       {results.map((item, index) => {
         const isAnswer =
-          reveal &&
-          ["quiz", "truefalse"].includes(question.type) &&
-          question.correct === index;
-        const hasAnswer =
-          reveal && ["quiz", "truefalse"].includes(question.type);
+          reveal && canCompete(question.type) && question.correct === index;
+        const hasAnswer = reveal && canCompete(question.type);
         return (
         <div
           className={`poll-row ${isAnswer ? "is-answer" : hasAnswer ? "not-answer" : ""}`}
@@ -614,21 +641,27 @@ function PollResults({
               {isAnswer && (
                 <em className="answer-badge">
                   <Check size={18} strokeWidth={3} />
-                  Correct
+                  {question.type === "twotruths" ? "The lie" : "Correct"}
                 </em>
               )}
             </span>
-            <strong>
-              {total ? Math.round((item.count / total) * 100) : 0}%
-            </strong>
+            {!hideCounts && (
+              <strong>
+                {total ? Math.round((item.count / total) * 100) : 0}%
+              </strong>
+            )}
           </div>
-          <div className="bar-track">
-            <div
-              className={`bar-fill color-${index % 4}`}
-              style={{ width: `${total ? (item.count / total) * 100 : 0}%` }}
-            />
-          </div>
-          <small>{item.count} responses</small>
+          {!hideCounts && (
+            <>
+              <div className="bar-track">
+                <div
+                  className={`bar-fill color-${index % 4}`}
+                  style={{ width: `${total ? (item.count / total) * 100 : 0}%` }}
+                />
+              </div>
+              <small>{item.count} responses</small>
+            </>
+          )}
         </div>
         );
       })}
@@ -683,9 +716,18 @@ function QuestionStage({
       </div>
       <div className="stage-title">
         <span className="question-eyebrow">
-          {question.type === "slide"
-            ? "A MOMENT TOGETHER"
-            : "A LITTLE CHECK-IN, A BIG CONNECTION"}
+          {question.author ? (
+            <>
+              A QUESTION FROM{" "}
+              <strong className="author-name">
+                {question.author.toLocaleUpperCase()}
+              </strong>
+            </>
+          ) : question.type === "slide" ? (
+            "A MOMENT TOGETHER"
+          ) : (
+            "A LITTLE CHECK-IN, A BIG CONNECTION"
+          )}
         </span>
         <h2>{question.title}</h2>
         {question.type === "cloud" && <p>One word. All the feels.</p>}
@@ -698,13 +740,33 @@ function QuestionStage({
       hasRevealMode(question.type) &&
       question.revealMode !== "live" &&
       !reveal ? (
-        <div className="response-hidden">
-          <strong>{question.responses || 0}</strong>
-          <h3>
-            {question.responses === 1 ? "person has" : "people have"} responded
-          </h3>
-          <p>Results stay hidden until the host clicks Reveal results.</p>
-        </div>
+        optionKinds.includes(question.type) ? (
+          <>
+            <PollResults
+              question={question}
+              results={question.options.map((text) => ({ text, count: 0 }))}
+              total={0}
+              reveal={false}
+              fit
+              hideCounts
+            />
+            <p className="response-hidden-note">
+              <strong>{question.responses || 0}</strong>{" "}
+              {question.responses === 1 ? "person has" : "people have"}{" "}
+              responded. Results stay hidden until the host clicks Reveal
+              results.
+            </p>
+          </>
+        ) : (
+          <div className="response-hidden">
+            <strong>{question.responses || 0}</strong>
+            <h3>
+              {question.responses === 1 ? "person has" : "people have"}{" "}
+              responded
+            </h3>
+            <p>Results stay hidden until the host clicks Reveal results.</p>
+          </div>
+        )
       ) : (
         <ResultsVisual
           question={question}
@@ -819,9 +881,9 @@ function LobbyNames({ names, max }: { names: string[]; max: number }) {
   );
 }
 
-function WelcomeLobby({ room, theme = "mint", host = false, onStart, disabled }: { room: Room; theme?: string; host?: boolean; onStart?: () => void; disabled?: boolean }) {
+function WelcomeLobby({ room, theme = "mint", host = false, onStart, disabled, startLabel = "Start questions" }: { room: Room; theme?: string; host?: boolean; onStart?: () => void; disabled?: boolean; startLabel?: string }) {
   return <section className={`welcome-lobby theme-${theme} ${host ? "host-lobby" : ""}`} aria-label="Welcome lobby">
-    <div className="lobby-intro"><div><span className="eyebrow">{host ? "WELCOME TO THE SESSION" : room.title}</span><h1>{host ? room.title : "Welcome, everyone."}</h1><span className="lobby-waiting"><span className="live-indicator" />{host ? "The room is open" : "You're in"}</span></div>{host && <button className="button primary" disabled={disabled} onClick={onStart}><Play size={17} />Start questions</button>}</div>
+    <div className="lobby-intro"><div><span className="eyebrow">{host ? "WELCOME TO THE SESSION" : room.title}</span><h1>{host ? room.title : "Welcome, everyone."}</h1><span className="lobby-waiting"><span className="live-indicator" />{host ? "The room is open" : "You're in"}</span></div>{host && <button className="button primary" disabled={disabled} onClick={onStart}><Play size={17} />{startLabel}</button>}</div>
     <div className="lobby-body">
       {host ? <div className="lobby-join"><h2>Join the session</h2><ShareDetails code={room.code} inline /></div> : <div className="lobby-code"><span>ROOM CODE</span><strong>{room.code.slice(0, 3)} {room.code.slice(3)}</strong></div>}
       <div className="lobby-roster">
@@ -829,8 +891,208 @@ function WelcomeLobby({ room, theme = "mint", host = false, onStart, disabled }:
         <LobbyNames names={room.participantNames} max={host ? 120 : 56} />
       </div>
     </div>
-    <div className="lobby-footer"><span className="stage-brand"><Zap size={16} fill="currentColor" />pulse.</span><span>{host ? "Everyone in? Let's begin." : "Waiting for your host to start."}</span></div>
+    <div className="lobby-footer"><span className="stage-brand"><Zap size={16} fill="currentColor" />pulse.</span><span>{host ? "Everyone in? Let's begin." : room.crowd ? `Soon you'll write a ${labels[room.crowd.kind]} question.` : "Waiting for your host to start."}</span></div>
   </section>;
+}
+
+/** Host view while players write their questions. */
+function CrowdWriting({ room, theme, disabled, onStart }: { room: Room; theme: string; disabled: boolean; onStart: () => void }) {
+  const crowd = room.crowd!;
+  const total = Math.max(room.participants, 1);
+  return <section className={`welcome-lobby host-lobby crowd-writing theme-${theme}`} aria-label="Players are writing questions">
+    <div className="lobby-intro">
+      <div>
+        <span className="eyebrow">PLAYER-MADE QUESTIONS · {labels[crowd.kind].toLocaleUpperCase()}</span>
+        <h1>Players are writing their questions</h1>
+        <span className="lobby-waiting"><span className="live-indicator" />Each player adds one {labels[crowd.kind]} question</span>
+      </div>
+      <button className="button primary" disabled={disabled || crowd.submitted === 0} onClick={onStart}><Play size={17} />Start game</button>
+    </div>
+    <div className="lobby-body">
+      <div className="lobby-join"><h2>Join the session</h2><ShareDetails code={room.code} inline /></div>
+      <div className="lobby-roster">
+        <div className="lobby-count" role="status" aria-label="Questions submitted"><Users size={22} /><strong>{crowd.submitted}</strong><span>of {room.participants} {room.participants === 1 ? "question" : "questions"} in</span></div>
+        <div className="crowd-progress" aria-hidden="true"><span style={{ width: `${Math.min(100, (crowd.submitted / total) * 100)}%` }} /></div>
+        {crowd.waiting.length ? <div className="crowd-waiting"><h2>Still writing</h2><ul>{crowd.waiting.map((name, index) => <li key={index} className={`color-${index % 4}`}>{name}</li>)}</ul></div> : <div className="crowd-waiting"><h2>Everyone is ready</h2></div>}
+      </div>
+    </div>
+    <div className="lobby-footer"><span className="stage-brand"><Zap size={16} fill="currentColor" />pulse.</span><span>You can start as soon as at least one question is in. Questions are played in random order.</span></div>
+  </section>;
+}
+
+type Authored = {
+  title: string;
+  options: string[];
+  correct: number | null;
+  sliderMin?: number;
+  sliderMax?: number;
+  sliderStep?: number;
+};
+
+function blankAuthored(kind: Kind): Authored {
+  return {
+    title: "",
+    options:
+      kind === "truefalse"
+        ? ["True", "False"]
+        : kind === "twotruths"
+          ? ["", "", ""]
+        : kind === "grid2x2"
+          ? ["", "", "", ""]
+          : ["poll", "quiz", "ranking", "points100"].includes(kind)
+            ? ["", ""]
+            : [],
+    correct: canCompete(kind) ? 0 : null,
+    ...(kind === "slider" ? { sliderMin: 0, sliderMax: 10, sliderStep: 1 } : {}),
+  };
+}
+
+/** The form every player fills in to write their own question of the host's chosen type. */
+function AuthorQuestion({ kind, sent, busy, disabled, initial, draftKey, onSubmit }: { kind: Kind; sent: boolean; busy: boolean; disabled: boolean; initial?: Authored; draftKey: string; onSubmit: (question: Authored) => void }) {
+  // Unsent edits survive a refresh; otherwise the question already submitted is shown again.
+  const [draft, setDraft] = useState<Authored>(() => {
+    const saved = readStored<{ kind?: Kind; draft?: Authored } | null>(draftKey, null);
+    if (saved?.kind === kind && saved.draft) return saved.draft;
+    return initial ? { ...blankAuthored(kind), ...initial } : blankAuthored(kind);
+  });
+  const firstDraft = useRef(draft);
+  useEffect(() => {
+    if (draft !== firstDraft.current) store(draftKey, { kind, draft });
+  }, [draft, draftKey, kind]);
+  const isOptions = ["poll", "quiz", "ranking", "points100"].includes(kind);
+  const isTrueFalse = kind === "truefalse";
+  const isTwoTruths = kind === "twotruths";
+  const isGrid = kind === "grid2x2";
+  const isSlider = kind === "slider";
+  const hasCorrect = kind === "quiz" || isTrueFalse;
+  const sliderOk =
+    !isSlider ||
+    (typeof draft.sliderMin === "number" &&
+      typeof draft.sliderMax === "number" &&
+      typeof draft.sliderStep === "number" &&
+      draft.sliderStep > 0 &&
+      draft.sliderMax > draft.sliderMin &&
+      (draft.sliderMax - draft.sliderMin) / draft.sliderStep <= 1000);
+  const valid =
+    (isTwoTruths || !!draft.title.trim()) &&
+    sliderOk &&
+    (!(isOptions || isGrid || isTwoTruths) || draft.options.every((option) => option.trim())) &&
+    (!isOptions || (draft.options.length >= 2 && draft.options.length <= 6));
+  const setOption = (index: number, text: string) =>
+    setDraft({ ...draft, options: draft.options.map((value, position) => (position === index ? text : value)) });
+  const axisNames = ["X axis · left (low)", "X axis · right (high)", "Y axis · bottom (low)", "Y axis · top (high)"];
+  return (
+    <form
+      className="answer-form author-form"
+      onSubmit={(event) => {
+        event.preventDefault();
+        onSubmit({ ...draft, title: isTwoTruths ? twoTruthsTitle : draft.title.trim(), options: draft.options.map((option) => option.trim()) });
+      }}
+    >
+      <div>
+        <span className="eyebrow">YOUR TURN · {labels[kind].toLocaleUpperCase()}</span>
+        <h1>Write a question for everyone</h1>
+        <p className="author-note">Everyone writes one. All questions are played in random order and show who asked them.</p>
+      </div>
+      {sent && <div className="qna-submitted-note"><CheckCheck size={20} />Your question is in. You can still edit it until the host starts the game.</div>}
+      {isTwoTruths ? (
+        <p className="fixed-question">{twoTruthsTitle}</p>
+      ) : (
+        <label>
+          {isSlider ? "What should people estimate?" : isTrueFalse ? "Your true-or-false statement" : "Your question"}
+          <textarea required rows={3} maxLength={200} value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} placeholder="Type your question..." />
+          <small className="character-count">{draft.title.length} / 200</small>
+        </label>
+      )}
+      {isTwoTruths && (
+        <fieldset className="author-options two-truths-options">
+          <legend>Write two truths and one lie<span> · Select the lie</span></legend>
+          {draft.options.map((option, index) => (
+            <div className="option-editor" key={index}>
+              <input aria-label={`Statement ${index + 1} is the lie`} type="radio" name="author-correct" checked={draft.correct === index} onChange={() => setDraft({ ...draft, correct: index })} />
+              <input aria-label={`Statement ${index + 1}`} required maxLength={200} value={option} onChange={(event) => setOption(index, event.target.value)} placeholder={draft.correct === index ? "The lie" : "A true statement"} />
+            </div>
+          ))}
+        </fieldset>
+      )}
+      {isTrueFalse && (
+        <fieldset className="author-options">
+          <legend>Which is correct?</legend>
+          {draft.options.map((option, index) => (
+            <label className="author-choice" key={index}>
+              <input type="radio" name="author-correct" checked={draft.correct === index} onChange={() => setDraft({ ...draft, correct: index })} />
+              {option}
+            </label>
+          ))}
+        </fieldset>
+      )}
+      {isOptions && (
+        <fieldset className="author-options">
+          <legend>{kind === "ranking" ? "Items to rank" : kind === "points100" ? "Options to allocate points across" : "Answer options"}{hasCorrect && <span> · Select the correct answer</span>}</legend>
+          {draft.options.map((option, index) => (
+            <div className="option-editor" key={index}>
+              {hasCorrect ? (
+                <input aria-label={`Option ${index + 1} is correct`} type="radio" name="author-correct" checked={draft.correct === index} onChange={() => setDraft({ ...draft, correct: index })} />
+              ) : (
+                <span className={`option-letter color-${index % 4}`}>{String.fromCharCode(65 + index)}</span>
+              )}
+              <input aria-label={`Option ${index + 1}`} required maxLength={100} value={option} onChange={(event) => setOption(index, event.target.value)} />
+              <IconButton
+                icon={X}
+                label={`Remove option ${index + 1}`}
+                disabled={draft.options.length <= 2}
+                onClick={() =>
+                  setDraft({
+                    ...draft,
+                    options: draft.options.filter((_, position) => position !== index),
+                    correct: hasCorrect ? (draft.correct === index ? 0 : draft.correct! > index ? draft.correct! - 1 : draft.correct) : null,
+                  })
+                }
+              />
+            </div>
+          ))}
+          {draft.options.length < 6 && (
+            <button type="button" className="text-button" onClick={() => setDraft({ ...draft, options: [...draft.options, ""] })}>
+              <Plus size={16} />
+              Add option
+            </button>
+          )}
+        </fieldset>
+      )}
+      {isGrid && (
+        <fieldset className="author-options">
+          <legend>Axis labels</legend>
+          {axisNames.map((name, index) => (
+            <label key={index}>
+              {name}
+              <input required maxLength={40} value={draft.options[index] ?? ""} onChange={(event) => setOption(index, event.target.value)} />
+            </label>
+          ))}
+        </fieldset>
+      )}
+      {isSlider && (
+        <fieldset className="slider-range-editor">
+          <legend>Slider range</legend>
+          <label>
+            Minimum
+            <input type="number" required value={draft.sliderMin ?? 0} onChange={(event) => setDraft({ ...draft, sliderMin: Number(event.target.value) })} />
+          </label>
+          <label>
+            Maximum
+            <input type="number" required value={draft.sliderMax ?? 10} onChange={(event) => setDraft({ ...draft, sliderMax: Number(event.target.value) })} />
+          </label>
+          <label>
+            Step
+            <input type="number" required min={0.01} step="any" value={draft.sliderStep ?? 1} onChange={(event) => setDraft({ ...draft, sliderStep: Number(event.target.value) })} />
+          </label>
+          {!sliderOk && <small className="field-error">Maximum must be greater than minimum, step must be positive, and the range can have at most 1,000 steps.</small>}
+        </fieldset>
+      )}
+      <button className="button primary full" disabled={busy || disabled || !valid}>
+        {busy ? <LoaderCircle className="spin" size={18} /> : <><Send size={17} />{sent ? "Update my question" : "Submit my question"}</>}
+      </button>
+    </form>
+  );
 }
 
 function QuestionEditor({
@@ -844,6 +1106,7 @@ function QuestionEditor({
 }) {
   const [draft, setDraft] = useState(question);
   const isTrueFalse = draft.type === "truefalse";
+  const isTwoTruths = draft.type === "twotruths";
   const isRanking = draft.type === "ranking";
   const isPoints100 = draft.type === "points100";
   const isGrid2x2 = draft.type === "grid2x2";
@@ -852,9 +1115,10 @@ function QuestionEditor({
     draft.type === "poll" ||
     draft.type === "quiz" ||
     isTrueFalse ||
+    isTwoTruths ||
     isRanking ||
     isPoints100;
-  const hasCorrectAnswer = draft.type === "quiz" || isTrueFalse;
+  const hasCorrectAnswer = canCompete(draft.type);
   const isSlide = draft.type === "slide";
   const sliderRangeValid =
     !isSlider ||
@@ -889,7 +1153,7 @@ function QuestionEditor({
               setDraft({
                 ...newQuestion(type),
                 id: draft.id,
-                title: draft.title,
+                title: type === "twotruths" ? twoTruthsTitle : draft.title,
               });
             }}
           >
@@ -904,19 +1168,26 @@ function QuestionEditor({
             ))}
           </select>
         </label>
-        <label>
-          {isSlide ? "Title" : "Your question"}
-          <textarea
-            autoFocus
-            required
-            maxLength={200}
-            value={draft.title}
-            onChange={(event) =>
-              setDraft({ ...draft, title: event.target.value })
-            }
-            rows={3}
-          />
-        </label>
+        {isTwoTruths ? (
+          <div className="fixed-question">
+            <span>Question</span>
+            <p>{twoTruthsTitle}</p>
+          </div>
+        ) : (
+          <label>
+            {isSlide ? "Title" : "Your question"}
+            <textarea
+              autoFocus
+              required
+              maxLength={200}
+              value={draft.title}
+              onChange={(event) =>
+                setDraft({ ...draft, title: event.target.value })
+              }
+              rows={3}
+            />
+          </label>
+        )}
         {isSlide && (
           <label>
             Description
@@ -1106,14 +1377,24 @@ function QuestionEditor({
                 ? "Items to rank"
                 : isPoints100
                   ? "Options to allocate points across"
-                  : "Answer options"}{" "}
-              {hasCorrectAnswer && <span>· Select the correct answer</span>}
+                  : isTwoTruths
+                    ? "Two truths and one lie"
+                    : "Answer options"}{" "}
+              {hasCorrectAnswer && (
+                <span>
+                  · Select {isTwoTruths ? "the lie" : "the correct answer"}
+                </span>
+              )}
             </legend>
             {draft.options.map((option, index) => (
               <div className="option-editor" key={index}>
                 {hasCorrectAnswer ? (
                   <input
-                    aria-label={`Option ${index + 1} is correct`}
+                    aria-label={
+                      isTwoTruths
+                        ? `Option ${index + 1} is the lie`
+                        : `Option ${index + 1} is correct`
+                    }
                     type="radio"
                     name="correct"
                     checked={draft.correct === index}
@@ -1127,7 +1408,14 @@ function QuestionEditor({
                 <input
                   aria-label={`Option ${index + 1}`}
                   required
-                  maxLength={100}
+                  maxLength={isTwoTruths ? 200 : 100}
+                  placeholder={
+                    isTwoTruths
+                      ? draft.correct === index
+                        ? "The lie"
+                        : "A true statement"
+                      : undefined
+                  }
                   value={option}
                   onChange={(event) =>
                     setDraft({
@@ -1138,7 +1426,7 @@ function QuestionEditor({
                     })
                   }
                 />
-                {!isTrueFalse && (
+                {!isTrueFalse && !isTwoTruths && (
                   <IconButton
                     icon={X}
                     label={`Remove option ${index + 1}`}
@@ -1163,7 +1451,7 @@ function QuestionEditor({
                 )}
               </div>
             ))}
-            {!isTrueFalse && draft.options.length < 6 && (
+            {!isTrueFalse && !isTwoTruths && draft.options.length < 6 && (
               <button
                 type="button"
                 className="text-button"
@@ -1353,6 +1641,7 @@ function ResultsPage({ room }: { room: Room | null }) {
                 <span className="eyebrow">
                   {String(index + 1).padStart(2, "0")} /{" "}
                   {labels[question.type]}
+                  {question.author ? ` · by ${question.author}` : ""}
                 </span>
                 <h2>{question.title}</h2>
                 <ResultsVisual question={question} reveal />
@@ -1678,7 +1967,7 @@ function Host() {
       : "studio",
   );
   const [modal, setModal] = useState<
-    "add" | "share" | "new" | "help" | "end" | "delete" | "import" | "simulate" | null
+    "add" | "share" | "new" | "help" | "end" | "delete" | "import" | "simulate" | "crowd" | null
   >(null);
   const [deletingSession, setDeletingSession] = useState<Session | null>(null);
   const [deleteError, setDeleteError] = useState("");
@@ -1700,10 +1989,11 @@ function Host() {
     room && !room.ended
       ? room.active
       : Math.min(selected, session.questions.length - 1);
+  // A player-made room has no questions until the game starts; fall back to the draft.
   const question =
-    room && !room.ended
-      ? room.questions[room.active]
-      : session.questions[currentIndex];
+    (room && !room.ended ? room.questions[room.active] : undefined) ??
+    session.questions[Math.max(0, currentIndex)] ??
+    session.questions[0];
   const isLive = !!room && !room.ended;
   const inLobby = isLive && !room.started;
   const questionList = isLive ? room.questions : session.questions;
@@ -1838,6 +2128,37 @@ function Host() {
       });
       live.setRoom(reply.state!);
       setSelected(0);
+      setPresenting(true);
+      setModal(null);
+    } catch (failure) {
+      setError((failure as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function startCrowdSession(crowdKind: Kind) {
+    setBusy(true);
+    setError("");
+    try {
+      const created: Session = {
+        ...newSession("blank"),
+        title: "Player-made questions",
+      };
+      const reply = await request("room:create", {
+        title: created.title,
+        questions: created.questions,
+        crowdKind,
+      });
+      const credentials = { code: reply.state!.code, token: reply.token! };
+      live.saveCredentials({ ...credentials, sessionId: created.id });
+      setSessions((items) => [
+        ...items,
+        { ...created, hostedRooms: [credentials] },
+      ]);
+      setSessionId(created.id);
+      live.setRoom(reply.state!);
+      setSelected(0);
+      setPage("studio");
       setPresenting(true);
       setModal(null);
     } catch (failure) {
@@ -2112,7 +2433,11 @@ function Host() {
                       "DRAFT SESSION"
                     )}
                   </span>
-                  <span className="muted">{questionList.length} questions</span>
+                  <span className="muted">
+                    {isLive && room.crowd && !room.started
+                      ? `Player-made ${labels[room.crowd.kind]} questions`
+                      : `${questionList.length} questions`}
+                  </span>
                 </div>
                 <div className="title-row">
                   {isLive ? (
@@ -2172,7 +2497,7 @@ function Host() {
                     </span>
                     <button
                       className="button primary"
-                      onClick={startSession}
+                      onClick={() => void startSession()}
                       disabled={!connected || busy}
                     >
                       <Play size={16} fill="currentColor" />
@@ -2264,6 +2589,8 @@ function Host() {
                               <Trophy size={32} strokeWidth={1.5} />
                             ) : item.type === "truefalse" ? (
                               <ToggleLeft size={32} strokeWidth={1.5} />
+                            ) : item.type === "twotruths" ? (
+                              <Drama size={32} strokeWidth={1.5} />
                             ) : item.type === "ranking" ? (
                               <ListOrdered size={32} strokeWidth={1.5} />
                             ) : item.type === "slider" ? (
@@ -2355,7 +2682,7 @@ function Host() {
                   </div>
                 </div>
                 {modal === "simulate" && <CloudSimulator question={question} theme={session.theme} onClose={() => setModal(null)} />}
-                {inLobby ? <WelcomeLobby room={room} theme={session.theme} host disabled={busy || !connected} onStart={() => void control("start")} /> : isLive && (room.ranking || room.podium) ? <ScoreStage room={room} theme={session.theme} showQr={session.showQr !== false} /> : <QuestionStage
+                {inLobby && room.crowd?.authoring ? <CrowdWriting room={room} theme={session.theme} disabled={busy || !connected} onStart={() => void control("start")} /> : inLobby ? <WelcomeLobby room={room} theme={session.theme} host disabled={busy || !connected || (!!room.crowd && room.participants === 0)} startLabel={room.crowd ? "Ask players to write questions" : "Start questions"} onStart={() => void control(room.crowd ? "collect" : "start")} /> : isLive && (room.ranking || room.podium) ? <ScoreStage room={room} theme={session.theme} showQr={session.showQr !== false} /> : <QuestionStage
                   question={question}
                   preview={!isLive}
                   theme={session.theme}
@@ -2522,6 +2849,8 @@ function Host() {
                                 ? "A little friendly competition."
                                 : question.type === "truefalse"
                                   ? "A quick binary call: true or false."
+                                  : question.type === "twotruths"
+                                    ? "Two truths and a lie. Who can spot it?"
                                   : question.type === "ranking"
                                     ? "Drag to sort what matters most."
                                     : question.type === "slider"
@@ -2891,6 +3220,8 @@ function Host() {
                             ? "A correct answer and a little competition"
                             : kind === "truefalse"
                               ? "A binary choice: true or false"
+                              : kind === "twotruths"
+                                ? kindHints.twotruths
                               : kind === "ranking"
                                 ? "Drag to sort items from most to least important"
                                 : kind === "slider"
@@ -2915,6 +3246,46 @@ function Host() {
           ))}
         </Modal>
       )}
+      {modal === "crowd" && (
+        <Modal
+          title="What should players write?"
+          onClose={() => setModal(null)}
+        >
+          <p className="muted crowd-intro">
+            Players join, then each writes one question of the type you pick. The
+            questions are played in random order, each one showing who wrote it.
+          </p>
+          {crowdGroups.map((group) => (
+            <section className="question-group" key={group.title}>
+              <h3>{group.title}</h3>
+              <div className="question-types">
+                {group.kinds.map((kind) => {
+                  const Icon = icons[kind];
+                  return (
+                    <button
+                      key={kind}
+                      disabled={busy}
+                      onClick={() => {
+                        setModal(null);
+                        void startCrowdSession(kind);
+                      }}
+                    >
+                      <span className={`type-icon type-${kind}`}>
+                        <Icon size={25} />
+                      </span>
+                      <span>
+                        <strong>{labels[kind]}</strong>
+                        <small>{kindHints[kind]}</small>
+                      </span>
+                      <ArrowRight size={19} />
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+        </Modal>
+      )}
       {modal === "share" && room && (
         <ShareModal code={room.code} onClose={() => setModal(null)} />
       )}
@@ -2931,6 +3302,14 @@ function Host() {
           >
             <Plus size={17} />
             Start from scratch
+          </button>
+          <button
+            className="button secondary full"
+            disabled={!connected || busy}
+            onClick={() => setModal("crowd")}
+          >
+            <Shuffle size={17} />
+            Players write the questions
           </button>
         </Modal>
       )}
@@ -3141,6 +3520,25 @@ function Participant() {
     });
     setAnswerQuestion(question.id);
   }
+  async function sendAuthored(authored: Authored) {
+    setBusy(true);
+    setError("");
+    try {
+      await request("room:author", {
+        ...live.credentials(),
+        question: authored,
+      });
+      // The server now holds this question, so the saved draft is no longer needed.
+      store(`pulse:author-draft:${live.credentials()?.code}`, null);
+      live.setSubmitted((items) =>
+        items.includes("crowd-authored") ? items : [...items, "crowd-authored"],
+      );
+    } catch (failure) {
+      setError((failure as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
   async function sendHeart(kind = "heart") {
     setReactionTap((current) => ({ kind, count: current.count + 1 }));
     try {
@@ -3281,6 +3679,30 @@ function Participant() {
             <ArrowRight size={17} />
           </a>
         </main>
+      ) : !room.started && room.crowd?.authoring ? (
+        <main className="participant-session">
+          <div className="participant-room">
+            <span>{room.title}</span>
+            <span>
+              {room.code.slice(0, 3)} {room.code.slice(3)}
+            </span>
+          </div>
+          <AuthorQuestion
+            key={live.authored ? "restored" : "new"}
+            kind={room.crowd.kind}
+            initial={live.authored}
+            draftKey={`pulse:author-draft:${room.code}`}
+            sent={submitted.includes("crowd-authored")}
+            busy={busy}
+            disabled={!connected}
+            onSubmit={(authored) => void sendAuthored(authored)}
+          />
+          <ReactionBar
+            tap={reactionTap}
+            disabled={!connected}
+            onSend={(kind) => void sendHeart(kind)}
+          />
+        </main>
       ) : !room.started ? (
         <main className="participant-lobby">
           <WelcomeLobby room={room} />
@@ -3311,7 +3733,20 @@ function Participant() {
               QUESTION {room.active + 1} OF {room.questions.length} ·{" "}
               {labels[question.type]}
             </span>
+            {question.author && (
+              <span className="participant-author">
+                A question from{" "}
+                <strong className="author-name">{question.author}</strong>
+              </span>
+            )}
             <h1>{question.title}</h1>
+            {question.author &&
+              question.author === live.credentials()?.name &&
+              canCompete(question.type) && (
+                <p className="author-note">
+                  You wrote this one, so it won’t score for you.
+                </p>
+              )}
             {room.podium && room.scored ? (
               <div className="participant-reveal">
                 <Podium room={room} />
@@ -3410,10 +3845,11 @@ function Participant() {
                   The results are in
                 </span>
                 <ResultsVisual question={question} reveal />
-                {["quiz", "truefalse"].includes(question.type) && (
+                {canCompete(question.type) && (
                   <div className="correct-answer">
                     <Check size={20} />
-                    Correct answer: {question.options[question.correct!]}
+                    {question.type === "twotruths" ? "The lie" : "Correct answer"}:{" "}
+                    {question.options[question.correct!]}
                   </div>
                 )}
                 <p className="waiting-note">
@@ -3455,9 +3891,9 @@ function Participant() {
               </div>
             ) : (
               <form onSubmit={vote} className="answer-form">
-                {["poll", "quiz", "truefalse"].includes(question.type) ? (
+                {question.type === "poll" || canCompete(question.type) ? (
                   <div
-                    className={`answer-options ${question.options.length >= 4 ? "two-col" : ""}`}
+                    className={`answer-options ${question.options.length >= 4 && question.type !== "twotruths" ? "two-col" : ""}`}
                   >
                     {question.options.map((option, index) => (
                       <button

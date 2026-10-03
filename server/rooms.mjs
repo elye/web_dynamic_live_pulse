@@ -1,11 +1,17 @@
 import { randomInt, randomUUID } from "node:crypto";
 
 export const rooms = new Map();
-const kinds = new Set(["slide", "cloud", "poll", "quiz", "truefalse", "ranking", "slider", "qna", "points100", "grid2x2", "text"]);
+const kinds = new Set(["slide", "cloud", "poll", "quiz", "truefalse", "twotruths", "ranking", "slider", "qna", "points100", "grid2x2", "text"]);
+/** Two truths and a lie always asks the same question. */
+export const twoTruthsTitle = "Pick the one that is not true.";
+
+/** Question types players can write themselves (everything that collects a response). */
+export const crowdKinds = [...kinds].filter((kind) => kind !== "slide");
+const optionKinds = ["poll", "quiz", "truefalse", "twotruths", "ranking", "points100", "grid2x2"];
 
 const hasRevealMode = (type) => type !== "slide" && type !== "qna";
 /** Only questions with a correct answer can be competitive. */
-const canCompete = (type) => type === "quiz" || type === "truefalse";
+const canCompete = (type) => type === "quiz" || type === "truefalse" || type === "twotruths";
 /** Questions with a correct answer hide responses until revealed; all others show them live. */
 const defaultRevealMode = (type) => (canCompete(type) ? "onDone" : "live");
 export const baseScore = 500;
@@ -15,7 +21,9 @@ export const speedWindowMs = 20000;
 export function validateQuestions(input) {
   if (!Array.isArray(input) || !input.length || input.length > 30)
     throw new Error("Add between 1 and 30 questions.");
-  return input.map((question) => {
+  return input.map((raw) => {
+    const question =
+      raw?.type === "twotruths" ? { ...raw, title: twoTruthsTitle } : raw;
     if (
       !kinds.has(question.type) ||
       typeof question.title !== "string" ||
@@ -35,6 +43,12 @@ export function validateQuestions(input) {
     )
       throw new Error("A true-or-false question needs exactly 2 answer options.");
     if (
+      question.type === "twotruths" &&
+      (options.length !== 3 ||
+        options.some((option) => !option || option.length > 200))
+    )
+      throw new Error("Two truths and a lie needs exactly 3 statements, up to 200 characters each.");
+    if (
       question.type === "grid2x2" &&
       (options.length !== 4 ||
         options.some((option) => !option || option.length > 40))
@@ -48,7 +62,7 @@ export function validateQuestions(input) {
     )
       throw new Error("Add 2 to 6 answer options, up to 100 characters each.");
     if (
-      ["quiz", "truefalse"].includes(question.type) &&
+      canCompete(question.type) &&
       (!Number.isInteger(question.correct) ||
         question.correct < 0 ||
         question.correct >= options.length)
@@ -78,7 +92,7 @@ export function validateQuestions(input) {
       (typeof question.competitive !== "boolean" ||
         (question.competitive && !canCompete(question.type)))
     )
-      throw new Error("Only quiz and true-or-false questions can be competitive.");
+      throw new Error("Only quiz, true-or-false and two-truths questions can be competitive.");
     if (question.showRanking !== undefined && typeof question.showRanking !== "boolean")
       throw new Error("Show ranking must be true or false.");
     return {
@@ -96,14 +110,20 @@ export function validateQuestions(input) {
         ? { sliderMin: question.sliderMin, sliderMax: question.sliderMax, sliderStep: question.sliderStep }
         : {}),
       options,
-      correct: ["quiz", "truefalse"].includes(question.type) ? question.correct : null,
+      correct: canCompete(question.type) ? question.correct : null,
     };
   });
 }
 
-export function createRoom(title, questions) {
+/**
+ * With `crowdKind`, players write the questions: the room starts with none, collects one
+ * question of that type from each player, then plays them in random order.
+ */
+export function createRoom(title, questions, crowdKind) {
   if (rooms.size >= 1000)
     throw new Error("The server is full. Please try again later.");
+  if (crowdKind !== undefined && !crowdKinds.includes(crowdKind))
+    throw new Error("Choose a question type for players to write.");
   let code;
   do {
     code = String(randomInt(100000, 1000000));
@@ -114,7 +134,12 @@ export function createRoom(title, questions) {
     title: String(title || "Untitled session")
       .trim()
       .slice(0, 100),
-    questions: validateQuestions(questions),
+    questions: crowdKind ? [] : validateQuestions(questions),
+    crowd: crowdKind
+      ? { kind: crowdKind, authoring: false, pending: new Map() }
+      : null,
+    /** Question id -> token of the player who wrote it. */
+    authors: new Map(),
     active: 0,
     started: false,
     accepting: false,
@@ -163,6 +188,64 @@ export function joinRoom(room, name, token) {
   return memberToken;
 }
 
+/** Stores (or replaces) a player's own question while the host is collecting them. */
+export function submitAuthored(room, token, input) {
+  if (!room.participants.has(token))
+    throw new Error("Join the room before writing a question.");
+  if (!room.crowd)
+    throw new Error("This session does not use player-made questions.");
+  if (room.ended || room.started)
+    throw new Error("The questions are already in play.");
+  if (!room.crowd.authoring)
+    throw new Error("Wait for the host to open question writing.");
+  if (!input || typeof input !== "object" || Array.isArray(input))
+    throw new Error("Write your question first.");
+  const kind = room.crowd.kind;
+  const [question] = validateQuestions([
+    {
+      type: kind,
+      title: input.title,
+      options: optionKinds.includes(kind) ? input.options : [],
+      correct: input.correct,
+      sliderMin: input.sliderMin,
+      sliderMax: input.sliderMax,
+      sliderStep: input.sliderStep,
+    },
+  ]);
+  room.crowd.pending.set(token, question);
+}
+
+/** The question a player already submitted, in the shape of their form, so a refresh can restore it. */
+export function authoredDraft(room, token) {
+  const question = room.crowd?.pending.get(token);
+  if (!question) return undefined;
+  return {
+    title: question.title,
+    options: question.options ?? [],
+    correct: question.correct ?? null,
+    sliderMin: question.sliderMin,
+    sliderMax: question.sliderMax,
+    sliderStep: question.sliderStep,
+  };
+}
+
+/** Turns the collected questions into the playable list, shuffled, each tagged with its author's name. */
+function buildCrowdQuestions(room) {
+  const entries = [...room.crowd.pending];
+  for (let index = entries.length - 1; index > 0; index--) {
+    const other = randomInt(index + 1);
+    [entries[index], entries[other]] = [entries[other], entries[index]];
+  }
+  room.questions = entries.map(([token, question]) => {
+    room.authors.set(question.id, token);
+    room.answeredAt.set(question.id, new Map());
+    room.votes.set(question.id, new Map());
+    room.upvotes.set(question.id, new Map());
+    return { ...question, author: room.participants.get(token).name };
+  });
+  room.crowd.pending.clear();
+}
+
 export function submitVote(room, token, questionId, value, now = Date.now()) {
   if (!room.participants.has(token))
     throw new Error("Join the room before responding.");
@@ -172,7 +255,7 @@ export function submitVote(room, token, questionId, value, now = Date.now()) {
     throw new Error("This question is no longer accepting responses.");
   const votes = room.votes.get(question.id);
   if (votes.has(token)) throw new Error("Your response is already in.");
-  if (["poll", "quiz", "truefalse"].includes(question.type)) {
+  if (question.type === "poll" || canCompete(question.type)) {
     if (
       !Number.isInteger(value) ||
       value < 0 ||
@@ -252,6 +335,7 @@ function markOpened(room, now) {
 export function scoreAnswer(room, question, token) {
   if (
     !canCompete(question.type) ||
+    room.authors.get(question.id) === token ||
     room.votes.get(question.id).get(token) !== question.correct
   )
     return 0;
@@ -315,10 +399,26 @@ export function controlRoom(room, token, action, index, now = Date.now()) {
     throw new Error(
       "This session has ended. Start a new session to play again.",
     );
-  if (!room.started && !["start", "end"].includes(action))
+  if (!room.started && !["start", "end", "collect"].includes(action))
     throw new Error("Start the questions before changing or revealing them.");
-  if (action === "start") {
+  if (action === "collect") {
+    if (!room.crowd)
+      throw new Error("This session does not use player-made questions.");
     if (room.started) throw new Error("The questions have already started.");
+    if (room.crowd.authoring)
+      throw new Error("Players are already writing their questions.");
+    if (!room.participants.size)
+      throw new Error("Wait for players to join first.");
+    room.crowd.authoring = true;
+  } else if (action === "start") {
+    if (room.started) throw new Error("The questions have already started.");
+    if (room.crowd) {
+      if (!room.crowd.authoring)
+        throw new Error("Ask players to write their questions first.");
+      if (!room.crowd.pending.size)
+        throw new Error("Wait for at least one player to submit a question.");
+      buildCrowdQuestions(room);
+    }
     room.started = true;
     room.active = 0;
     room.accepting = room.questions[room.active].type !== "slide";
@@ -368,7 +468,7 @@ export function controlRoom(room, token, action, index, now = Date.now()) {
 
 function results(room, question) {
   const values = [...room.votes.get(question.id).values()];
-  if (["poll", "quiz", "truefalse"].includes(question.type))
+  if (question.type === "poll" || canCompete(question.type))
     return question.options.map((text, index) => ({
       text,
       count: values.filter((value) => value === index).length,
@@ -471,6 +571,20 @@ export function snapshot(room, host = false) {
     participantNames: [...room.participants.values()].map((member) => member.name),
     competitive: room.questions.some((question) => question.competitive === true),
     scored: room.questions.some((question) => canCompete(question.type)),
+    crowd: room.crowd
+      ? {
+          kind: room.crowd.kind,
+          authoring: room.crowd.authoring,
+          submitted: room.started
+            ? room.questions.length
+            : room.crowd.pending.size,
+          waiting: room.started
+            ? []
+            : [...room.participants]
+                .filter(([token]) => !room.crowd.pending.has(token))
+                .map(([, member]) => member.name),
+        }
+      : null,
     leaderboard,
     questions: room.questions.map((question, index) => ({
       ...question,

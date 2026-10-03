@@ -5,10 +5,12 @@ import {
   joinRoom,
   submitVote,
   submitUpvote,
+  submitAuthored,
   controlRoom,
   snapshot,
   reactRoom,
   rooms,
+  twoTruthsTitle,
 } from "./rooms.mjs";
 import { createAppServer } from "./index.mjs";
 import { io as connect } from "socket.io-client";
@@ -296,6 +298,37 @@ test("true-or-false questions score like quizzes and require exactly two options
     { text: "False", count: 0 },
   ]);
   assert.ok(snapshot(room).leaderboard[0].score >= 990);
+  rooms.delete(room.code);
+});
+
+test("two truths and a lie has a fixed question, exactly 3 statements, and scores like a quiz", () => {
+  const twotruths = {
+    type: "twotruths",
+    title: "ignored",
+    options: ["I ran a marathon.", "I own a parrot.", "I was born in Mars."],
+    correct: 2,
+  };
+  assert.throws(
+    () => createRoom("Invalid", [{ ...twotruths, options: ["A", "B"] }]),
+    /exactly 3/,
+  );
+  assert.throws(
+    () => createRoom("Invalid", [{ ...twotruths, options: ["A", "B", ""] }]),
+    /exactly 3/,
+  );
+  assert.throws(() => createRoom("Invalid", [{ ...twotruths, correct: 3 }]), /correct/);
+  const room = createRoom("Icebreaker", [twotruths]);
+  assert.equal(room.questions[0].title, twoTruthsTitle);
+  const right = joinRoom(room, "Alex");
+  const wrong = joinRoom(room, "Sam");
+  controlRoom(room, room.hostToken, "start");
+  submitVote(room, right, room.questions[0].id, 2);
+  submitVote(room, wrong, room.questions[0].id, 0);
+  controlRoom(room, room.hostToken, "reveal");
+  assert.equal(snapshot(room).questions[0].correct, 2);
+  const board = snapshot(room).leaderboard;
+  assert.equal(board[0].name, "Alex");
+  assert.ok(board[0].score >= 990);
   rooms.delete(room.code);
 });
 
@@ -648,4 +681,43 @@ test("deletion authorizes every room, removes live and ended rooms, and notifies
     audience.disconnect();
     await new Promise((resolve) => io.close(resolve));
   }
+});
+
+test("player-made questions: collect one per player, shuffle, credit the author, and never score the author", () => {
+  const room = createRoom("Crowd", [], "quiz");
+  assert.equal(room.questions.length, 0);
+  const alex = joinRoom(room, "Alex");
+  const sam = joinRoom(room, "Sam");
+  const kim = joinRoom(room, "Kim");
+  const mine = (title) => ({ title, options: ["Yes", "No"], correct: 0 });
+  assert.throws(() => submitAuthored(room, alex, mine("Too early?")), /host to open/);
+  assert.throws(() => controlRoom(room, room.hostToken, "start"), /write their questions first/);
+  controlRoom(room, room.hostToken, "collect");
+  assert.deepEqual(snapshot(room).crowd.waiting, ["Alex", "Sam", "Kim"]);
+  assert.throws(() => controlRoom(room, room.hostToken, "start"), /at least one/);
+  assert.throws(() => submitAuthored(room, alex, { title: "", options: ["a", "b"], correct: 0 }), /title/);
+  assert.throws(() => submitAuthored(room, alex, { title: "x", options: ["a", "b"], correct: 5 }), /correct/);
+  submitAuthored(room, alex, mine("Draft"));
+  submitAuthored(room, alex, mine("Alex's question"));
+  submitAuthored(room, sam, mine("Sam's question"));
+  const before = snapshot(room, true).crowd;
+  assert.equal(before.submitted, 2);
+  assert.deepEqual(before.waiting, ["Kim"]);
+  controlRoom(room, room.hostToken, "start");
+  assert.equal(room.started, true);
+  const snap = snapshot(room, true);
+  assert.deepEqual(snap.questions.map((q) => q.author).sort(), ["Alex", "Sam"]);
+  assert.deepEqual(snap.questions.map((q) => q.title).sort(), ["Alex's question", "Sam's question"]);
+  assert.throws(() => submitAuthored(room, kim, mine("Late")), /already in play/);
+  const authorToken = { Alex: alex, Sam: sam }[room.questions[0].author];
+  const otherToken = authorToken === alex ? sam : alex;
+  submitVote(room, authorToken, room.questions[0].id, 0);
+  submitVote(room, otherToken, room.questions[0].id, 0);
+  submitVote(room, kim, room.questions[0].id, 0);
+  const scores = Object.fromEntries(snapshot(room, true).leaderboard.map((e) => [e.name, e.score]));
+  assert.equal(scores[room.participants.get(authorToken).name], 0);
+  assert.ok(scores[room.participants.get(otherToken).name] >= 990);
+  assert.ok(scores.Kim >= 990);
+  assert.throws(() => createRoom("Bad", [], "slide"), /Choose a question type/);
+  rooms.delete(room.code);
 });

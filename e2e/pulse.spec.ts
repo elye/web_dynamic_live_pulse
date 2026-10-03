@@ -787,7 +787,11 @@ test("two audiences answer all types, reconnect, receive reveals, and finish wit
       audience.getByRole("heading", { name: "Your voice is in.", exact: true }),
     ).toBeVisible();
     // Questions with an answer hide responses until revealed.
-    await expect(page.locator(".response-hidden")).toContainText("1");
+    // The options stay on the slide, but the counts and bars are hidden.
+    await expect(page.locator(".poll-results.counts-hidden .poll-row")).toHaveCount(4);
+    await expect(page.locator(".poll-results.counts-hidden .bar-track")).toHaveCount(0);
+    await expect(page.locator(".poll-results.counts-hidden")).toContainText("Saturn");
+    await expect(page.locator(".response-hidden-note")).toContainText("1");
     await page
       .getByRole("button", { name: "Reveal results", exact: true })
       .click();
@@ -898,3 +902,116 @@ for (const width of [390, 768, 1440]) {
     await expect(page.getByRole("alert")).toContainText("Room not found");
   });
 }
+
+test("players write their own questions, which are then played in random order with the author's name", async ({
+  page,
+  browser,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "My sessions" }).click();
+  await page.getByRole("button", { name: "New session", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Players write the questions", exact: true })
+    .click();
+  await page.getByRole("dialog").getByRole("button", { name: /Multiple choice/ }).click();
+  await expect(page.locator(".host-lobby")).toBeVisible();
+  await page.getByRole("button", { name: "Invite audience", exact: true }).click();
+  const link = await page
+    .getByRole("dialog")
+    .getByLabel("Participant link", { exact: true })
+    .inputValue();
+  const code = new URL(link).searchParams.get("code")!;
+  await page.getByRole("button", { name: "Close dialog", exact: true }).click();
+  const players: { name: string; page: Page }[] = [];
+  for (const name of ["Alex", "Sam"]) {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const player = await context.newPage();
+    await player.goto(`/join?code=${code}`);
+    await player.getByLabel("Your name", { exact: true }).fill(name);
+    await player.getByRole("button", { name: "Join the room", exact: true }).click();
+    await expect(player.getByRole("heading", { name: "Welcome, everyone.", exact: true })).toBeVisible();
+    players.push({ name, page: player });
+  }
+  await expect(page.locator(".lobby-count strong")).toHaveText("2");
+  await page.getByRole("button", { name: "Ask players to write questions", exact: true }).click();
+  for (const { name, page: player } of players) {
+    await expect(player.getByRole("heading", { name: "Write a question for everyone" })).toBeVisible();
+    await player.getByRole("textbox", { name: /Your question/ }).fill(`${name}'s favourite?`);
+    await player.getByRole("textbox", { name: "Option 1", exact: true }).fill(`${name} one`);
+    await player.getByRole("textbox", { name: "Option 2", exact: true }).fill(`${name} two`);
+    await player.getByRole("button", { name: "Submit my question", exact: true }).click();
+    await expect(player.getByText(/Your question is in/)).toBeVisible();
+  }
+  await expect(page.locator(".crowd-writing .lobby-count strong")).toHaveText("2");
+  // A refresh keeps what the player already submitted in the form.
+  await players[0].page.reload();
+  await expect(players[0].page.getByText(/Your question is in/)).toBeVisible();
+  await expect(players[0].page.getByRole("textbox", { name: /Your question/ })).toHaveValue("Alex's favourite?");
+  await expect(players[0].page.getByRole("textbox", { name: "Option 1", exact: true })).toHaveValue("Alex one");
+  await expect(players[0].page.getByRole("textbox", { name: "Option 2", exact: true })).toHaveValue("Alex two");
+  await page.getByRole("button", { name: "Start game", exact: true }).click();
+  const seen: string[] = [];
+  for (let step = 0; step < 2; step++) {
+    if (step > 0) await expect(page.locator(".question-eyebrow .author-name").first()).not.toHaveText(seen[0]);
+    const author = (await page.locator(".question-eyebrow .author-name").first().innerText()).trim();
+    seen.push(author);
+    const name = author.charAt(0) + author.slice(1).toLowerCase();
+    await expect(page.getByRole("heading", { name: `${name}'s favourite?` })).toBeVisible();
+    for (const { page: player } of players) {
+      await expect(player.getByRole("heading", { name: `${name}'s favourite?` })).toBeVisible();
+      await expect(player.locator(".participant-author .author-name")).toHaveText(name);
+    }
+    if (step === 0) await page.getByRole("button", { name: "Next question", exact: true }).last().click();
+  }
+  expect(new Set(seen).size).toBe(2);
+});
+
+test("two truths and a lie uses a fixed question and shows the statements in a single column", async ({
+  page,
+  browser,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Add question", exact: true }).last().click();
+  await page.getByRole("dialog").getByRole("button", { name: /Two truths and a lie/ }).click();
+  const editor = page.getByRole("dialog");
+  await expect(editor.getByText("Pick the one that is not true.")).toBeVisible();
+  await expect(editor.getByRole("textbox", { name: "Your question", exact: true })).toHaveCount(0);
+  const long = (text: string) => `${text} and this statement is intentionally long so it needs the full width of the screen`;
+  await editor.getByLabel("Option 1", { exact: true }).fill(long("I once met a president"));
+  await editor.getByLabel("Option 2", { exact: true }).fill(long("I have run a marathon"));
+  await editor.getByLabel("Option 3", { exact: true }).fill(long("I have never eaten pizza"));
+  await editor.getByLabel("Option 3 is the lie", { exact: true }).check();
+  await expect(editor.getByRole("button", { name: /Remove option/ })).toHaveCount(0);
+  await editor.getByRole("button", { name: "Save question", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Pick the one that is not true.", exact: true })).toBeVisible();
+  for (let step = 0; step < 4; step++)
+    await page.getByRole("button", { name: "Move question up", exact: true }).click();
+  await expect(page.locator(".question-thumbnail.selected .thumbnail-number")).toHaveText("01");
+
+  await page.getByRole("button", { name: "Present live", exact: true }).click();
+  await page.getByRole("button", { name: "Invite audience", exact: true }).click();
+  const link = await page.getByRole("dialog").getByLabel("Participant link", { exact: true }).inputValue();
+  const code = new URL(link).searchParams.get("code")!;
+  await page.getByRole("button", { name: "Close dialog", exact: true }).click();
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const player = await context.newPage();
+  await player.goto(`/join?code=${code}`);
+  await player.getByLabel("Your name", { exact: true }).fill("Alex");
+  await player.getByRole("button", { name: "Join the room", exact: true }).click();
+  await expect(page.locator(".lobby-count strong")).toHaveText("1");
+  await page.getByRole("button", { name: "Start questions", exact: true }).click();
+  await expect(player.getByRole("heading", { name: "Pick the one that is not true." })).toBeVisible();
+  const options = player.locator(".answer-option");
+  await expect(options).toHaveCount(3);
+  await expect(player.locator(".answer-options.two-col")).toHaveCount(0);
+  const boxes = await options.evaluateAll((items) => items.map((item) => item.getBoundingClientRect()));
+  expect(new Set(boxes.map((box) => Math.round(box.left))).size).toBe(1);
+  expect(boxes[1].top).toBeGreaterThan(boxes[0].bottom - 1);
+  expect(boxes[2].top).toBeGreaterThan(boxes[1].bottom - 1);
+  await options.nth(2).click();
+  await player.getByRole("button", { name: "Send response", exact: true }).click();
+  await page.getByRole("button", { name: "Reveal results", exact: true }).click();
+  await expect(page.locator(".answer-badge")).toHaveText(/The lie/);
+  await expect(player.getByText(/The lie: .*never eaten pizza/)).toBeVisible();
+});

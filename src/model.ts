@@ -4,6 +4,7 @@ export type Kind =
   | "poll"
   | "quiz"
   | "truefalse"
+  | "twotruths"
   | "ranking"
   | "slider"
   | "qna"
@@ -18,8 +19,10 @@ export function hasRevealMode(type: Kind) {
 }
 /** Only questions with a correct answer can be scored and ranked. */
 export function canCompete(type: Kind) {
-  return type === "quiz" || type === "truefalse";
+  return type === "quiz" || type === "truefalse" || type === "twotruths";
 }
+/** Two truths and a lie always asks the same question. */
+export const twoTruthsTitle = "Pick the one that is not true.";
 /** Questions with an answer hide responses until the host reveals them; all others show them live. */
 export function defaultRevealMode(type: Kind): RevealMode {
   return canCompete(type) ? "onDone" : "live";
@@ -38,6 +41,8 @@ export type Question = {
   competitive?: boolean;
   /** Show the top-10 ranking after this question's results (answered questions only). */
   showRanking?: boolean;
+  /** Name of the player who wrote this question (player-made sessions only). */
+  author?: string;
   responses?: number;
   results?: { text: string; count: number; id?: string }[];
 };
@@ -69,6 +74,16 @@ export type Room = {
   competitive: boolean;
   /** At least one question has a correct answer, so players earn points. */
   scored: boolean;
+  /** Set when players write the questions themselves. */
+  crowd: {
+    kind: Kind;
+    /** The host has opened question writing. */
+    authoring: boolean;
+    /** Questions submitted so far (or in play, once started). */
+    submitted: number;
+    /** Names of players who have not submitted yet. */
+    waiting: string[];
+  } | null;
   leaderboard: { name: string; score: number }[];
 };
 export const labels: Record<Kind, string> = {
@@ -77,6 +92,7 @@ export const labels: Record<Kind, string> = {
   poll: "Multiple choice",
   quiz: "Quiz",
   truefalse: "True or false",
+  twotruths: "Two truths and a lie",
   ranking: "Ranking",
   slider: "Slider",
   qna: "Q&A",
@@ -100,6 +116,7 @@ export function newQuestion(type: Kind): Question {
       poll: "What should we focus on next?",
       quiz: "Which planet has the most moons?",
       truefalse: "Octopuses have three hearts.",
+      twotruths: twoTruthsTitle,
       ranking: "Rank these from most to least important",
       slider: "How many hours a day do you spend in meetings?",
       qna: "Ask us anything",
@@ -131,6 +148,12 @@ export function newQuestion(type: Kind): Question {
             ]
           : type === "truefalse"
             ? ["True", "False"]
+            : type === "twotruths"
+              ? [
+                  "I have climbed a mountain.",
+                  "I speak three languages.",
+                  "I have met a famous person.",
+                ]
             : type === "ranking"
               ? ["Speed", "Quality", "Cost", "Communication"]
               : type === "points100"
@@ -138,7 +161,14 @@ export function newQuestion(type: Kind): Question {
                 : type === "grid2x2"
                   ? ["Low urgency", "High urgency", "Low impact", "High impact"]
                   : [],
-    correct: type === "quiz" ? 1 : type === "truefalse" ? 0 : null,
+    correct:
+      type === "quiz"
+        ? 1
+        : type === "truefalse"
+          ? 0
+          : type === "twotruths"
+            ? 2
+            : null,
   };
 }
 
@@ -292,6 +322,7 @@ export function importSession(json: string): Session {
             "poll",
             "quiz",
             "truefalse",
+            "twotruths",
             "ranking",
             "slider",
             "qna",
@@ -331,6 +362,16 @@ export function importSession(json: string): Session {
           )
         )
           throw new Error(prefix + "add exactly 2 nonempty options.");
+      } else if (question.type === "twotruths") {
+        if (
+          options.length !== 3 ||
+          options.some(
+            (option: string) => !option.trim() || option.length > 200,
+          )
+        )
+          throw new Error(
+            prefix + "add exactly 3 nonempty statements, up to 200 characters each.",
+          );
       } else if (question.type === "grid2x2") {
         if (
           options.length !== 4 ||
@@ -356,7 +397,7 @@ export function importSession(json: string): Session {
       } else if (options.length)
         throw new Error(prefix + "this question type must have empty options.");
       if (
-        ["quiz", "truefalse"].includes(question.type) &&
+        canCompete(question.type as Kind) &&
         (typeof question.correct !== "number" ||
           !Number.isInteger(question.correct) ||
           question.correct < 0 ||
@@ -394,7 +435,7 @@ export function importSession(json: string): Session {
           (question.competitive && !canCompete(question.type as Kind)))
       )
         throw new Error(
-          prefix + "only quiz and truefalse questions can set competitive to true.",
+          prefix + "only quiz, truefalse and twotruths questions can set competitive to true.",
         );
       if (
         question.showRanking !== undefined &&
@@ -404,7 +445,8 @@ export function importSession(json: string): Session {
       return {
         id: createId(),
         type: question.type as Kind,
-        title: question.title.trim(),
+        title:
+          question.type === "twotruths" ? twoTruthsTitle : question.title.trim(),
         ...(canCompete(question.type as Kind)
           ? {
               competitive: question.competitive !== false,
@@ -429,7 +471,7 @@ export function importSession(json: string): Session {
             }
           : {}),
         options: options.map((option: string) => option.trim()),
-        correct: ["quiz", "truefalse"].includes(question.type)
+        correct: canCompete(question.type as Kind)
           ? (question.correct as number)
           : null,
       };

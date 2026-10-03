@@ -89,6 +89,8 @@ const icons: Record<Kind, LucideIcon> = {
   grid2x2: Grid2x2,
   text: MessageCircle,
 };
+/** Question types whose options are shown on the stage even while responses are hidden. */
+const optionKinds: Kind[] = ["poll", "quiz", "truefalse", "twotruths"];
 /** Questions without a right answer show responses live; questions with one are scored and ranked. */
 const kindGroups: { title: string; hint: string; kinds: Kind[] }[] = [
   {
@@ -594,12 +596,15 @@ function PollResults({
   total,
   reveal,
   fit,
+  hideCounts = false,
 }: {
   question: Question;
   results: { text: string; count: number }[];
   total: number;
   reveal: boolean;
   fit: boolean;
+  /** Show the options only, without percentages, bars, or counts. */
+  hideCounts?: boolean;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const list = useRef<HTMLDivElement>(null);
@@ -608,12 +613,15 @@ function PollResults({
     list,
     11,
     38,
-    results.map((item) => item.text).join("\n") + (reveal ? "r" : "") + fit,
+    results.map((item) => item.text).join("\n") +
+      (reveal ? "r" : "") +
+      (hideCounts ? "h" : "") +
+      fit,
   );
   const content = (
     <div
       ref={list}
-      className={`poll-results ${results.length >= 4 && question.type !== "twotruths" ? "two-col" : ""}`}
+      className={`poll-results ${hideCounts ? "counts-hidden" : ""} ${results.length >= 4 && question.type !== "twotruths" ? "two-col" : ""}`}
     >
       {results.map((item, index) => {
         const isAnswer =
@@ -637,17 +645,23 @@ function PollResults({
                 </em>
               )}
             </span>
-            <strong>
-              {total ? Math.round((item.count / total) * 100) : 0}%
-            </strong>
+            {!hideCounts && (
+              <strong>
+                {total ? Math.round((item.count / total) * 100) : 0}%
+              </strong>
+            )}
           </div>
-          <div className="bar-track">
-            <div
-              className={`bar-fill color-${index % 4}`}
-              style={{ width: `${total ? (item.count / total) * 100 : 0}%` }}
-            />
-          </div>
-          <small>{item.count} responses</small>
+          {!hideCounts && (
+            <>
+              <div className="bar-track">
+                <div
+                  className={`bar-fill color-${index % 4}`}
+                  style={{ width: `${total ? (item.count / total) * 100 : 0}%` }}
+                />
+              </div>
+              <small>{item.count} responses</small>
+            </>
+          )}
         </div>
         );
       })}
@@ -726,13 +740,33 @@ function QuestionStage({
       hasRevealMode(question.type) &&
       question.revealMode !== "live" &&
       !reveal ? (
-        <div className="response-hidden">
-          <strong>{question.responses || 0}</strong>
-          <h3>
-            {question.responses === 1 ? "person has" : "people have"} responded
-          </h3>
-          <p>Results stay hidden until the host clicks Reveal results.</p>
-        </div>
+        optionKinds.includes(question.type) ? (
+          <>
+            <PollResults
+              question={question}
+              results={question.options.map((text) => ({ text, count: 0 }))}
+              total={0}
+              reveal={false}
+              fit
+              hideCounts
+            />
+            <p className="response-hidden-note">
+              <strong>{question.responses || 0}</strong>{" "}
+              {question.responses === 1 ? "person has" : "people have"}{" "}
+              responded. Results stay hidden until the host clicks Reveal
+              results.
+            </p>
+          </>
+        ) : (
+          <div className="response-hidden">
+            <strong>{question.responses || 0}</strong>
+            <h3>
+              {question.responses === 1 ? "person has" : "people have"}{" "}
+              responded
+            </h3>
+            <p>Results stay hidden until the host clicks Reveal results.</p>
+          </div>
+        )
       ) : (
         <ResultsVisual
           question={question}

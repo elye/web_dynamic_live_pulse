@@ -2378,6 +2378,23 @@ textarea {
   font-size: 15px;
   opacity: 0.65;
 }
+.response-hidden-note {
+  text-align: center;
+  font-size: 14px;
+  opacity: 0.7;
+  margin: 0 0 6px;
+}
+.response-hidden-note strong {
+  font-size: 1.3em;
+  font-weight: 700;
+}
+.poll-results.counts-hidden .poll-row {
+  background: #ffffff66;
+  border-color: #ffffff99;
+}
+.poll-results.counts-hidden .poll-label {
+  justify-content: flex-start;
+}
 .reveal-mode-editor {
   display: flex;
   flex-direction: column;

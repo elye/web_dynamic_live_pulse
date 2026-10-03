@@ -787,7 +787,11 @@ test("two audiences answer all types, reconnect, receive reveals, and finish wit
       audience.getByRole("heading", { name: "Your voice is in.", exact: true }),
     ).toBeVisible();
     // Questions with an answer hide responses until revealed.
-    await expect(page.locator(".response-hidden")).toContainText("1");
+    // The options stay on the slide, but the counts and bars are hidden.
+    await expect(page.locator(".poll-results.counts-hidden .poll-row")).toHaveCount(4);
+    await expect(page.locator(".poll-results.counts-hidden .bar-track")).toHaveCount(0);
+    await expect(page.locator(".poll-results.counts-hidden")).toContainText("Saturn");
+    await expect(page.locator(".response-hidden-note")).toContainText("1");
     await page
       .getByRole("button", { name: "Reveal results", exact: true })
       .click();

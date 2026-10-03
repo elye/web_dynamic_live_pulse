@@ -531,6 +531,7 @@ function ResultsVisual({
     !preview &&
     !total &&
     !optionKinds.includes(question.type) &&
+    question.type !== "slider" &&
     !(concealed && question.type === "grid2x2")
   )
     return (
@@ -610,7 +611,11 @@ function ResultsVisual({
       <SliderResults
         min={question.sliderMin ?? 0}
         max={question.sliderMax ?? 10}
-        summary={summary?.text || "Average: 0"}
+        summary={
+          summary?.count
+            ? summary.text
+            : `${question.sliderMin ?? 0} to ${question.sliderMax ?? 10}`
+        }
         values={distribution
           .map((item) => ({ value: Number(item.text), count: item.count }))
           .filter((item) => Number.isFinite(item.value))}

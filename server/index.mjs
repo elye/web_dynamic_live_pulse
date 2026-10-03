@@ -15,6 +15,7 @@ import {
   rooms,
   snapshot,
   submitAuthored,
+  authoredDraft,
   submitUpvote,
   submitVote,
 } from "./rooms.mjs";
@@ -95,6 +96,7 @@ export function createAppServer() {
             .map((question) => question.id),
           ...(room.crowd?.pending.has(memberToken) ? ["crowd-authored"] : []),
         ],
+        authored: authoredDraft(room, memberToken),
       };
     });
     listen("room:author", ({ code, token, question }) => {

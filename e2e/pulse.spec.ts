@@ -944,6 +944,12 @@ test("players write their own questions, which are then played in random order w
     await expect(player.getByText(/Your question is in/)).toBeVisible();
   }
   await expect(page.locator(".crowd-writing .lobby-count strong")).toHaveText("2");
+  // A refresh keeps what the player already submitted in the form.
+  await players[0].page.reload();
+  await expect(players[0].page.getByText(/Your question is in/)).toBeVisible();
+  await expect(players[0].page.getByRole("textbox", { name: /Your question/ })).toHaveValue("Alex's favourite?");
+  await expect(players[0].page.getByRole("textbox", { name: "Option 1", exact: true })).toHaveValue("Alex one");
+  await expect(players[0].page.getByRole("textbox", { name: "Option 2", exact: true })).toHaveValue("Alex two");
   await page.getByRole("button", { name: "Start game", exact: true }).click();
   const seen: string[] = [];
   for (let step = 0; step < 2; step++) {

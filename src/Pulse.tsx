@@ -948,8 +948,17 @@ function blankAuthored(kind: Kind): Authored {
 }
 
 /** The form every player fills in to write their own question of the host's chosen type. */
-function AuthorQuestion({ kind, sent, busy, disabled, onSubmit }: { kind: Kind; sent: boolean; busy: boolean; disabled: boolean; onSubmit: (question: Authored) => void }) {
-  const [draft, setDraft] = useState<Authored>(() => blankAuthored(kind));
+function AuthorQuestion({ kind, sent, busy, disabled, initial, draftKey, onSubmit }: { kind: Kind; sent: boolean; busy: boolean; disabled: boolean; initial?: Authored; draftKey: string; onSubmit: (question: Authored) => void }) {
+  // Unsent edits survive a refresh; otherwise the question already submitted is shown again.
+  const [draft, setDraft] = useState<Authored>(() => {
+    const saved = readStored<{ kind?: Kind; draft?: Authored } | null>(draftKey, null);
+    if (saved?.kind === kind && saved.draft) return saved.draft;
+    return initial ? { ...blankAuthored(kind), ...initial } : blankAuthored(kind);
+  });
+  const firstDraft = useRef(draft);
+  useEffect(() => {
+    if (draft !== firstDraft.current) store(draftKey, { kind, draft });
+  }, [draft, draftKey, kind]);
   const isOptions = ["poll", "quiz", "ranking", "points100"].includes(kind);
   const isTrueFalse = kind === "truefalse";
   const isTwoTruths = kind === "twotruths";
@@ -3519,6 +3528,8 @@ function Participant() {
         ...live.credentials(),
         question: authored,
       });
+      // The server now holds this question, so the saved draft is no longer needed.
+      store(`pulse:author-draft:${live.credentials()?.code}`, null);
       live.setSubmitted((items) =>
         items.includes("crowd-authored") ? items : [...items, "crowd-authored"],
       );
@@ -3677,7 +3688,10 @@ function Participant() {
             </span>
           </div>
           <AuthorQuestion
+            key={live.authored ? "restored" : "new"}
             kind={room.crowd.kind}
+            initial={live.authored}
+            draftKey={`pulse:author-draft:${room.code}`}
             sent={submitted.includes("crowd-authored")}
             busy={busy}
             disabled={!connected}

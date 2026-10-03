@@ -215,6 +215,20 @@ export function submitAuthored(room, token, input) {
   room.crowd.pending.set(token, question);
 }
 
+/** The question a player already submitted, in the shape of their form, so a refresh can restore it. */
+export function authoredDraft(room, token) {
+  const question = room.crowd?.pending.get(token);
+  if (!question) return undefined;
+  return {
+    title: question.title,
+    options: question.options ?? [],
+    correct: question.correct ?? null,
+    sliderMin: question.sliderMin,
+    sliderMax: question.sliderMax,
+    sliderStep: question.sliderStep,
+  };
+}
+
 /** Turns the collected questions into the playable list, shuffled, each tagged with its author's name. */
 function buildCrowdQuestions(room) {
   const entries = [...room.crowd.pending];

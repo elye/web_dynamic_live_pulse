@@ -1,5 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { FormEvent, ReactNode, RefObject } from "react";
+import type {
+  FormEvent,
+  InputHTMLAttributes,
+  ReactNode,
+  RefObject,
+} from "react";
 import {
   ArrowDown,
   ArrowLeft,
@@ -336,6 +341,39 @@ function HeartLayer() {
         </span>
       ))}
     </div>
+  );
+}
+
+/**
+ * A number field that keeps what the user typed (empty, "-", "01") while only
+ * reporting valid numbers, so a leading 0 can be replaced and the field can be cleared.
+ */
+function NumberInput({
+  value,
+  onValue,
+  ...props
+}: {
+  value: number;
+  onValue: (value: number) => void;
+} & Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  "value" | "onChange" | "type"
+>) {
+  const [text, setText] = useState(String(value));
+  useEffect(() => {
+    setText((current) => (Number(current) === value ? current : String(value)));
+  }, [value]);
+  return (
+    <input
+      {...props}
+      type="number"
+      value={text}
+      onChange={(event) => {
+        setText(event.target.value);
+        const parsed = Number(event.target.value);
+        if (event.target.value !== "" && Number.isFinite(parsed)) onValue(parsed);
+      }}
+    />
   );
 }
 
@@ -1181,15 +1219,15 @@ function AuthorQuestion({ kind, sent, busy, disabled, initial, draftKey, onSubmi
           <legend>Slider range</legend>
           <label>
             Minimum
-            <input type="number" required value={draft.sliderMin ?? 0} onChange={(event) => setDraft({ ...draft, sliderMin: Number(event.target.value) })} />
+            <NumberInput required step="any" value={draft.sliderMin ?? 0} onValue={(value) => setDraft({ ...draft, sliderMin: value })} />
           </label>
           <label>
             Maximum
-            <input type="number" required value={draft.sliderMax ?? 10} onChange={(event) => setDraft({ ...draft, sliderMax: Number(event.target.value) })} />
+            <NumberInput required step="any" value={draft.sliderMax ?? 10} onValue={(value) => setDraft({ ...draft, sliderMax: value })} />
           </label>
           <label>
             Step
-            <input type="number" required min={0.01} step="any" value={draft.sliderStep ?? 1} onChange={(event) => setDraft({ ...draft, sliderStep: Number(event.target.value) })} />
+            <NumberInput required min={0.01} step="any" value={draft.sliderStep ?? 1} onValue={(value) => setDraft({ ...draft, sliderStep: value })} />
           </label>
           {!sliderOk && <small className="field-error">Maximum must be greater than minimum, step must be positive, and the range can have at most 1,000 steps.</small>}
         </fieldset>
@@ -1317,45 +1355,30 @@ function QuestionEditor({
             <legend>Slider range</legend>
             <label>
               Minimum
-              <input
-                type="number"
+              <NumberInput
                 required
+                step="any"
                 value={draft.sliderMin ?? 0}
-                onChange={(event) =>
-                  setDraft({
-                    ...draft,
-                    sliderMin: Number(event.target.value),
-                  })
-                }
+                onValue={(value) => setDraft({ ...draft, sliderMin: value })}
               />
             </label>
             <label>
               Maximum
-              <input
-                type="number"
+              <NumberInput
                 required
+                step="any"
                 value={draft.sliderMax ?? 10}
-                onChange={(event) =>
-                  setDraft({
-                    ...draft,
-                    sliderMax: Number(event.target.value),
-                  })
-                }
+                onValue={(value) => setDraft({ ...draft, sliderMax: value })}
               />
             </label>
             <label>
               Step
-              <input
-                type="number"
+              <NumberInput
                 required
                 min={0.01}
+                step="any"
                 value={draft.sliderStep ?? 1}
-                onChange={(event) =>
-                  setDraft({
-                    ...draft,
-                    sliderStep: Number(event.target.value),
-                  })
-                }
+                onValue={(value) => setDraft({ ...draft, sliderStep: value })}
               />
             </label>
             {!sliderRangeValid && (

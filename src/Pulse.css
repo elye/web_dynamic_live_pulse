@@ -4902,7 +4902,6 @@ textarea {
 .author-choice { flex-direction: row; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; }
 .author-choice input { accent-color: #386a4e; width: 18px; height: 18px; }
 .author-form .slider-range-editor label { flex: 1; min-width: 90px; }
-.crowd-writing .lobby-body { grid-template-columns: minmax(0, 1fr); }
 .crowd-progress { height: 8px; background: #e4eadd; border-radius: 4px; overflow: hidden; }
 .crowd-progress span { display: block; height: 100%; background: #86a975; border-radius: 4px; transition: width .3s; }
 .crowd-waiting { min-height: 180px; }

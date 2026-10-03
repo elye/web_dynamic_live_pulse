@@ -909,6 +909,7 @@ function CrowdWriting({ room, theme, disabled, onStart }: { room: Room; theme: s
       <button className="button primary" disabled={disabled || crowd.submitted === 0} onClick={onStart}><Play size={17} />Start game</button>
     </div>
     <div className="lobby-body">
+      <div className="lobby-join"><h2>Join the session</h2><ShareDetails code={room.code} inline /></div>
       <div className="lobby-roster">
         <div className="lobby-count" role="status" aria-label="Questions submitted"><Users size={22} /><strong>{crowd.submitted}</strong><span>of {room.participants} {room.participants === 1 ? "question" : "questions"} in</span></div>
         <div className="crowd-progress" aria-hidden="true"><span style={{ width: `${Math.min(100, (crowd.submitted / total) * 100)}%` }} /></div>

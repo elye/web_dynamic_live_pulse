@@ -91,7 +91,16 @@ const icons: Record<Kind, LucideIcon> = {
   text: MessageCircle,
 };
 /** Question types whose options are shown on the stage even while responses are hidden. */
-const optionKinds: Kind[] = ["poll", "quiz", "truefalse", "twotruths"];
+const optionKinds: Kind[] = [
+  "poll",
+  "quiz",
+  "truefalse",
+  "twotruths",
+  "ranking",
+  "points100",
+];
+/** Kinds with a frame (axes / range) that can be shown while responses are hidden. */
+const frameKinds: Kind[] = ["grid2x2", "slider"];
 /** Questions without a right answer show responses live; questions with one are scored and ranked. */
 const kindGroups: { title: string; hint: string; kinds: Kind[] }[] = [
   {
@@ -330,11 +339,34 @@ function HeartLayer() {
   );
 }
 
+/** 2×2 grid axis title: as large as its box allows, smaller only when the text is long. */
+function GridAxisLabel({
+  side,
+  text,
+  max = 24,
+}: {
+  side: "top" | "bottom" | "left" | "right";
+  text: string;
+  max?: number;
+}) {
+  const box = useRef<HTMLSpanElement>(null);
+  const content = useRef<HTMLSpanElement>(null);
+  useFitFont(box, content, 9, max, text);
+  return (
+    <span className={`grid2x2-axis-label grid2x2-${side}`} ref={box}>
+      <span className="grid2x2-axis-text" ref={content}>
+        {text}
+      </span>
+    </span>
+  );
+}
+
 function ResultsVisual({
   question,
   preview = false,
   reveal = false,
   fit = false,
+  concealed = false,
   onUpvote,
   upvotedIds,
 }: {
@@ -342,6 +374,8 @@ function ResultsVisual({
   preview?: boolean;
   reveal?: boolean;
   fit?: boolean;
+  /** Show only the frame (axes / range), without any responses. */
+  concealed?: boolean;
   onUpvote?: (entrantId: string) => void;
   upvotedIds?: Set<string>;
 }) {
@@ -380,12 +414,30 @@ function ResultsVisual({
                   text,
                   count: [8, 14, 6, 10, 4, 5][index],
                 }))
-    : question.results || [];
+    : question.results?.length || !optionKinds.includes(question.type)
+      ? question.results || []
+      : question.options.map((text) => ({ text, count: 0 }));
   const total =
     question.type === "qna"
       ? results.length
       : results.reduce((sum, item) => sum + item.count, 0);
-  if (!preview && !total)
+  if (concealed && question.type === "slider")
+    return (
+      <div className="slider-results">
+        <div className="slider-average">
+          <SlidersHorizontal size={20} />
+          <strong>
+            {question.sliderMin ?? 0} to {question.sliderMax ?? 10}
+          </strong>
+        </div>
+      </div>
+    );
+  if (
+    !preview &&
+    !total &&
+    !optionKinds.includes(question.type) &&
+    !(concealed && question.type === "grid2x2")
+  )
     return (
       <div className="response-empty">
         <span className="empty-rings">
@@ -490,18 +542,10 @@ function ResultsVisual({
     return (
       <div className="grid2x2-results">
         <div className="grid2x2-plot">
-          <span className="grid2x2-axis-label grid2x2-top">
-            {question.options[3]}
-          </span>
-          <span className="grid2x2-axis-label grid2x2-bottom">
-            {question.options[2]}
-          </span>
-          <span className="grid2x2-axis-label grid2x2-left">
-            {question.options[0]}
-          </span>
-          <span className="grid2x2-axis-label grid2x2-right">
-            {question.options[1]}
-          </span>
+          <GridAxisLabel side="top" text={question.options[3]} />
+          <GridAxisLabel side="bottom" text={question.options[2]} />
+          <GridAxisLabel side="left" text={question.options[0]} />
+          <GridAxisLabel side="right" text={question.options[1]} />
           <span className="grid2x2-quadrant-h" />
           <span className="grid2x2-quadrant-v" />
           {points.map((point, index) => {
@@ -527,11 +571,13 @@ function ResultsVisual({
             />
           )}
         </div>
-        <div className="grid2x2-summary">
-          <Grid2x2 size={18} />
-          <strong>{summary?.text || "Average: 0,0"}</strong>
-          <span>{points.length} responses placed</span>
-        </div>
+        {!concealed && (
+          <div className="grid2x2-summary">
+            <Grid2x2 size={18} />
+            <strong>{summary?.text || "Average: 0,0"}</strong>
+            <span>{points.length} responses placed</span>
+          </div>
+        )}
       </div>
     );
   }
@@ -751,6 +797,16 @@ function QuestionStage({
               fit
               hideCounts
             />
+            <p className="response-hidden-note">
+              <strong>{question.responses || 0}</strong>{" "}
+              {question.responses === 1 ? "person has" : "people have"}{" "}
+              responded. Results stay hidden until the host clicks Reveal
+              results.
+            </p>
+          </>
+        ) : frameKinds.includes(question.type) ? (
+          <>
+            <ResultsVisual question={question} fit concealed />
             <p className="response-hidden-note">
               <strong>{question.responses || 0}</strong>{" "}
               {question.responses === 1 ? "person has" : "people have"}{" "}
@@ -4153,18 +4209,10 @@ function Participant() {
                         );
                       }}
                     >
-                      <span className="grid2x2-axis-label grid2x2-top">
-                        {question.options[3]}
-                      </span>
-                      <span className="grid2x2-axis-label grid2x2-bottom">
-                        {question.options[2]}
-                      </span>
-                      <span className="grid2x2-axis-label grid2x2-left">
-                        {question.options[0]}
-                      </span>
-                      <span className="grid2x2-axis-label grid2x2-right">
-                        {question.options[1]}
-                      </span>
+                      <GridAxisLabel side="top" text={question.options[3]} max={18} />
+                      <GridAxisLabel side="bottom" text={question.options[2]} max={18} />
+                      <GridAxisLabel side="left" text={question.options[0]} max={18} />
+                      <GridAxisLabel side="right" text={question.options[1]} max={18} />
                       <span className="grid2x2-quadrant-h" />
                       <span className="grid2x2-quadrant-v" />
                       {gridPoint && (

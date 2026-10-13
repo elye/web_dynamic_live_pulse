@@ -16,8 +16,17 @@ type Reply = {
   state?: Room;
   token?: string;
   submitted?: string[];
+  answers?: Record<string, Answer>;
   authored?: AuthoredQuestion;
 };
+
+/** What a player sent for one question; the shape depends on the question type. */
+export type Answer =
+  | string
+  | number
+  | number[]
+  | { x: number; y: number }
+  | null;
 
 /** A player-written question as the player's form holds it. */
 export type AuthoredQuestion = {
@@ -61,6 +70,7 @@ export function useLive(
   const [connected, setConnected] = useState(socket.connected);
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState<string[]>([]);
+  const [answers, setAnswers] = useState<Record<string, Answer>>({});
   const [authored, setAuthored] = useState<AuthoredQuestion | undefined>();
   const key = role === "host" ? "pulse:host" : `pulse:participant:${code}`;
   const notifyRestored = useEffectEvent((restoredRoom: Room) =>
@@ -78,6 +88,7 @@ export function useLive(
         );
         setRoom(reply.state!);
         setSubmitted(reply.submitted || []);
+        setAnswers(reply.answers || {});
         setAuthored(reply.authored);
         notifyRestored(reply.state!);
       } catch (failure) {
@@ -97,6 +108,7 @@ export function useLive(
       if (saved?.code !== deletedCode) return;
       setRoom(null);
       setSubmitted([]);
+      setAnswers({});
       store(key, null);
       if (role === "audience")
         setError("The host deleted this session. Join another room.");
@@ -126,6 +138,8 @@ export function useLive(
     setError,
     submitted,
     setSubmitted,
+    answers,
+    setAnswers,
     authored,
     credentials: () => readStored<Credentials | null>(key, null),
     saveCredentials: (credentials: Credentials | null) =>

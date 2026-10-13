@@ -80,6 +80,7 @@ import {
 } from "./model";
 import type { Kind, Question, Room, Session } from "./model";
 import { onHeart, request, useLive } from "./live";
+import type { Answer } from "./live";
 import WordCloud from "./WordCloud";
 
 const icons: Record<Kind, LucideIcon> = {
@@ -3798,6 +3799,51 @@ function Host() {
   );
 }
 
+/** Describes what a player sent for a question, e.g. the options they ticked. */
+function describeAnswer(question: Question, answer: Answer | undefined) {
+  if (answer === undefined || answer === null || answer === "") return "";
+  const label = (index: number) =>
+    `${String.fromCharCode(65 + index)}. ${question.options[index] ?? ""}`;
+  if (Array.isArray(answer)) {
+    if (question.type === "ranking")
+      return answer
+        .map((index, position) => `${position + 1}. ${question.options[index]}`)
+        .join(" · ");
+    if (question.type === "points100")
+      return answer
+        .map((points, index) => ({ points, index }))
+        .filter((item) => item.points > 0)
+        .map((item) => `${question.options[item.index]}: ${item.points}`)
+        .join(" · ");
+    return answer.map(label).join(" · ");
+  }
+  if (typeof answer === "number")
+    return question.type === "slider" ? String(answer) : label(answer);
+  if (typeof answer === "object") return `x: ${answer.x} · y: ${answer.y}`;
+  return answer;
+}
+
+/** Shows the player's own submitted answer so they can see what they sent. */
+function MyAnswer({
+  question,
+  answer,
+}: {
+  question: Question;
+  answer: Answer | undefined;
+}) {
+  const text = describeAnswer(question, answer);
+  if (!text) return null;
+  const many = Array.isArray(answer) && question.type !== "points100";
+  return (
+    <div className="my-answer">
+      <small>
+        {many && question.type !== "ranking" ? "Your answers" : "Your answer"}
+      </small>
+      <strong>{text}</strong>
+    </div>
+  );
+}
+
 function Participant() {
   const initialCode =
     new URLSearchParams(window.location.search).get("code") || "";
@@ -3812,7 +3858,7 @@ function Participant() {
   const [upvotedQuestion, setUpvotedQuestion] = useState("");
   const [reactionTap, setReactionTap] = useState({ kind: "", count: 0 });
   const live = useLive("audience", initialCode);
-  const { room, connected, error, setError, submitted } = live;
+  const { room, connected, error, setError, submitted, answers } = live;
   const question = room?.questions[room.active];
   const currentUpvoted = upvotedQuestion === question?.id ? upvoted : new Set<string>();
   const currentAnswer = answerQuestion === question?.id ? answer : "";
@@ -3882,22 +3928,24 @@ function Participant() {
     setBusy(true);
     setError("");
     try {
-      await request("room:vote", {
-        ...live.credentials(),
-        questionId: question.id,
-        value:
-          question.type === "ranking"
-            ? rankingOrder
-            : isMultiple
-              ? selectedOptions
+      const value =
+        question.type === "ranking"
+          ? rankingOrder
+          : isMultiple
+            ? selectedOptions
             : question.type === "slider"
               ? sliderValue
               : question.type === "points100"
                 ? pointsAllocation
                 : question.type === "grid2x2"
                   ? gridPoint
-                  : currentAnswer,
+                  : currentAnswer;
+      await request("room:vote", {
+        ...live.credentials(),
+        questionId: question.id,
+        value,
       });
+      live.setAnswers((items) => ({ ...items, [question.id]: value }));
       live.setSubmitted((items) => [...items, question.id]);
     } catch (failure) {
       setError((failure as Error).message);
@@ -4257,6 +4305,9 @@ function Participant() {
                   The results are in
                 </span>
                 <ResultsVisual question={question} reveal />
+                {hasSubmitted && (
+                  <MyAnswer question={question} answer={answers[question.id]} />
+                )}
                 {canCompete(question.type) && (
                   <div className="correct-answer">
                     <Check size={20} />
@@ -4286,6 +4337,9 @@ function Participant() {
                   Live results
                 </span>
                 <ResultsVisual question={question} />
+                {hasSubmitted && (
+                  <MyAnswer question={question} answer={answers[question.id]} />
+                )}
                 <p className="waiting-note">
                   {hasSubmitted ? "Your voice is in. " : ""}Results update as
                   people answer.
@@ -4298,6 +4352,7 @@ function Participant() {
                 </span>
                 <h2>Your voice is in.</h2>
                 <p>Let’s see what everyone thinks.</p>
+                <MyAnswer question={question} answer={answers[question.id]} />
                 <div className="waiting-dots">
                   <i />
                   <i />

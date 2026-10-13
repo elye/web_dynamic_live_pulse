@@ -39,6 +39,8 @@ export type Question = {
   sliderStep?: number;
   revealMode?: RevealMode;
   competitive?: boolean;
+  /** Multiple choice polls only: participants may pick more than one option. */
+  multiple?: boolean;
   /** Show the top-10 ranking after this question's results (answered questions only). */
   showRanking?: boolean;
   /** Name of the player who wrote this question (player-made sessions only). */
@@ -138,6 +140,7 @@ export function newQuestion(type: Kind): Question {
       : {}),
     ...(hasRevealMode(type) ? { revealMode: defaultRevealMode(type) } : {}),
     ...(canCompete(type) ? { competitive: true, showRanking: true } : {}),
+    ...(type === "poll" ? { multiple: false } : {}),
     options:
       type === "quiz"
         ? ["Jupiter", "Saturn", "Neptune", "Mars"]
@@ -250,11 +253,13 @@ export function serializeSession(session: Session): string {
           revealMode,
           competitive,
           showRanking,
+          multiple,
         }) => ({
           type,
           title,
           options,
           correct,
+          ...(type === "poll" ? { multiple: multiple === true } : {}),
           ...(canCompete(type)
             ? {
                 competitive: competitive !== false,
@@ -444,9 +449,20 @@ export function importSession(json: string): Session {
         typeof question.showRanking !== "boolean"
       )
         throw new Error(prefix + "showRanking must be true or false.");
+      if (
+        question.multiple !== undefined &&
+        (typeof question.multiple !== "boolean" ||
+          (question.multiple && question.type !== "poll"))
+      )
+        throw new Error(
+          prefix + "only poll questions can set multiple to true.",
+        );
       return {
         id: createId(),
         type: question.type as Kind,
+        ...(question.type === "poll"
+          ? { multiple: question.multiple === true }
+          : {}),
         title:
           question.type === "twotruths" ? twoTruthsTitle : question.title.trim(),
         ...(canCompete(question.type as Kind)

@@ -517,7 +517,9 @@ function ResultsVisual({
   const total =
     question.type === "qna"
       ? results.length
-      : results.reduce((sum, item) => sum + item.count, 0);
+      : question.type === "poll" && question.multiple && !preview
+        ? (question.responses ?? 0)
+        : results.reduce((sum, item) => sum + item.count, 0);
   if (concealed && question.type === "slider")
     return (
       <SliderResults
@@ -1085,6 +1087,7 @@ type Authored = {
   title: string;
   options: string[];
   correct: number | null;
+  multiple?: boolean;
   sliderMin?: number;
   sliderMax?: number;
   sliderStep?: number;
@@ -1186,6 +1189,19 @@ function AuthorQuestion({ kind, sent, busy, disabled, initial, draftKey, onSubmi
             </label>
           ))}
         </fieldset>
+      )}
+      {kind === "poll" && (
+        <label className="competitive-toggle">
+          <input
+            type="checkbox"
+            checked={draft.multiple === true}
+            onChange={(event) => setDraft({ ...draft, multiple: event.target.checked })}
+          />
+          <span>
+            <b>Allow multiple answers</b>
+            <small>Players can select more than one option.</small>
+          </span>
+        </label>
       )}
       {isOptions && (
         <fieldset className="author-options">
@@ -1439,6 +1455,24 @@ function QuestionEditor({
               <small>
                 After the results, show the ranking of the top 10 players before
                 the next question.
+              </small>
+            </span>
+          </label>
+        )}
+        {draft.type === "poll" && (
+          <label className="competitive-toggle">
+            <input
+              type="checkbox"
+              checked={draft.multiple === true}
+              onChange={(event) =>
+                setDraft({ ...draft, multiple: event.target.checked })
+              }
+            />
+            <span>
+              <b>Allow multiple answers</b>
+              <small>
+                Participants can select more than one option. Percentages show how
+                many participants picked each option.
               </small>
             </span>
           </label>
@@ -3721,6 +3755,8 @@ function Participant() {
         : null
       : null;
   const hasSubmitted = !!question && submitted.includes(question.id);
+  const isMultiple = question?.type === "poll" && question.multiple === true;
+  const selectedOptions = Array.isArray(currentAnswer) ? currentAnswer : [];
 
   async function join(event: FormEvent) {
     event.preventDefault();
@@ -3755,6 +3791,8 @@ function Participant() {
         value:
           question.type === "ranking"
             ? rankingOrder
+            : question.type === "poll" && question.multiple
+              ? selectedOptions
             : question.type === "slider"
               ? sliderValue
               : question.type === "points100"
@@ -4173,24 +4211,38 @@ function Participant() {
                   <div
                     className={`answer-options ${question.options.length >= 4 && question.type !== "twotruths" ? "two-col" : ""}`}
                   >
-                    {question.options.map((option, index) => (
-                      <button
-                        type="button"
-                        key={index}
-                        className={`answer-option ${currentAnswer === index ? "chosen" : ""}`}
-                        onClick={() => {
-                          setAnswer(index);
-                          setAnswerQuestion(question.id);
-                        }}
-                        aria-pressed={currentAnswer === index}
-                      >
-                        <span className={`option-letter color-${index % 4}`}>
-                          {String.fromCharCode(65 + index)}
-                        </span>
-                        <span>{option}</span>
-                        {currentAnswer === index && <Check size={20} />}
-                      </button>
-                    ))}
+                    {isMultiple && (
+                      <small className="multi-hint">Select all that apply</small>
+                    )}
+                    {question.options.map((option, index) => {
+                      const chosen = isMultiple
+                        ? selectedOptions.includes(index)
+                        : currentAnswer === index;
+                      return (
+                        <button
+                          type="button"
+                          key={index}
+                          className={`answer-option ${chosen ? "chosen" : ""}`}
+                          onClick={() => {
+                            setAnswer(
+                              isMultiple
+                                ? chosen
+                                  ? selectedOptions.filter((item) => item !== index)
+                                  : [...selectedOptions, index]
+                                : index,
+                            );
+                            setAnswerQuestion(question.id);
+                          }}
+                          aria-pressed={chosen}
+                        >
+                          <span className={`option-letter color-${index % 4}`}>
+                            {String.fromCharCode(65 + index)}
+                          </span>
+                          <span>{option}</span>
+                          {chosen && <Check size={20} />}
+                        </button>
+                      );
+                    })}
                   </div>
                 ) : question.type === "ranking" ? (
                   <div className="rank-list" aria-label="Drag to reorder, most important first">
@@ -4376,7 +4428,9 @@ function Participant() {
                       ? pointsAllocated !== 100
                       : question.type === "grid2x2"
                         ? !gridPoint
-                        : !["ranking", "slider"].includes(question.type) &&
+                        : isMultiple
+                          ? selectedOptions.length === 0
+                          : !["ranking", "slider"].includes(question.type) &&
                           (currentAnswer === "" ||
                             (typeof currentAnswer === "string" &&
                               !currentAnswer.trim())))

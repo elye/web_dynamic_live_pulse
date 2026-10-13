@@ -2875,6 +2875,13 @@ textarea {
   flex-direction: column;
   gap: 12px;
 }
+.answer-options .multi-hint {
+  flex: 0 0 100%;
+  text-align: center;
+  color: #6b7a63;
+  font-size: 18px;
+  font-weight: 700;
+}
 /* 4+ options: two columns; an odd last item is centred between them. */
 .answer-options.two-col {
   flex-direction: row;

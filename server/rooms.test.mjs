@@ -367,6 +367,31 @@ test("ranking questions collect a full permutation and score with Borda points",
   rooms.delete(room.code);
 });
 
+test("multiple choice polls can allow several answers per participant", () => {
+  const poll = { type: "poll", title: "Pick any", options: ["A", "B", "C"], correct: null, multiple: true };
+  assert.throws(
+    () => createRoom("Invalid", [{ ...questions[1], multiple: true }]),
+    /multiple/i,
+  );
+  const room = createRoom("Multi", [poll]);
+  const first = joinRoom(room, "Alex");
+  const second = joinRoom(room, "Sam");
+  controlRoom(room, room.hostToken, "start");
+  const id = room.questions[0].id;
+  assert.throws(() => submitVote(room, first, id, 0), /one or more/);
+  assert.throws(() => submitVote(room, first, id, []), /one or more/);
+  assert.throws(() => submitVote(room, first, id, [0, 0]), /one or more/);
+  assert.throws(() => submitVote(room, first, id, [3]), /one or more/);
+  submitVote(room, first, id, [2, 0]);
+  submitVote(room, second, id, [0]);
+  controlRoom(room, room.hostToken, "reveal");
+  const question = snapshot(room, true).questions[0];
+  assert.equal(question.multiple, true);
+  assert.equal(question.responses, 2);
+  assert.deepEqual(question.results.map((item) => item.count), [2, 0, 1]);
+  rooms.delete(room.code);
+});
+
 test("100 Points questions require allocations that sum to exactly 100 and aggregate totals", () => {
   const points100 = {
     type: "points100",

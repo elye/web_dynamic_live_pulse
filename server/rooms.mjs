@@ -95,10 +95,17 @@ export function validateQuestions(input) {
       throw new Error("Only quiz, true-or-false and two-truths questions can be competitive.");
     if (question.showRanking !== undefined && typeof question.showRanking !== "boolean")
       throw new Error("Show ranking must be true or false.");
+    if (
+      question.multiple !== undefined &&
+      (typeof question.multiple !== "boolean" ||
+        (question.multiple && question.type !== "poll"))
+    )
+      throw new Error("Only multiple choice polls can allow multiple answers.");
     return {
       id: randomUUID(),
       type: question.type,
       title: question.title.trim(),
+      ...(question.type === "poll" ? { multiple: question.multiple === true } : {}),
       ...(hasRevealMode(question.type)
         ? { revealMode: question.revealMode ?? defaultRevealMode(question.type) }
         : {}),
@@ -209,6 +216,7 @@ export function submitAuthored(room, token, input) {
       title: input.title,
       options: optionKinds.includes(kind) ? input.options : [],
       correct: input.correct,
+      ...(kind === "poll" ? { multiple: input.multiple === true } : {}),
       sliderMin: input.sliderMin,
       sliderMax: input.sliderMax,
       sliderStep: input.sliderStep,
@@ -225,6 +233,7 @@ export function authoredDraft(room, token) {
     title: question.title,
     options: question.options ?? [],
     correct: question.correct ?? null,
+    multiple: question.multiple,
     sliderMin: question.sliderMin,
     sliderMax: question.sliderMax,
     sliderStep: question.sliderStep,
@@ -257,7 +266,19 @@ export function submitVote(room, token, questionId, value, now = Date.now()) {
     throw new Error("This question is no longer accepting responses.");
   const votes = room.votes.get(question.id);
   if (votes.has(token)) throw new Error("Your response is already in.");
-  if (question.type === "poll" || canCompete(question.type)) {
+  if (question.type === "poll" && question.multiple) {
+    if (
+      !Array.isArray(value) ||
+      !value.length ||
+      new Set(value).size !== value.length ||
+      value.some(
+        (index) =>
+          !Number.isInteger(index) || index < 0 || index >= question.options.length,
+      )
+    )
+      throw new Error("Choose one or more of the available options.");
+    value = [...value].sort((first, second) => first - second);
+  } else if (question.type === "poll" || canCompete(question.type)) {
     if (
       !Number.isInteger(value) ||
       value < 0 ||
@@ -480,7 +501,9 @@ function results(room, question) {
   if (question.type === "poll" || canCompete(question.type))
     return question.options.map((text, index) => ({
       text,
-      count: values.filter((value) => value === index).length,
+      count: values.filter((value) =>
+        Array.isArray(value) ? value.includes(index) : value === index,
+      ).length,
     }));
   if (question.type === "ranking") {
     const points = new Array(question.options.length).fill(0);

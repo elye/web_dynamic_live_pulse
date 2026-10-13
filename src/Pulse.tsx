@@ -80,6 +80,7 @@ import {
 } from "./model";
 import type { Kind, Question, Room, Session } from "./model";
 import { onHeart, request, useLive } from "./live";
+import type { Answer } from "./live";
 import WordCloud from "./WordCloud";
 
 const icons: Record<Kind, LucideIcon> = {
@@ -517,7 +518,11 @@ function ResultsVisual({
   const total =
     question.type === "qna"
       ? results.length
-      : results.reduce((sum, item) => sum + item.count, 0);
+      : (question.type === "poll" || question.type === "quiz") &&
+          question.multiple &&
+          !preview
+        ? (question.responses ?? 0)
+        : results.reduce((sum, item) => sum + item.count, 0);
   if (concealed && question.type === "slider")
     return (
       <SliderResults
@@ -765,7 +770,11 @@ function PollResults({
     >
       {results.map((item, index) => {
         const isAnswer =
-          reveal && canCompete(question.type) && question.correct === index;
+          reveal &&
+          canCompete(question.type) &&
+          (question.corrects?.length
+            ? question.corrects.includes(index)
+            : question.correct === index);
         const hasAnswer = reveal && canCompete(question.type);
         return (
         <div
@@ -1085,6 +1094,8 @@ type Authored = {
   title: string;
   options: string[];
   correct: number | null;
+  multiple?: boolean;
+  corrects?: number[];
   sliderMin?: number;
   sliderMax?: number;
   sliderStep?: number;
@@ -1126,6 +1137,9 @@ function AuthorQuestion({ kind, sent, busy, disabled, initial, draftKey, onSubmi
   const isGrid = kind === "grid2x2";
   const isSlider = kind === "slider";
   const hasCorrect = kind === "quiz" || isTrueFalse;
+  const multiQuiz = kind === "quiz" && draft.multiple === true;
+  const setCorrects = (next: number[]) =>
+    setDraft({ ...draft, corrects: next, correct: next.length ? Math.min(...next) : null });
   const sliderOk =
     !isSlider ||
     (typeof draft.sliderMin === "number" &&
@@ -1137,6 +1151,7 @@ function AuthorQuestion({ kind, sent, busy, disabled, initial, draftKey, onSubmi
   const valid =
     (isTwoTruths || !!draft.title.trim()) &&
     sliderOk &&
+    (!multiQuiz || (draft.corrects ?? []).length > 0) &&
     (!(isOptions || isGrid || isTwoTruths) || draft.options.every((option) => option.trim())) &&
     (!isOptions || (draft.options.length >= 2 && draft.options.length <= 6));
   const setOption = (index: number, text: string) =>
@@ -1187,12 +1202,31 @@ function AuthorQuestion({ kind, sent, busy, disabled, initial, draftKey, onSubmi
           ))}
         </fieldset>
       )}
+      {(kind === "poll" || kind === "quiz") && (
+        <label className="competitive-toggle">
+          <input
+            type="checkbox"
+            checked={draft.multiple === true}
+            onChange={(event) =>
+              event.target.checked
+                ? setDraft({ ...draft, multiple: true, corrects: [draft.correct ?? 0] })
+                : setDraft({ ...draft, multiple: false, corrects: undefined, correct: draft.corrects?.length ? Math.min(...draft.corrects) : 0 })
+            }
+          />
+          <span>
+            <b>Allow multiple answers</b>
+            <small>Players can select more than one option.</small>
+          </span>
+        </label>
+      )}
       {isOptions && (
         <fieldset className="author-options">
-          <legend>{kind === "ranking" ? "Items to rank" : kind === "points100" ? "Options to allocate points across" : "Answer options"}{hasCorrect && <span> · Select the correct answer</span>}</legend>
+          <legend>{kind === "ranking" ? "Items to rank" : kind === "points100" ? "Options to allocate points across" : "Answer options"}{hasCorrect && <span> · Select {multiQuiz ? "all the correct answers" : "the correct answer"}</span>}</legend>
           {draft.options.map((option, index) => (
             <div className="option-editor" key={index}>
-              {hasCorrect ? (
+              {multiQuiz ? (
+                <input aria-label={`Option ${index + 1} is correct`} type="checkbox" checked={(draft.corrects ?? []).includes(index)} onChange={(event) => setCorrects(event.target.checked ? [...(draft.corrects ?? []), index] : (draft.corrects ?? []).filter((item) => item !== index))} />
+              ) : hasCorrect ? (
                 <input aria-label={`Option ${index + 1} is correct`} type="radio" name="author-correct" checked={draft.correct === index} onChange={() => setDraft({ ...draft, correct: index })} />
               ) : (
                 <span className={`option-letter color-${index % 4}`}>{String.fromCharCode(65 + index)}</span>
@@ -1202,13 +1236,19 @@ function AuthorQuestion({ kind, sent, busy, disabled, initial, draftKey, onSubmi
                 icon={X}
                 label={`Remove option ${index + 1}`}
                 disabled={draft.options.length <= 2}
-                onClick={() =>
+                onClick={() => {
+                  const options = draft.options.filter((_, position) => position !== index);
+                  if (multiQuiz) {
+                    const next = (draft.corrects ?? []).filter((item) => item !== index).map((item) => (item > index ? item - 1 : item));
+                    setDraft({ ...draft, options, corrects: next, correct: next.length ? Math.min(...next) : null });
+                    return;
+                  }
                   setDraft({
                     ...draft,
-                    options: draft.options.filter((_, position) => position !== index),
+                    options,
                     correct: hasCorrect ? (draft.correct === index ? 0 : draft.correct! > index ? draft.correct! - 1 : draft.correct) : null,
-                  })
-                }
+                  });
+                }}
               />
             </div>
           ))}
@@ -1280,6 +1320,14 @@ function QuestionEditor({
     isRanking ||
     isPoints100;
   const hasCorrectAnswer = canCompete(draft.type);
+  const isMultiQuiz = draft.type === "quiz" && draft.multiple === true;
+  const draftCorrects = draft.corrects ?? [];
+  const setDraftCorrects = (next: number[]) =>
+    setDraft({
+      ...draft,
+      corrects: next,
+      correct: next.length ? Math.min(...next) : null,
+    });
   const isSlide = draft.type === "slide";
   const sliderRangeValid =
     !isSlider ||
@@ -1443,6 +1491,56 @@ function QuestionEditor({
             </span>
           </label>
         )}
+        {draft.type === "poll" && (
+          <label className="competitive-toggle">
+            <input
+              type="checkbox"
+              checked={draft.multiple === true}
+              onChange={(event) =>
+                setDraft({ ...draft, multiple: event.target.checked })
+              }
+            />
+            <span>
+              <b>Allow multiple answers</b>
+              <small>
+                Participants can select more than one option. Percentages show how
+                many participants picked each option.
+              </small>
+            </span>
+          </label>
+        )}
+        {draft.type === "quiz" && (
+          <label className="competitive-toggle">
+            <input
+              type="checkbox"
+              checked={isMultiQuiz}
+              onChange={(event) => {
+                if (event.target.checked) {
+                  setDraft({
+                    ...draft,
+                    multiple: true,
+                    corrects: [draft.correct ?? 0],
+                  });
+                } else {
+                  const { corrects, ...rest } = draft;
+                  setDraft({
+                    ...rest,
+                    multiple: false,
+                    correct: corrects?.length ? Math.min(...corrects) : 0,
+                  });
+                }
+              }}
+            />
+            <span>
+              <b>Allow multiple answers</b>
+              <small>
+                Tick every correct option. Players can select several and earn
+                points in proportion to the correct options they found (2 of 3
+                is 67% of the points). Picking any wrong option scores 0.
+              </small>
+            </span>
+          </label>
+        )}
         {hasRevealMode(draft.type) && (
           <fieldset className="reveal-mode-editor">
             <legend>When should responses show?</legend>
@@ -1528,13 +1626,31 @@ function QuestionEditor({
                     : "Answer options"}{" "}
               {hasCorrectAnswer && (
                 <span>
-                  · Select {isTwoTruths ? "the lie" : "the correct answer"}
+                  · Select{" "}
+                  {isTwoTruths
+                    ? "the lie"
+                    : isMultiQuiz
+                      ? "all the correct answers"
+                      : "the correct answer"}
                 </span>
               )}
             </legend>
             {draft.options.map((option, index) => (
               <div className="option-editor" key={index}>
-                {hasCorrectAnswer ? (
+                {isMultiQuiz ? (
+                  <input
+                    aria-label={`Option ${index + 1} is correct`}
+                    type="checkbox"
+                    checked={draftCorrects.includes(index)}
+                    onChange={(event) =>
+                      setDraftCorrects(
+                        event.target.checked
+                          ? [...draftCorrects, index]
+                          : draftCorrects.filter((item) => item !== index),
+                      )
+                    }
+                  />
+                ) : hasCorrectAnswer ? (
                   <input
                     aria-label={
                       isTwoTruths
@@ -1577,12 +1693,25 @@ function QuestionEditor({
                     icon={X}
                     label={`Remove option ${index + 1}`}
                     disabled={draft.options.length <= 2}
-                    onClick={() =>
+                    onClick={() => {
+                      const options = draft.options.filter(
+                        (_, position) => position !== index,
+                      );
+                      if (isMultiQuiz) {
+                        const next = draftCorrects
+                          .filter((item) => item !== index)
+                          .map((item) => (item > index ? item - 1 : item));
+                        setDraft({
+                          ...draft,
+                          options,
+                          corrects: next,
+                          correct: next.length ? Math.min(...next) : null,
+                        });
+                        return;
+                      }
                       setDraft({
                         ...draft,
-                        options: draft.options.filter(
-                          (_, position) => position !== index,
-                        ),
+                        options,
                         correct:
                           hasCorrectAnswer
                             ? draft.correct === index
@@ -1591,8 +1720,8 @@ function QuestionEditor({
                                 ? draft.correct! - 1
                                 : draft.correct
                             : null,
-                      })
-                    }
+                      });
+                    }}
                   />
                 )}
               </div>
@@ -1623,6 +1752,7 @@ function QuestionEditor({
               (isOptions && draft.options.some((option) => !option.trim())) ||
               (isGrid2x2 && draft.options.some((option) => !option.trim())) ||
               (isSlide && !draft.description?.trim()) ||
+              (isMultiQuiz && !draftCorrects.length) ||
               (isSlider && !sliderRangeValid)
             }
           >
@@ -3669,6 +3799,110 @@ function Host() {
   );
 }
 
+/** Describes what a player sent for a question, e.g. the options they ticked. */
+function describeAnswer(question: Question, answer: Answer | undefined) {
+  if (answer === undefined || answer === null || answer === "") return "";
+  const label = (index: number) =>
+    `${String.fromCharCode(65 + index)}. ${question.options[index] ?? ""}`;
+  if (Array.isArray(answer)) {
+    if (question.type === "ranking")
+      return answer
+        .map((index, position) => `${position + 1}. ${question.options[index]}`)
+        .join(" · ");
+    if (question.type === "points100")
+      return answer
+        .map((points, index) => ({ points, index }))
+        .filter((item) => item.points > 0)
+        .map((item) => `${question.options[item.index]}: ${item.points}`)
+        .join(" · ");
+    return answer.map(label).join(" · ");
+  }
+  if (typeof answer === "number")
+    return question.type === "slider" ? String(answer) : label(answer);
+  if (typeof answer === "object") return `x: ${answer.x} · y: ${answer.y}`;
+  return answer;
+}
+
+/** Shows the player's own submitted answer so they can see what they sent. */
+function MyAnswer({
+  question,
+  answer,
+}: {
+  question: Question;
+  answer: Answer | undefined;
+}) {
+  const text = describeAnswer(question, answer);
+  if (!text) return null;
+  const many = Array.isArray(answer) && question.type !== "points100";
+  return (
+    <div className="my-answer">
+      <small>
+        {many && question.type !== "ranking" ? "Your answers" : "Your answer"}
+      </small>
+      <strong>{text}</strong>
+    </div>
+  );
+}
+
+/** Tells a player how they did on a revealed question that has a correct answer. */
+function Verdict({
+  question,
+  answer,
+  answered,
+}: {
+  question: Question;
+  answer: Answer | undefined;
+  answered: boolean;
+}) {
+  let tone: "right" | "partial" | "wrong" | "missed";
+  let title: string;
+  let detail = "";
+  const corrects = question.corrects;
+  if (!answered) {
+    tone = "missed";
+    title = "No answer this time";
+  } else if (corrects?.length) {
+    const picked = Array.isArray(answer) ? answer : [];
+    const right = picked.filter((index) => corrects.includes(index)).length;
+    const wrong = picked.length - right;
+    if (wrong === 0 && right === corrects.length) {
+      tone = "right";
+      title = "You got it right!";
+      detail = `You found all ${corrects.length} correct answers.`;
+    } else if (wrong === 0 && right > 0) {
+      tone = "partial";
+      title = "Partly right!";
+      detail = `You found ${right} of ${corrects.length} correct answers.`;
+    } else {
+      tone = "wrong";
+      title = "Not quite";
+      detail =
+        right > 0
+          ? `You found ${right} of ${corrects.length}, but picked ${wrong} wrong ${wrong === 1 ? "option" : "options"}, so no points this time.`
+          : "None of your picks were correct.";
+    }
+  } else if (answer === question.correct) {
+    tone = "right";
+    title = "You got it right!";
+  } else {
+    tone = "wrong";
+    title = "Not quite";
+  }
+  return (
+    <div className={`verdict verdict-${tone}`} role="status">
+      {tone === "wrong" || tone === "missed" ? (
+        <X size={22} />
+      ) : (
+        <Check size={22} />
+      )}
+      <div>
+        <strong>{title}</strong>
+        {detail && <span>{detail}</span>}
+      </div>
+    </div>
+  );
+}
+
 function Participant() {
   const initialCode =
     new URLSearchParams(window.location.search).get("code") || "";
@@ -3683,7 +3917,7 @@ function Participant() {
   const [upvotedQuestion, setUpvotedQuestion] = useState("");
   const [reactionTap, setReactionTap] = useState({ kind: "", count: 0 });
   const live = useLive("audience", initialCode);
-  const { room, connected, error, setError, submitted } = live;
+  const { room, connected, error, setError, submitted, answers } = live;
   const question = room?.questions[room.active];
   const currentUpvoted = upvotedQuestion === question?.id ? upvoted : new Set<string>();
   const currentAnswer = answerQuestion === question?.id ? answer : "";
@@ -3721,6 +3955,10 @@ function Participant() {
         : null
       : null;
   const hasSubmitted = !!question && submitted.includes(question.id);
+  const isMultiple =
+    (question?.type === "poll" || question?.type === "quiz") &&
+    question.multiple === true;
+  const selectedOptions = Array.isArray(currentAnswer) ? currentAnswer : [];
 
   async function join(event: FormEvent) {
     event.preventDefault();
@@ -3749,20 +3987,24 @@ function Participant() {
     setBusy(true);
     setError("");
     try {
-      await request("room:vote", {
-        ...live.credentials(),
-        questionId: question.id,
-        value:
-          question.type === "ranking"
-            ? rankingOrder
+      const value =
+        question.type === "ranking"
+          ? rankingOrder
+          : isMultiple
+            ? selectedOptions
             : question.type === "slider"
               ? sliderValue
               : question.type === "points100"
                 ? pointsAllocation
                 : question.type === "grid2x2"
                   ? gridPoint
-                  : currentAnswer,
+                  : currentAnswer;
+      await request("room:vote", {
+        ...live.credentials(),
+        questionId: question.id,
+        value,
       });
+      live.setAnswers((items) => ({ ...items, [question.id]: value }));
       live.setSubmitted((items) => [...items, question.id]);
     } catch (failure) {
       setError((failure as Error).message);
@@ -4122,11 +4364,35 @@ function Participant() {
                   The results are in
                 </span>
                 <ResultsVisual question={question} reveal />
+                {canCompete(question.type) &&
+                  question.correct !== null &&
+                  !(
+                    question.author &&
+                    question.author === live.credentials()?.name
+                  ) && (
+                    <Verdict
+                      question={question}
+                      answer={answers[question.id]}
+                      answered={hasSubmitted}
+                    />
+                  )}
+                {hasSubmitted && (
+                  <MyAnswer question={question} answer={answers[question.id]} />
+                )}
                 {canCompete(question.type) && (
                   <div className="correct-answer">
                     <Check size={20} />
-                    {question.type === "twotruths" ? "The lie" : "Correct answer"}:{" "}
-                    {question.options[question.correct!]}
+                    {question.type === "twotruths"
+                      ? "The lie"
+                      : question.corrects?.length
+                        ? "Correct answers"
+                        : "Correct answer"}
+                    :{" "}
+                    {question.corrects?.length
+                      ? question.corrects
+                          .map((index) => question.options[index])
+                          .join(", ")
+                      : question.options[question.correct!]}
                   </div>
                 )}
                 <p className="waiting-note">
@@ -4142,6 +4408,9 @@ function Participant() {
                   Live results
                 </span>
                 <ResultsVisual question={question} />
+                {hasSubmitted && (
+                  <MyAnswer question={question} answer={answers[question.id]} />
+                )}
                 <p className="waiting-note">
                   {hasSubmitted ? "Your voice is in. " : ""}Results update as
                   people answer.
@@ -4154,6 +4423,7 @@ function Participant() {
                 </span>
                 <h2>Your voice is in.</h2>
                 <p>Let’s see what everyone thinks.</p>
+                <MyAnswer question={question} answer={answers[question.id]} />
                 <div className="waiting-dots">
                   <i />
                   <i />
@@ -4173,24 +4443,38 @@ function Participant() {
                   <div
                     className={`answer-options ${question.options.length >= 4 && question.type !== "twotruths" ? "two-col" : ""}`}
                   >
-                    {question.options.map((option, index) => (
-                      <button
-                        type="button"
-                        key={index}
-                        className={`answer-option ${currentAnswer === index ? "chosen" : ""}`}
-                        onClick={() => {
-                          setAnswer(index);
-                          setAnswerQuestion(question.id);
-                        }}
-                        aria-pressed={currentAnswer === index}
-                      >
-                        <span className={`option-letter color-${index % 4}`}>
-                          {String.fromCharCode(65 + index)}
-                        </span>
-                        <span>{option}</span>
-                        {currentAnswer === index && <Check size={20} />}
-                      </button>
-                    ))}
+                    {isMultiple && (
+                      <small className="multi-hint">Select all that apply</small>
+                    )}
+                    {question.options.map((option, index) => {
+                      const chosen = isMultiple
+                        ? selectedOptions.includes(index)
+                        : currentAnswer === index;
+                      return (
+                        <button
+                          type="button"
+                          key={index}
+                          className={`answer-option ${chosen ? "chosen" : ""}`}
+                          onClick={() => {
+                            setAnswer(
+                              isMultiple
+                                ? chosen
+                                  ? selectedOptions.filter((item) => item !== index)
+                                  : [...selectedOptions, index]
+                                : index,
+                            );
+                            setAnswerQuestion(question.id);
+                          }}
+                          aria-pressed={chosen}
+                        >
+                          <span className={`option-letter color-${index % 4}`}>
+                            {String.fromCharCode(65 + index)}
+                          </span>
+                          <span>{option}</span>
+                          {chosen && <Check size={20} />}
+                        </button>
+                      );
+                    })}
                   </div>
                 ) : question.type === "ranking" ? (
                   <div className="rank-list" aria-label="Drag to reorder, most important first">
@@ -4376,7 +4660,9 @@ function Participant() {
                       ? pointsAllocated !== 100
                       : question.type === "grid2x2"
                         ? !gridPoint
-                        : !["ranking", "slider"].includes(question.type) &&
+                        : isMultiple
+                          ? selectedOptions.length === 0
+                          : !["ranking", "slider"].includes(question.type) &&
                           (currentAnswer === "" ||
                             (typeof currentAnswer === "string" &&
                               !currentAnswer.trim())))

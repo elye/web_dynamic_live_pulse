@@ -61,8 +61,23 @@ export function validateQuestions(input) {
         options.some((option) => !option || option.length > 100))
     )
       throw new Error("Add 2 to 6 answer options, up to 100 characters each.");
+    const multiQuiz = question.type === "quiz" && question.multiple === true;
+    const corrects = multiQuiz
+      ? Array.isArray(question.corrects)
+        ? [...new Set(question.corrects)].sort((first, second) => first - second)
+        : []
+      : undefined;
+    if (
+      multiQuiz &&
+      (!corrects.length ||
+        corrects.some(
+          (index) => !Number.isInteger(index) || index < 0 || index >= options.length,
+        ))
+    )
+      throw new Error("Choose the correct answers.");
     if (
       canCompete(question.type) &&
+      !multiQuiz &&
       (!Number.isInteger(question.correct) ||
         question.correct < 0 ||
         question.correct >= options.length)
@@ -95,10 +110,20 @@ export function validateQuestions(input) {
       throw new Error("Only quiz, true-or-false and two-truths questions can be competitive.");
     if (question.showRanking !== undefined && typeof question.showRanking !== "boolean")
       throw new Error("Show ranking must be true or false.");
+    if (
+      question.multiple !== undefined &&
+      (typeof question.multiple !== "boolean" ||
+        (question.multiple && question.type !== "poll" && question.type !== "quiz"))
+    )
+      throw new Error("Only multiple choice polls and quizzes can allow multiple answers.");
     return {
       id: randomUUID(),
       type: question.type,
       title: question.title.trim(),
+      ...(question.type === "poll" || question.type === "quiz"
+        ? { multiple: question.multiple === true }
+        : {}),
+      ...(multiQuiz ? { corrects } : {}),
       ...(hasRevealMode(question.type)
         ? { revealMode: question.revealMode ?? defaultRevealMode(question.type) }
         : {}),
@@ -110,7 +135,11 @@ export function validateQuestions(input) {
         ? { sliderMin: question.sliderMin, sliderMax: question.sliderMax, sliderStep: question.sliderStep }
         : {}),
       options,
-      correct: canCompete(question.type) ? question.correct : null,
+      correct: canCompete(question.type)
+        ? multiQuiz
+          ? corrects[0]
+          : question.correct
+        : null,
     };
   });
 }
@@ -209,6 +238,8 @@ export function submitAuthored(room, token, input) {
       title: input.title,
       options: optionKinds.includes(kind) ? input.options : [],
       correct: input.correct,
+      ...(kind === "poll" || kind === "quiz" ? { multiple: input.multiple === true } : {}),
+      ...(kind === "quiz" ? { corrects: input.corrects } : {}),
       sliderMin: input.sliderMin,
       sliderMax: input.sliderMax,
       sliderStep: input.sliderStep,
@@ -225,6 +256,8 @@ export function authoredDraft(room, token) {
     title: question.title,
     options: question.options ?? [],
     correct: question.correct ?? null,
+    multiple: question.multiple,
+    corrects: question.corrects,
     sliderMin: question.sliderMin,
     sliderMax: question.sliderMax,
     sliderStep: question.sliderStep,
@@ -257,7 +290,19 @@ export function submitVote(room, token, questionId, value, now = Date.now()) {
     throw new Error("This question is no longer accepting responses.");
   const votes = room.votes.get(question.id);
   if (votes.has(token)) throw new Error("Your response is already in.");
-  if (question.type === "poll" || canCompete(question.type)) {
+  if ((question.type === "poll" || question.type === "quiz") && question.multiple) {
+    if (
+      !Array.isArray(value) ||
+      !value.length ||
+      new Set(value).size !== value.length ||
+      value.some(
+        (index) =>
+          !Number.isInteger(index) || index < 0 || index >= question.options.length,
+      )
+    )
+      throw new Error("Choose one or more of the available options.");
+    value = [...value].sort((first, second) => first - second);
+  } else if (question.type === "poll" || canCompete(question.type)) {
     if (
       !Number.isInteger(value) ||
       value < 0 ||
@@ -337,21 +382,31 @@ function markOpened(room, now) {
 export function scoreAnswer(room, question, token) {
   if (
     !canCompete(question.type) ||
-    room.authors.get(question.id) === token ||
-    room.votes.get(question.id).get(token) !== question.correct
+    room.authors.get(question.id) === token
   )
     return 0;
-  if (!question.competitive) return 1000;
-  const opened = room.openedAt.get(question.id);
-  const answered = room.answeredAt.get(question.id).get(token);
-  const elapsed =
-    opened === undefined || answered === undefined
-      ? speedWindowMs
-      : Math.max(0, answered - opened);
-  return (
-    baseScore +
-    Math.round(speedBonus * Math.max(0, 1 - elapsed / speedWindowMs))
-  );
+  const answer = room.votes.get(question.id).get(token);
+  // Multi-answer quizzes: any wrong pick scores 0; otherwise the points are
+  // scaled by the share of correct options found, then rounded to a whole number.
+  let share = 1;
+  if (question.corrects) {
+    if (!Array.isArray(answer) || !answer.length) return 0;
+    if (answer.some((index) => !question.corrects.includes(index))) return 0;
+    share = new Set(answer).size / question.corrects.length;
+  } else if (answer !== question.correct) return 0;
+  let points = 1000;
+  if (question.competitive) {
+    const opened = room.openedAt.get(question.id);
+    const answered = room.answeredAt.get(question.id).get(token);
+    const elapsed =
+      opened === undefined || answered === undefined
+        ? speedWindowMs
+        : Math.max(0, answered - opened);
+    points =
+      baseScore +
+      Math.round(speedBonus * Math.max(0, 1 - elapsed / speedWindowMs));
+  }
+  return Math.round(points * share);
 }
 
 export function submitUpvote(room, token, questionId, entrantToken) {
@@ -480,7 +535,9 @@ function results(room, question) {
   if (question.type === "poll" || canCompete(question.type))
     return question.options.map((text, index) => ({
       text,
-      count: values.filter((value) => value === index).length,
+      count: values.filter((value) =>
+        Array.isArray(value) ? value.includes(index) : value === index,
+      ).length,
     }));
   if (question.type === "ranking") {
     const points = new Array(question.options.length).fill(0);
@@ -602,6 +659,14 @@ export function snapshot(room, host = false) {
         host || (room.revealed && (index === room.active || room.ended))
           ? question.correct
           : null,
+      ...(question.corrects
+        ? {
+            corrects:
+              host || (room.revealed && (index === room.active || room.ended))
+                ? question.corrects
+                : [],
+          }
+        : {}),
       responses: room.votes.get(question.id).size,
       results:
         host ||

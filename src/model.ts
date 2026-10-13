@@ -39,6 +39,10 @@ export type Question = {
   sliderStep?: number;
   revealMode?: RevealMode;
   competitive?: boolean;
+  /** Multiple choice polls and quizzes: participants may pick more than one option. */
+  multiple?: boolean;
+  /** Multi-answer quizzes: every correct option (zero-based). Points need exactly these. */
+  corrects?: number[];
   /** Show the top-10 ranking after this question's results (answered questions only). */
   showRanking?: boolean;
   /** Name of the player who wrote this question (player-made sessions only). */
@@ -138,6 +142,7 @@ export function newQuestion(type: Kind): Question {
       : {}),
     ...(hasRevealMode(type) ? { revealMode: defaultRevealMode(type) } : {}),
     ...(canCompete(type) ? { competitive: true, showRanking: true } : {}),
+    ...(type === "poll" || type === "quiz" ? { multiple: false } : {}),
     options:
       type === "quiz"
         ? ["Jupiter", "Saturn", "Neptune", "Mars"]
@@ -250,11 +255,19 @@ export function serializeSession(session: Session): string {
           revealMode,
           competitive,
           showRanking,
+          multiple,
+          corrects,
         }) => ({
           type,
           title,
           options,
           correct,
+          ...(type === "poll" || type === "quiz"
+            ? { multiple: multiple === true }
+            : {}),
+          ...(type === "quiz" && multiple === true
+            ? { corrects: corrects?.length ? corrects : [correct ?? 0] }
+            : {}),
           ...(canCompete(type)
             ? {
                 competitive: competitive !== false,
@@ -398,8 +411,26 @@ export function importSession(json: string): Session {
           );
       } else if (options.length)
         throw new Error(prefix + "this question type must have empty options.");
+      const multiQuiz = question.type === "quiz" && question.multiple === true;
+      if (
+        multiQuiz &&
+        (!Array.isArray(question.corrects) ||
+          !question.corrects.length ||
+          question.corrects.some(
+            (index: unknown) =>
+              typeof index !== "number" ||
+              !Number.isInteger(index) ||
+              index < 0 ||
+              index >= options.length,
+          ))
+      )
+        throw new Error(
+          prefix +
+            "corrects must list one or more valid zero-based option indexes when multiple is true.",
+        );
       if (
         canCompete(question.type as Kind) &&
+        !multiQuiz &&
         (typeof question.correct !== "number" ||
           !Number.isInteger(question.correct) ||
           question.correct < 0 ||
@@ -444,9 +475,29 @@ export function importSession(json: string): Session {
         typeof question.showRanking !== "boolean"
       )
         throw new Error(prefix + "showRanking must be true or false.");
+      if (
+        question.multiple !== undefined &&
+        (typeof question.multiple !== "boolean" ||
+          (question.multiple &&
+            question.type !== "poll" &&
+            question.type !== "quiz"))
+      )
+        throw new Error(
+          prefix + "only poll and quiz questions can set multiple to true.",
+        );
       return {
         id: createId(),
         type: question.type as Kind,
+        ...(question.type === "poll" || question.type === "quiz"
+          ? { multiple: question.multiple === true }
+          : {}),
+        ...(multiQuiz
+          ? {
+              corrects: [
+                ...new Set(question.corrects as number[]),
+              ].sort((first, second) => first - second),
+            }
+          : {}),
         title:
           question.type === "twotruths" ? twoTruthsTitle : question.title.trim(),
         ...(canCompete(question.type as Kind)
@@ -473,9 +524,11 @@ export function importSession(json: string): Session {
             }
           : {}),
         options: options.map((option: string) => option.trim()),
-        correct: canCompete(question.type as Kind)
-          ? (question.correct as number)
-          : null,
+        correct: multiQuiz
+          ? Math.min(...(question.corrects as number[]))
+          : canCompete(question.type as Kind)
+            ? (question.correct as number)
+            : null,
       };
     },
   );

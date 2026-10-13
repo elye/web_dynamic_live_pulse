@@ -1563,13 +1563,17 @@ textarea {
   gap: 9px;
   margin-bottom: 9px;
 }
-.option-editor > input:not([type="radio"]) {
+.option-editor > input:not([type="radio"]):not([type="checkbox"]) {
   flex: 1;
 }
-.option-editor input[type="radio"] {
+.option-editor input[type="radio"],
+.option-editor input[type="checkbox"] {
   accent-color: #386a4e;
   width: 18px;
   height: 18px;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
   flex-shrink: 0;
 }
 .slider-range-editor {
@@ -2875,6 +2879,13 @@ textarea {
   flex-direction: column;
   gap: 12px;
 }
+.answer-options .multi-hint {
+  flex: 0 0 100%;
+  text-align: center;
+  color: #6b7a63;
+  font-size: 18px;
+  font-weight: 700;
+}
 /* 4+ options: two columns; an odd last item is centred between them. */
 .answer-options.two-col {
   flex-direction: row;
@@ -3395,6 +3406,33 @@ textarea {
   font-size: 10px;
   color: #8c9b80;
 }
+.my-answer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  max-width: 100%;
+  margin: 6px auto 0;
+  padding: 10px 16px;
+  background: #f1f6ec;
+  border: 1px solid #d6e3cc;
+  border-radius: 14px;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.my-answer small,
+.submitted-state .my-answer small {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b7a63;
+}
+.my-answer strong {
+  font-size: 16px;
+  color: #386a4e;
+  line-height: 1.4;
+}
 .waiting-dots {
   display: flex;
   gap: 5px;
@@ -3412,6 +3450,50 @@ textarea {
 }
 .waiting-dots i:nth-child(3) {
   animation-delay: 0.4s;
+}
+.verdict {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 6px 0;
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  text-align: left;
+}
+.verdict > svg {
+  flex-shrink: 0;
+}
+.verdict > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.verdict strong {
+  font-size: 17px;
+}
+.verdict span {
+  font-size: 13px;
+}
+.verdict-right {
+  background: #e3efdc;
+  border-color: #b9d4a8;
+  color: #2f6a3f;
+}
+.verdict-partial {
+  background: #fff4d6;
+  border-color: #ecd596;
+  color: #7a5a10;
+}
+.verdict-wrong {
+  background: #fbe5e2;
+  border-color: #efbab3;
+  color: #9a3328;
+}
+.verdict-missed {
+  background: #eef0ea;
+  border-color: #d9ddd3;
+  color: #6b7a63;
 }
 .participant-reveal .word-cloud {
   padding: 0;

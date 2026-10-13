@@ -96,6 +96,14 @@ export function createAppServer() {
             .map((question) => question.id),
           ...(room.crowd?.pending.has(memberToken) ? ["crowd-authored"] : []),
         ],
+        answers: Object.fromEntries(
+          room.questions
+            .filter((question) => room.votes.get(question.id).has(memberToken))
+            .map((question) => [
+              question.id,
+              room.votes.get(question.id).get(memberToken),
+            ]),
+        ),
         authored: authoredDraft(room, memberToken),
       };
     });

@@ -36,13 +36,13 @@ export const slideSpecs: Record<Kind, SlideSpec> = {
     rules: "options: []. correct: null. Title is an open prompt answerable in one or two words.",
   },
   poll: {
-    purpose: "Multiple choice poll with no correct answer. Participants pick one option.",
-    rules: "options: 2-6 strings (max 100 characters each). correct: null.",
+    purpose: "Multiple choice poll with no correct answer. Participants pick one option, or several when multiple is true.",
+    rules: "options: 2-6 strings (max 100 characters each). correct: null. Optional: multiple (boolean, default false; true lets participants select more than one option).",
   },
   quiz: {
     purpose: "Multiple choice quiz with one correct answer. Scored and ranked.",
     rules:
-      'options: 2-6 strings (max 100 characters each). "correct": zero-based index of the right option (REQUIRED). Optional: competitive (boolean, default true = faster answers score more), showRanking (boolean, default true), revealMode ("live" or "onDone", default "onDone").',
+      'options: 2-6 strings (max 100 characters each). "correct": zero-based index of the right option (REQUIRED). Optional: competitive (boolean, default true = faster answers score more), showRanking (boolean, default true), revealMode ("live" or "onDone", default "onDone"). Optional multiple (boolean, default false): when true, more than one option is correct, "corrects" (array of zero-based indexes, REQUIRED) lists them all, "correct" must be the smallest of them, and players earn points in proportion to the correct options selected (any wrong option selected scores 0).',
   },
   truefalse: {
     purpose: "True or false statement. Scored and ranked. The title is the statement to judge.",

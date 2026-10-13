@@ -24,6 +24,8 @@ export type AuthoredQuestion = {
   title: string;
   options: string[];
   correct: number | null;
+  multiple?: boolean;
+  corrects?: number[];
   sliderMin?: number;
   sliderMax?: number;
   sliderStep?: number;

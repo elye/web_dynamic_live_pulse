@@ -7,6 +7,7 @@ import {
   submitUpvote,
   submitAuthored,
   controlRoom,
+  scoreAnswer,
   snapshot,
   reactRoom,
   rooms,
@@ -389,6 +390,158 @@ test("multiple choice polls can allow several answers per participant", () => {
   assert.equal(question.multiple, true);
   assert.equal(question.responses, 2);
   assert.deepEqual(question.results.map((item) => item.count), [2, 0, 1]);
+  rooms.delete(room.code);
+});
+
+/** Creates a started room with one multi-answer quiz and returns helpers to answer and score it. */
+function multiQuizRoom(extra = {}, optionCount = 4) {
+  const options = ["A", "B", "C", "D", "E", "F"].slice(0, optionCount);
+  const room = createRoom("Multi quiz", [
+    { type: "quiz", title: "Pick all", options, multiple: true, corrects: [0, 2], competitive: false, ...extra },
+  ]);
+  const t0 = 1_000_000;
+  controlRoom(room, room.hostToken, "start", undefined, t0);
+  const question = room.questions[0];
+  let player = 0;
+  return {
+    room,
+    question,
+    /** One new player answers `value` after `afterMs`, and their score is returned. */
+    play(value, afterMs = 0) {
+      const token = joinRoom(room, `P${player++}`);
+      submitVote(room, token, question.id, value, t0 + afterMs);
+      return { token, score: scoreAnswer(room, question, token) };
+    },
+  };
+}
+
+test("multi-answer quiz definitions validate corrects and store them sorted and unique", () => {
+  const quiz = { type: "quiz", title: "Primes", options: ["2", "3", "4", "5"], multiple: true, corrects: [3, 0, 1, 1] };
+  assert.throws(() => createRoom("Invalid", [{ ...quiz, corrects: [] }]), /correct/i);
+  assert.throws(() => createRoom("Invalid", [{ ...quiz, corrects: [9] }]), /correct/i);
+  assert.throws(() => createRoom("Invalid", [{ ...quiz, corrects: [-1] }]), /correct/i);
+  assert.throws(() => createRoom("Invalid", [{ ...quiz, corrects: undefined }]), /correct/i);
+  const room = createRoom("Multi quiz", [quiz]);
+  assert.deepEqual(room.questions[0].corrects, [0, 1, 3]);
+  assert.equal(room.questions[0].correct, 0);
+  rooms.delete(room.code);
+});
+
+test("multi-answer quiz votes must be a non-empty list of distinct valid options", () => {
+  const { room, question } = multiQuizRoom();
+  const token = joinRoom(room, "Alex");
+  for (const bad of [0, [], [0, 0], [4], [-1], ["0"], null])
+    assert.throws(() => submitVote(room, token, question.id, bad), /one or more/);
+  rooms.delete(room.code);
+});
+
+test("multi-answer quiz: partial credit is proportional, rounded to the nearest whole point", () => {
+  // Three correct options (A, C, E) out of five.
+  const { room, play } = multiQuizRoom({ corrects: [0, 2, 4] }, 5);
+  assert.equal(play([0, 2, 4]).score, 1000, "all correct");
+  assert.equal(play([4, 0]).score, 667, "2 of 3 = 666.67 rounds up");
+  assert.equal(play([2]).score, 333, "1 of 3 = 333.33 rounds down");
+  assert.equal(play([0, 0 + 2]).score, 667, "order does not matter");
+  rooms.delete(room.code);
+});
+
+test("multi-answer quiz: any wrong option picked scores zero", () => {
+  const { room, play } = multiQuizRoom({ corrects: [0, 2] });
+  assert.equal(play([0, 2]).score, 1000);
+  assert.equal(play([0]).score, 500);
+  assert.equal(play([0, 1]).score, 0, "one right, one wrong");
+  assert.equal(play([1]).score, 0, "only wrong");
+  assert.equal(play([0, 2, 3]).score, 0, "all right plus one wrong");
+  assert.equal(play([0, 1, 2, 3]).score, 0, "everything selected");
+  rooms.delete(room.code);
+});
+
+test("multi-answer quiz: rounding of every share from 1/6 to 6/6", () => {
+  const { room, play } = multiQuizRoom({ corrects: [0, 1, 2, 3, 4, 5] }, 6);
+  const expected = [167, 333, 500, 667, 833, 1000]; // 1000 * n / 6, rounded
+  expected.forEach((score, index) =>
+    assert.equal(play(Array.from({ length: index + 1 }, (_, i) => i)).score, score),
+  );
+  rooms.delete(room.code);
+});
+
+test("multi-answer quiz: speed scoring is scaled by the share and rounded last", () => {
+  // 3000 ms in: 500 + round(500 * (1 - 3000 / 20000)) = 925 for a fully correct answer.
+  const { room, play } = multiQuizRoom({ corrects: [0, 1], competitive: true });
+  assert.equal(play([0, 1], 3000).score, 925);
+  assert.equal(play([0], 3000).score, 463, "925 / 2 = 462.5 rounds up");
+  assert.equal(play([0, 2], 3000).score, 0, "wrong option scores zero even when fast");
+  // Slow answers keep the 500 base: half of it is 250.
+  assert.equal(play([1], 60_000).score, 250);
+  rooms.delete(room.code);
+});
+
+test("multi-answer quiz: an author never scores their own question and unanswered players score zero", () => {
+  const { room, question, play } = multiQuizRoom({ corrects: [0, 1] });
+  const idle = joinRoom(room, "Idle");
+  assert.equal(scoreAnswer(room, question, idle), 0);
+  const { token } = play([0, 1]);
+  room.authors.set(question.id, token);
+  assert.equal(scoreAnswer(room, question, token), 0);
+  rooms.delete(room.code);
+});
+
+test("multi-answer quiz: the leaderboard uses the partial scores", () => {
+  const { room, play } = multiQuizRoom({ corrects: [0, 1, 2] }, 4);
+  play([0, 1, 2]);
+  play([0, 1]);
+  play([0, 3]);
+  controlRoom(room, room.hostToken, "reveal");
+  const board = Object.fromEntries(snapshot(room, true).leaderboard.map((e) => [e.name, e.score]));
+  assert.deepEqual(board, { P0: 1000, P1: 667, P2: 0 });
+  rooms.delete(room.code);
+});
+
+test("multi-answer quiz: results count every selected option, right or wrong", () => {
+  // Correct answers are A and C. Players pick B+C, A, A+C and D+B.
+  const { room, play } = multiQuizRoom({ corrects: [0, 2] });
+  play([1, 2]);
+  play([0]);
+  play([0, 2]);
+  play([3, 1]);
+  const counts = () => snapshot(room, true).questions[0].results.map((item) => item.count);
+  assert.deepEqual(counts(), [2, 2, 2, 1], "A=2, B=2, C=2, D=1");
+  assert.equal(snapshot(room, true).questions[0].responses, 4, "counted per player, not per pick");
+  // Hidden from players until revealed, then visible with the correct answers.
+  assert.deepEqual(snapshot(room).questions[0].results, []);
+  assert.deepEqual(snapshot(room).questions[0].corrects, []);
+  controlRoom(room, room.hostToken, "reveal");
+  assert.deepEqual(snapshot(room).questions[0].results.map((item) => item.count), [2, 2, 2, 1]);
+  assert.deepEqual(snapshot(room).questions[0].corrects, [0, 2]);
+  rooms.delete(room.code);
+});
+
+test("multi-answer poll: results count every selected option and responses count players", () => {
+  const room = createRoom("Poll", [{ type: "poll", title: "Pick any", options: ["A", "B", "C"], multiple: true }]);
+  const a = joinRoom(room, "A");
+  const b = joinRoom(room, "B");
+  const c = joinRoom(room, "C");
+  controlRoom(room, room.hostToken, "start");
+  const id = room.questions[0].id;
+  submitVote(room, a, id, [0, 1, 2]);
+  submitVote(room, b, id, [1]);
+  submitVote(room, c, id, [2, 1]);
+  const [question] = snapshot(room, true).questions;
+  assert.deepEqual(question.results.map((item) => item.count), [1, 3, 2]);
+  assert.equal(question.responses, 3);
+  rooms.delete(room.code);
+});
+
+test("single-answer quizzes still score all or nothing", () => {
+  const room = createRoom("Single", [{ type: "quiz", title: "One", options: ["A", "B"], correct: 1, competitive: false }]);
+  const right = joinRoom(room, "Right");
+  const wrong = joinRoom(room, "Wrong");
+  controlRoom(room, room.hostToken, "start");
+  const [question] = room.questions;
+  submitVote(room, right, question.id, 1);
+  submitVote(room, wrong, question.id, 0);
+  assert.equal(scoreAnswer(room, question, right), 1000);
+  assert.equal(scoreAnswer(room, question, wrong), 0);
   rooms.delete(room.code);
 });
 

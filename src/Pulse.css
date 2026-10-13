@@ -1563,13 +1563,17 @@ textarea {
   gap: 9px;
   margin-bottom: 9px;
 }
-.option-editor > input:not([type="radio"]) {
+.option-editor > input:not([type="radio"]):not([type="checkbox"]) {
   flex: 1;
 }
-.option-editor input[type="radio"] {
+.option-editor input[type="radio"],
+.option-editor input[type="checkbox"] {
   accent-color: #386a4e;
   width: 18px;
   height: 18px;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
   flex-shrink: 0;
 }
 .slider-range-editor {

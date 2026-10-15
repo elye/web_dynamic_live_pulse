@@ -1,0 +1,60 @@
+import { Users } from "lucide-react";
+import { ReactionBar } from "../../../components/ReactionBar";
+import { useParticipant } from "../ParticipantContext";
+import { AnswerForm } from "./AnswerForm";
+import { LiveResultsReveal } from "./LiveResultsReveal";
+import { PausedState } from "./PausedState";
+import { PodiumReveal } from "./PodiumReveal";
+import { QnaSession } from "./QnaSession";
+import { QuestionHeader } from "./QuestionHeader";
+import { RankingReveal } from "./RankingReveal";
+import { ResultsReveal } from "./ResultsReveal";
+import { SlideView } from "./SlideView";
+import { SubmittedState } from "./SubmittedState";
+
+export function QuestionScreen() {
+  const { room, question, hasSubmitted, connected, sendHeart, reactionTap } =
+    useParticipant();
+  if (!room || !question) return null;
+  return (
+    <main className="participant-session">
+      <QuestionHeader />
+      {room.podium && room.scored ? (
+        <PodiumReveal />
+      ) : room.ranking ? (
+        <RankingReveal />
+      ) : question.type === "slide" ? (
+        <SlideView />
+      ) : question.type === "qna" ? (
+        <QnaSession />
+      ) : room.revealed ? (
+        <ResultsReveal />
+      ) : question.revealMode === "live" &&
+        !room.hidden &&
+        (hasSubmitted || !room.accepting) ? (
+        <LiveResultsReveal />
+      ) : hasSubmitted ? (
+        <SubmittedState />
+      ) : !room.accepting ? (
+        <PausedState />
+      ) : (
+        <AnswerForm />
+      )}
+      <ReactionBar
+        tap={reactionTap}
+        disabled={!connected}
+        onSend={(kind) => void sendHeart(kind)}
+      />
+      <div className="participant-bottom">
+        <span>
+          <Users size={15} />
+          {room.participants} in the room
+        </span>
+        <span>
+          <span className="live-dot" />
+          Live together
+        </span>
+      </div>
+    </main>
+  );
+}

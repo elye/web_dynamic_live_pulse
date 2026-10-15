@@ -1,0 +1,258 @@
+/* Presentation mode and live controls. */
+
+.empty-rings {
+  display: grid;
+  place-items: center;
+  width: 67px;
+  height: 67px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  opacity: 0.4;
+  margin-bottom: 12px;
+  animation: breathe 3s infinite;
+}
+
+.audience-count {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  color: #718563;
+}
+
+.separator {
+  margin: 0 3px;
+  opacity: 0.5;
+}
+
+.live-indicator {
+  color: #3b7b49;
+}
+
+.live-controls {
+  display: flex;
+  gap: 10px;
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+}
+
+.live-controls > .primary {
+  margin-left: auto;
+}
+
+.presentation-shell .topbar {
+  padding: 0 40px;
+}
+
+.presentation-shell .logo {
+  font-size: 29px;
+}
+
+.presentation-shell .logo-symbol {
+  height: 31px;
+  width: 29px;
+}
+
+.presentation-title {
+  margin-right: auto;
+  font-size: 12px;
+  color: var(--muted);
+  margin-left: 15px;
+}
+
+.presenting .studio-heading {
+  margin-bottom: 17px;
+}
+
+.presenting .editor-layout {
+  grid-template-columns: 1fr;
+}
+
+.presenting .canvas-toolbar {
+  display: none;
+}
+
+.presenting .question-stage {
+  aspect-ratio: 2;
+  min-height: 480px;
+}
+
+.presenting .stage-title h2 {
+  font-size: 38px;
+  max-width: 850px;
+}
+
+.presenting .stage-title {
+  max-width: 900px;
+  margin-top: 35px;
+}
+
+.presenting .word-cloud {
+  max-width: 850px;
+}
+
+.presenting .question-eyebrow {
+  font-size: 9px;
+}
+
+.presenting .stage-top {
+  font-size: 11px;
+}
+
+.presenting .stage-top > span:last-child {
+  font-size: 10px;
+}
+
+.presenting .stage-kind {
+  font-size: 10px;
+}
+
+.presentation-shell .app-footer {
+  display: none;
+}
+
+@media (min-width: 1500px) {
+  .question-stage .stage-title {
+    margin-top: 44px;
+  }
+}
+
+@media (max-width: 760px) {
+  .live-controls {
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+  .live-controls .button {
+    font-size: 10px;
+    padding-inline: 11px;
+  }
+  .presentation-shell .topbar {
+    padding-inline: 20px;
+  }
+  .presentation-title {
+    font-size: 10px;
+    margin-left: 0;
+    display: none;
+  }
+  .presenting .question-stage {
+    min-height: 440px;
+    aspect-ratio: auto;
+  }
+  .presenting .stage-title h2 {
+    font-size: 29px;
+  }
+  .presenting .question-eyebrow {
+    font-size: 7px;
+  }
+  .presenting .stage-top > span:last-child {
+    font-size: 8px;
+  }
+  .audience-count {
+    font-size: 9px;
+  }
+  .audience-count .separator {
+    margin: 0;
+  }
+  .presenting .heading-actions {
+    padding-top: 8px;
+  }
+  .presenting .session-heading > p {
+    display: none;
+  }
+  .presenting .studio-heading {
+    align-items: center;
+  }
+  .presenting .stage-title {
+    margin-top: 35px;
+  }
+  .presenting .stage-kind {
+    font-size: 8px;
+  }
+  .presenting .stage-top > span:last-child {
+    font-size: 7px;
+  }
+}
+
+@media (max-width: 540px) {
+  .live-controls {
+    justify-content: space-between;
+  }
+  .live-controls .button {
+    font-size: 8px;
+    padding: 9px;
+    gap: 6px;
+    min-height: 34px;
+  }
+  .live-controls > .primary {
+    width: 100%;
+    margin: 3px 0 0;
+  }
+  .live-controls > .button > svg {
+    width: 14px;
+  }
+  .audience-count {
+    font-size: 8px;
+    gap: 4px;
+    flex-wrap: wrap;
+    max-width: 160px;
+  }
+  .audience-count svg {
+    width: 14px;
+  }
+  .audience-count > .separator {
+    display: none;
+  }
+  .audience-count > .live-indicator {
+    width: 100%;
+    padding-left: 18px;
+    font-size: 7px;
+  }
+  .presentation-shell .topbar {
+    height: 68px;
+  }
+  .presentation-shell .topbar .logo {
+    font-size: 26px;
+  }
+  .presentation-shell .topbar .logo-symbol {
+    width: 26px;
+    height: 29px;
+  }
+  .presentation-shell .topbar .small-button {
+    font-size: 9px;
+    padding: 7px;
+  }
+  .presenting {
+    padding-inline: 17px;
+  }
+  .presenting .studio-heading {
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .presenting .session-heading {
+    width: auto;
+  }
+  .presenting .heading-actions {
+    width: auto;
+    justify-content: start;
+    gap: 8px;
+    padding: 0;
+  }
+  .presenting .title-row h1 {
+    font-size: 23px;
+  }
+  .presenting .question-stage {
+    min-height: 440px;
+  }
+  .presenting .stage-title h2 {
+    font-size: 27px;
+  }
+  .presenting .question-eyebrow {
+    font-size: 6px;
+  }
+  .presenting .stage-kind {
+    font-size: 7px;
+  }
+  .presenting .stage-top > span:last-child {
+    font-size: 7px;
+  }
+}

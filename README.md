@@ -15,7 +15,7 @@ Open http://localhost:5173. The command starts Vite and the live server together
 
 ## Host a Session
 
-1. Start in the studio with an editable four-question check-in, or create a session from the template library.
+1. The app opens on **My sessions**. Open the editable four-question check-in to enter the studio, or create a session from the template library.
 2. Edit questions, answer choices, and correct quiz answers. Duplicate, reorder, or delete questions and select a slide mood. Reorder by dragging a question's card in the question rail to a new position (drag handle on the right), or use the up/down arrows in the question details panel. Reordering is disabled while a session is live.
 3. Select **Present live** to open the welcome screen. The QR code, room code, and selectable participant URL are always visible beside the live participant roster. Use the copy icon to copy the URL, or select the field to copy it manually.
   Select **Start questions** when everyone is ready. Participants wait in the welcome lobby until then.
@@ -256,7 +256,7 @@ Conventions:
 - Dependencies point downward: `features/*` may import `components/`, `constants/`, `hooks/` and `model.ts`. Those shared folders never import from `features/`. Features import each other only for shared visuals such as `results/` and `lobby/`.
 - Files that export components export only components. Keep constants and helpers in separate `.ts` files so fast refresh keeps working.
 - Stylesheets are plain global CSS. Class names are unique across files, so a rule lives in the file of the feature that owns the component. `styles/index.css` imports them in a fixed order. Later files win ties with equal specificity, and `motion.css` must stay last.
-- E2E specs import `test` and `expect` from `e2e/helpers/test.ts`. That `test` installs the cloud canvas probe on every page.
+- E2E specs import `test` and `expect` from `e2e/helpers/test.ts`. That `test` installs the cloud canvas probe on every page. Host specs call `gotoStudio(page)` from `e2e/helpers/studio.ts`, because the app opens on **My sessions** rather than inside a session.
 
 ## Checks
 

@@ -1,0 +1,126 @@
+/* Join QR, share links and the help dialog. */
+
+/* Join QR pinned to the top right of every live slide. */
+
+.join-qr {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 5px 5px 4px;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px #1d3a2a24;
+  color: #315239;
+}
+
+.join-qr svg {
+  display: block;
+  width: 72px;
+  height: 72px;
+}
+
+.join-qr span {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.presenting .join-qr svg {
+  width: 96px;
+  height: 96px;
+}
+
+.presenting .join-qr span {
+  font-size: 10px;
+}
+
+/* The room code sits under the QR, so drop the duplicate in the header row. */
+
+.join-qr strong {
+  font-family: "Manrope", sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+  padding-bottom: 1px;
+}
+
+.presenting .join-qr strong {
+  font-size: 17px;
+}
+
+.question-stage.has-qr .stage-top > span:last-child {
+  display: none;
+}
+
+.share-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 17px;
+  text-align: center;
+}
+
+.share-code {
+  font-family: "Manrope", sans-serif;
+  font-size: 43px;
+  line-height: 1;
+}
+
+.qr-frame {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.qr-frame svg {
+  display: block;
+}
+
+.eyebrow {
+  font-size: 9px;
+  font-weight: 650;
+  color: #8b9988;
+}
+
+.share-link {
+  flex-direction: row;
+  align-items: center;
+  background: #f7f9f5;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  width: 100%;
+  padding: 5px 8px;
+  color: #8b9988;
+}
+
+.share-link input {
+  font-size: 11px;
+  background: none;
+  border: none;
+  flex: 1;
+  padding: 8px 0;
+}
+
+.help-content h3 {
+  font-size: 13px;
+  margin-top: 22px;
+}
+
+.help-content p {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #869180;
+  margin-top: 7px;
+}
+
+.help-content h3:first-child {
+  margin-top: 0;
+}

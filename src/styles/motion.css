@@ -1,0 +1,18 @@
+/* Reduced-motion overrides. Keep last so it wins over earlier animations. */
+
+@media (prefers-reduced-motion: reduce) {
+  .heart-layer,
+  .confetti {
+    display: none;
+  }
+  .podium-place {
+    animation: none !important;
+  }
+  *,
+  *:before,
+  *:after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

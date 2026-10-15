@@ -1,0 +1,92 @@
+/* Buttons shared by every screen. */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 12px 17px;
+  border-radius: 5px;
+  line-height: 1.3;
+  min-height: 41px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.primary {
+  background: #275642;
+  color: #fff;
+  box-shadow: 0 2px 3px #153a2b0c;
+}
+
+.primary:hover:not(:disabled) {
+  background: #173f2e;
+  box-shadow: 0 3px 9px #1b443524;
+}
+
+.secondary {
+  background: #fff;
+  border-color: #e0e6df;
+  color: #59695d;
+}
+
+.secondary:hover:not(:disabled) {
+  background: #f3f6f2;
+  border-color: #b8caba;
+}
+
+.small-button {
+  font-size: 10px;
+  min-height: 33px;
+  padding: 8px 11px;
+}
+
+.danger-outline {
+  border-color: #ecd8d0;
+  color: #b36959;
+  background: #fff;
+}
+
+.danger {
+  background: #a74738;
+  color: #fff;
+}
+
+.text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  background: none;
+  font-weight: 500;
+  padding: 4px 0;
+  color: #657567;
+}
+
+.text-button:hover {
+  color: #225c3e;
+}
+
+.icon-button {
+  width: 29px;
+  height: 29px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: transparent;
+  border-radius: 4px;
+  color: #839084;
+}
+
+.icon-button:hover:not(:disabled) {
+  background: #e8eee7;
+  color: #2a5740;
+}
+
+.icon-button.toggle-on {
+  background: #dcecd8;
+  color: #2a5740;
+}

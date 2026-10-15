@@ -228,6 +228,36 @@ npm start
 
 Open http://localhost:3001. Express serves the production build, API, and Socket.IO from the same origin. `PORT` changes the production listening port. `npm run preview` previews only the frontend; it is not the complete live app.
 
+## Project Structure
+
+```text
+src/
+  main.tsx, App.tsx, Pulse.tsx   Entry points; Pulse picks Host or Participant by URL
+  model.ts, live.ts, aiPrompt.ts Shared domain types, socket client, AI prompt text
+  components/                    Small UI pieces used by several features
+  constants/                     Static data (question kinds, hints, reactions)
+  hooks/                         Reusable hooks
+  features/
+    host/                        Host app: useHostController, layout/, studio/, library/, modals/
+    participant/                 Participant app: useParticipantController, pages, question/, inputs/
+    editor/                      Question editor form; one file per form section
+    results/ stage/ lobby/       Result visuals, question stage, welcome lobby
+    scoring/ crowd/ share/       Leaderboard and podium, player-made questions, join and share
+    sessions/                    Results page and import / AI prompt dialogs
+  styles/                        Plain CSS split by feature; index.css fixes the import order
+server/                          Express and Socket.IO server (rooms.mjs holds the domain)
+e2e/                             Playwright specs by feature; helpers/ holds shared utilities
+```
+
+Conventions:
+
+- Each file has one job and stays under about 400 lines.
+- `Host` and `Participant` each build one controller hook (state, derived values, actions) and share it through context. Screens and sections read what they need with `useHost()` or `useParticipant()`.
+- Dependencies point downward: `features/*` may import `components/`, `constants/`, `hooks/` and `model.ts`. Those shared folders never import from `features/`. Features import each other only for shared visuals such as `results/` and `lobby/`.
+- Files that export components export only components. Keep constants and helpers in separate `.ts` files so fast refresh keeps working.
+- Stylesheets are plain global CSS. Class names are unique across files, so a rule lives in the file of the feature that owns the component. `styles/index.css` imports them in a fixed order. Later files win ties with equal specificity, and `motion.css` must stay last.
+- E2E specs import `test` and `expect` from `e2e/helpers/test.ts`. That `test` installs the cloud canvas probe on every page.
+
 ## Checks
 
 ```sh

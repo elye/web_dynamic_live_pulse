@@ -1,6 +1,7 @@
 import { expect, test } from "./helpers/test";
 import { checkCloudGeometry, installCloudProbe } from "./helpers/cloud";
 import { noOverflow } from "./helpers/layout";
+import { gotoStudio } from "./helpers/studio";
 
 test("two audiences answer all types, reconnect, receive reveals, and finish with scores and export", async ({
   page,
@@ -8,7 +9,7 @@ test("two audiences answer all types, reconnect, receive reveals, and finish wit
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.goto("/");
+  await gotoStudio(page);
   await page.getByRole("button", { name: "Present live", exact: true }).click();
   await expect(
     page

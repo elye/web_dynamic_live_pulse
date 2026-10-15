@@ -1,11 +1,12 @@
 import { expect, test } from "./helpers/test";
 import { checkCloudGeometry } from "./helpers/cloud";
 import { noOverflow } from "./helpers/layout";
+import { gotoStudio } from "./helpers/studio";
 
 for (const width of [390, 768, 1440]) {
   test(`studio and participant join layout at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });
-    await page.goto("/");
+    await gotoStudio(page);
     await expect(
       page.getByRole("button", { name: "Present live", exact: true }),
     ).toBeEnabled();

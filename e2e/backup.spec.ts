@@ -1,11 +1,12 @@
 import { expect, test } from "./helpers/test";
 import { readFile } from "node:fs/promises";
 import { noOverflow } from "./helpers/layout";
+import { gotoStudio } from "./helpers/studio";
 
 test("session JSON backup restores a deleted draft from a file or pasted JSON", async ({
   page,
 }) => {
-  await page.goto("/");
+  await gotoStudio(page);
   await page
     .getByLabel("Session title", { exact: true })
     .fill("Portable workshop");

@@ -1,10 +1,11 @@
 import { expect, test } from "./helpers/test";
+import { gotoStudio } from "./helpers/studio";
 
 test("two truths and a lie uses a fixed question and shows the statements in a single column", async ({
   page,
   browser,
 }) => {
-  await page.goto("/");
+  await gotoStudio(page);
   await page
     .getByRole("button", { name: "Add question", exact: true })
     .last()

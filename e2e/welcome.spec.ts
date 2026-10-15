@@ -1,5 +1,6 @@
 import { expect, test } from "./helpers/test";
 import { noOverflow } from "./helpers/layout";
+import { gotoStudio } from "./helpers/studio";
 
 test("welcome screen keeps QR, copyable URL, and roster visible without a dialog", async ({
   page,
@@ -9,7 +10,7 @@ test("welcome screen keeps QR, copyable URL, and roster visible without a dialog
   await page.route("**/api/network", (route) =>
     route.fulfill({ json: { address: "192.168.0.3" } }),
   );
-  await page.goto("/");
+  await gotoStudio(page);
   await page.getByRole("button", { name: "Present live", exact: true }).click();
   const lobby = page.getByRole("region", { name: "Welcome lobby" });
   const link = lobby.getByRole("textbox", {

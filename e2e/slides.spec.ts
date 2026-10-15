@@ -1,10 +1,11 @@
 import { expect, test } from "./helpers/test";
+import { gotoStudio } from "./helpers/studio";
 
 test("title-and-description slides show no input to participants or reveal controls to hosts", async ({
   page,
   context,
 }) => {
-  await page.goto("/");
+  await gotoStudio(page);
   await page
     .getByRole("button", { name: "Add question", exact: true })
     .last()

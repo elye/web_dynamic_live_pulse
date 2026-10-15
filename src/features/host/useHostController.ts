@@ -28,9 +28,8 @@ export function useHostController() {
   const [page, setPage] = useState<
     "studio" | "sessions" | "templates" | "results"
   >(() =>
-    readStored<Session[] | null>("pulse:sessions", null)?.length === 0
-      ? "sessions"
-      : "studio",
+    // Open on the workspace, but a reload mid-session returns to the live studio.
+    readStored("pulse:host", null) ? "studio" : "sessions",
   );
   const [modal, setModal] = useState<
     | "add"

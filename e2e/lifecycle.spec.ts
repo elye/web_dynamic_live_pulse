@@ -1,12 +1,13 @@
 import { expect, test } from "./helpers/test";
 import { readFile } from "node:fs/promises";
+import { gotoStudio } from "./helpers/studio";
 
 for (const ended of [false, true]) {
   test(`delete ${ended ? "ended" : "live"} session removes its room and notifies participants`, async ({
     page,
     browser,
   }) => {
-    await page.goto("/");
+    await gotoStudio(page);
     await page
       .getByRole("button", { name: "Present live", exact: true })
       .click();

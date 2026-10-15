@@ -1,4 +1,5 @@
 import { expect, test } from "./helpers/test";
+import { gotoStudio, openStudio } from "./helpers/studio";
 
 test("edit, duplicate, reorder, delete, and save a question on a LAN-compatible host", async ({
   page,
@@ -9,7 +10,7 @@ test("edit, duplicate, reorder, delete, and save a question on a LAN-compatible 
       configurable: true,
     }),
   );
-  await page.goto("/");
+  await gotoStudio(page);
   await expect(
     page.getByRole("button", { name: "Present live", exact: true }),
   ).toBeEnabled();
@@ -48,6 +49,7 @@ test("edit, duplicate, reorder, delete, and save a question on a LAN-compatible 
   await expect(page.locator(".question-thumbnail")).toHaveCount(4);
   await page.getByRole("button", { name: "peach theme", exact: true }).click();
   await page.reload();
+  await openStudio(page);
   await expect(page.locator(".question-stage")).toHaveClass(/theme-peach/);
   await expect(
     page.getByRole("heading", {

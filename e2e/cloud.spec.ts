@@ -2,11 +2,12 @@ import { expect, test } from "./helpers/test";
 import { io as connect } from "socket.io-client";
 import { checkCloudGeometry, installCloudProbe } from "./helpers/cloud";
 import { noOverflow } from "./helpers/layout";
+import { gotoStudio } from "./helpers/studio";
 
 test("cloud simulator previews many words without changing the session", async ({
   page,
 }) => {
-  await page.goto("/");
+  await gotoStudio(page);
   await expect(page.locator(".cloud-canvas")).toHaveAttribute(
     "data-ready",
     "true",
@@ -74,7 +75,7 @@ test("cloud simulator previews many words without changing the session", async (
 test("dense canvas cloud handles long phrases, live updates, and resizing", async ({
   page,
 }) => {
-  await page.goto("/");
+  await gotoStudio(page);
   await page.getByRole("button", { name: "Present live", exact: true }).click();
   const url = await page
     .getByLabel("Participant link", { exact: true })
@@ -151,7 +152,7 @@ test("canvas cloud stays crisp and collision-free on high-DPI phones", async ({
   try {
     const page = await context.newPage();
     await installCloudProbe(page);
-    await page.goto("/");
+    await gotoStudio(page);
     await checkCloudGeometry(page, 11);
     expect(
       await page

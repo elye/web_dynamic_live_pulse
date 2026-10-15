@@ -115,9 +115,7 @@ test("two audiences answer all types, reconnect, receive reveals, and finish wit
       audience.getByText("Live results", { exact: true }),
     ).toBeVisible();
     await expect(page.locator(".audience-count strong")).toHaveText("2");
-    await page
-      .getByRole("button", { name: "Reveal results", exact: true })
-      .click();
+    // Word clouds show results live, so the host can hide them instead.
     await expect(audience.locator(".word-cloud")).toContainText("inspired");
     await checkCloudGeometry(audience, 1);
     await page
@@ -146,9 +144,7 @@ test("two audiences answer all types, reconnect, receive reveals, and finish wit
     await audience
       .getByRole("button", { name: "Send response", exact: true })
       .click();
-    await page
-      .getByRole("button", { name: "Reveal results", exact: true })
-      .click();
+    // Polls without an answer show results live, so there is nothing to reveal.
     await expect(audience.locator(".poll-results")).toContainText("100%");
     await page
       .getByRole("button", { name: "Next question", exact: true })

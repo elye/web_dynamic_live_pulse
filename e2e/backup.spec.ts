@@ -88,6 +88,7 @@ test("session JSON backup restores a deleted draft from a file or pasted JSON", 
         options,
         correct,
         revealMode,
+        multiple,
         competitive,
         showRanking,
       }: {
@@ -96,6 +97,7 @@ test("session JSON backup restores a deleted draft from a file or pasted JSON", 
         options: string[];
         correct: number | null;
         revealMode?: string;
+        multiple?: boolean;
         competitive?: boolean;
         showRanking?: boolean;
       }) => ({
@@ -104,6 +106,7 @@ test("session JSON backup restores a deleted draft from a file or pasted JSON", 
         options,
         correct,
         ...(revealMode ? { revealMode } : {}),
+        ...(multiple !== undefined ? { multiple } : {}),
         ...(competitive !== undefined ? { competitive } : {}),
         ...(showRanking !== undefined ? { showRanking } : {}),
       }),

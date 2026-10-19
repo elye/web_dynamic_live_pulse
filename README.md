@@ -40,6 +40,8 @@ A quiz or true-or-false author does not earn points for their own question. Play
 
 Add a **Title & description** question when you just need to show participants a title and a longer description without collecting any response, such as a welcome slide or a break announcement. Participants see only the title and description text and cannot submit anything; hosts see **Next question**/**Finish session** but no pause or reveal controls, since there is nothing to collect. Slide questions are skipped in the results summary.
 
+**Word cloud** questions let each participant submit a short word or phrase. In the question editor, set **Submissions per participant** from 1 to 5 (default 1). Participants see a clear hint telling them they can contribute up to that number of times, with the remaining count after each contribution. Exported JSON stores this as `"maxSubmissions": 1` to `5`; missing values default to 1.
+
 **Multiple choice** questions have an **Allow multiple answers** checkbox in the question editor (and in the player-made question form). It is off by default. When on, participants see "Select all that apply", can toggle any number of options, and submit once. Each option's percentage is the share of participants who picked it, so the percentages can add up to more than 100%. It is stored as `"multiple": true` in exported JSON (valid on `poll` and `quiz` questions; a missing value means off).
 
 **Quiz** questions have the same **Allow multiple answers** checkbox. When on, the editor's correct-answer radio buttons become checkboxes so you can tick every correct option, and players select as many options as they like. A player earns points in proportion to the correct options they selected (for example 2 of 3 correct options earns 67% of the points, rounded to the nearest whole point; speed scoring still applies if enabled). Selecting **any** wrong option scores 0. On reveal, every correct option is highlighted, and each option's percentage counts every player who picked it, whether it was right or wrong. In JSON this is `"multiple": true` plus `"corrects": [0, 2]` (zero-based indexes, at least one), with `correct` set to the smallest of them.
@@ -132,6 +134,14 @@ The versioned format is:
   "theme": "mint",
   "questions": [
     {
+      "type": "cloud",
+      "title": "Describe this sprint in one word.",
+      "options": [],
+      "correct": null,
+      "maxSubmissions": 3,
+      "revealMode": "live"
+    },
+    {
       "type": "quiz",
       "title": "Which planet has the most moons?",
       "options": ["Jupiter", "Saturn", "Neptune", "Mars"],
@@ -184,6 +194,8 @@ The versioned format is:
 ```
 
 Supported types are `slide`, `cloud`, `poll`, `quiz`, `truefalse`, `twotruths`, `ranking`, `slider`, `qna`, `points100`, `grid2x2`, and `text`; supported themes are `mint`, `peach`, `lilac`, and `sky`. `correct` is a zero-based option index for quizzes, true-or-false questions, and two-truths-and-a-lie questions (where it points at the lie), and `null` otherwise (including for ranking, slider, Q&A, 100 Points, and 2x2 Grid, which have no single correct answer). Word clouds, open responses, Q&A, and slides use an empty `options` array; true-or-false questions require exactly 2 options; two-truths-and-a-lie questions require exactly 3 statements (up to 200 characters each) and always use the title "Pick the one that is not true.", whatever title is supplied; polls, quizzes, ranking, and 100 Points require 2 to 6; 2x2 Grid questions require exactly 4 options, used as axis labels in a fixed order (x-axis low, x-axis high, y-axis low, y-axis high) up to 40 characters each rather than selectable choices; slider questions also use an empty `options` array and instead require `sliderMin`, `sliderMax`, and `sliderStep` (`sliderMax` must exceed `sliderMin`, `sliderStep` must be positive, and the range must divide into at most 1000 steps). Slide questions require a non-empty `description` (up to 280 characters); other types omit it. `poll` and `quiz` questions also accept an optional boolean `multiple` (default `false`); when `true`, participants may select more than one option. A `quiz` with `multiple: true` must also have `corrects`, a non-empty array of unique zero-based option indexes, and `correct` is set to the smallest of them. Every type except `slide` and `qna` carries `revealMode`: `"onDone"` hides results (showing only the response count) until the host clicks Reveal results, and `"live"` shows responses as they arrive. It is optional on import and defaults to `"live"` for word clouds and `"onDone"` otherwise; any other value is rejected. Existing question and option limits apply to imports.
+
+Word cloud questions also accept optional `maxSubmissions`, an integer from 1 to 5. It defaults to 1 when missing and controls how many separate words or short phrases each participant may contribute.
 
 Newly hosted rooms are tracked with their source session, even across multiple runs. For sessions hosted before this feature, the currently recoverable host room is linked when its title and questions match the draft; older rooms whose host credentials were not retained cannot be recovered or deleted through the library and expire normally.
 
@@ -278,7 +290,7 @@ Server tests cover authorization, hidden answers, input validation, duplicate vo
 - Live rooms and responses are held in server memory. They expire after 24 hours and are lost when the server restarts, including development-server restarts after backend edits.
 - The results view shows the most recently hosted room. Export it before creating another room.
 - Each room supports at most 30 questions and 500 participant identities. A participant token permits one response per question. Clearing browser storage creates a new identity; this is not a verified-person voting system.
-- Word clouds accept up to 30 characters and display the 60 most frequent distinct responses. Open responses, Q&A questions, and slide descriptions accept up to 280 characters. Polls, quizzes, ranking, and 100 Points questions support 2 to 6 options. 2x2 Grid questions require exactly 4 axis labels, up to 40 characters each, and each submitted point is constrained to -100 to 100 on both axes. Slider questions use a configurable numeric range (minimum, maximum, and step) instead of options, with at most 1000 steps across the range.
+- Word clouds accept up to 30 characters per contribution, allow 1 to 5 contributions per participant, and display the 60 most frequent distinct responses. Open responses, Q&A questions, and slide descriptions accept up to 280 characters. Polls, quizzes, ranking, and 100 Points questions support 2 to 6 options. 2x2 Grid questions require exactly 4 axis labels, up to 40 characters each, and each submitted point is constrained to -100 to 100 on both axes. Slider questions use a configurable numeric range (minimum, maximum, and step) instead of options, with at most 1000 steps across the range.
 - Host controls require a server-generated bearer token. Keep host browser storage private. All visitors can create their own rooms; room codes are invitation codes, not confidential access controls.
 
 ## Before Public Deployment

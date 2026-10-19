@@ -25,6 +25,7 @@ export type Answer =
   | string
   | number
   | number[]
+  | string[]
   | { x: number; y: number }
   | null;
 

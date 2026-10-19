@@ -277,6 +277,16 @@
   font-weight: 700;
 }
 
+.answer-form .cloud-submit-hint {
+  display: block;
+  margin: 8px 0 12px;
+  text-align: center;
+  color: #6b7a63;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
 /* 4+ options: two columns; an odd last item is centred between them. */
 
 .answer-options.two-col {

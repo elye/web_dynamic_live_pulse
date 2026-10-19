@@ -45,6 +45,8 @@ export type Question = {
   corrects?: number[];
   /** Show the top-10 ranking after this question's results (answered questions only). */
   showRanking?: boolean;
+  /** Word clouds: maximum contributions one participant can submit. */
+  maxSubmissions?: number;
   /** Name of the player who wrote this question (player-made sessions only). */
   author?: string;
   responses?: number;
@@ -143,6 +145,7 @@ export function newQuestion(type: Kind): Question {
     ...(hasRevealMode(type) ? { revealMode: defaultRevealMode(type) } : {}),
     ...(canCompete(type) ? { competitive: true, showRanking: true } : {}),
     ...(type === "poll" || type === "quiz" ? { multiple: false } : {}),
+    ...(type === "cloud" ? { maxSubmissions: 1 } : {}),
     options:
       type === "quiz"
         ? ["Jupiter", "Saturn", "Neptune", "Mars"]
@@ -257,6 +260,7 @@ export function serializeSession(session: Session): string {
           showRanking,
           multiple,
           corrects,
+          maxSubmissions,
         }) => ({
           type,
           title,
@@ -268,6 +272,7 @@ export function serializeSession(session: Session): string {
           ...(type === "quiz" && multiple === true
             ? { corrects: corrects?.length ? corrects : [correct ?? 0] }
             : {}),
+          ...(type === "cloud" ? { maxSubmissions: maxSubmissions ?? 1 } : {}),
           ...(canCompete(type)
             ? {
                 competitive: competitive !== false,
@@ -485,6 +490,17 @@ export function importSession(json: string): Session {
         throw new Error(
           prefix + "only poll and quiz questions can set multiple to true.",
         );
+      if (
+        question.maxSubmissions !== undefined &&
+        (question.type !== "cloud" ||
+          typeof question.maxSubmissions !== "number" ||
+          !Number.isInteger(question.maxSubmissions) ||
+          question.maxSubmissions < 1 ||
+          question.maxSubmissions > 5)
+      )
+        throw new Error(
+          prefix + "word clouds can allow 1 to 5 submissions per participant.",
+        );
       return {
         id: createId(),
         type: question.type as Kind,
@@ -508,6 +524,9 @@ export function importSession(json: string): Session {
           : {}),
         ...(question.type === "slide"
           ? { description: (question.description as string).trim() }
+          : {}),
+        ...(question.type === "cloud"
+          ? { maxSubmissions: (question.maxSubmissions as number) ?? 1 }
           : {}),
         ...(question.type === "slider"
           ? {

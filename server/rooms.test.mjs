@@ -262,6 +262,30 @@ test("question changes reject stale answers and aggregate words case-insensitive
   rooms.delete(room.code);
 });
 
+test("word clouds can allow multiple submissions per participant", () => {
+  const room = createRoom("Workshop", [
+    { type: "cloud", title: "Share words", options: [], maxSubmissions: 3 },
+  ]);
+  const token = joinRoom(room, "Alex");
+  const other = joinRoom(room, "Sam");
+  controlRoom(room, room.hostToken, "start");
+  submitVote(room, token, room.questions[0].id, " Curious ");
+  submitVote(room, token, room.questions[0].id, "curious");
+  submitVote(room, token, room.questions[0].id, "Ready");
+  assert.throws(
+    () => submitVote(room, token, room.questions[0].id, "Again"),
+    /already/,
+  );
+  submitVote(room, other, room.questions[0].id, "ready");
+  const question = snapshot(room, true).questions[0];
+  assert.equal(question.responses, 4);
+  assert.deepEqual(question.results, [
+    { text: "curious", count: 2 },
+    { text: "ready", count: 2 },
+  ]);
+  rooms.delete(room.code);
+});
+
 test("invalid question definitions cannot create a room", () => {
   assert.throws(() => createRoom("Empty", []), /between/);
   assert.throws(
@@ -271,6 +295,20 @@ test("invalid question definitions cannot create a room", () => {
   assert.throws(
     () => createRoom("Invalid", [{ ...questions[0], options: ["", "A"] }]),
     /options/,
+  );
+  assert.throws(
+    () =>
+      createRoom("Invalid", [
+        { type: "cloud", title: "Cloud", options: [], maxSubmissions: 0 },
+      ]),
+    /Word clouds/,
+  );
+  assert.throws(
+    () =>
+      createRoom("Invalid", [
+        { type: "cloud", title: "Cloud", options: [], maxSubmissions: 6 },
+      ]),
+    /Word clouds/,
   );
 });
 

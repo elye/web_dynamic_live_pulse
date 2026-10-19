@@ -12,7 +12,8 @@ export function MyAnswer({
 }) {
   const text = describeAnswer(question, answer);
   if (!text) return null;
-  const many = Array.isArray(answer) && question.type !== "points100";
+  const many =
+    Array.isArray(answer) && question.type !== "points100" && answer.length > 1;
   return (
     <div className="my-answer">
       <small>

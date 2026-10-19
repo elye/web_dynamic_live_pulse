@@ -13,7 +13,7 @@ import { SlideView } from "./SlideView";
 import { SubmittedState } from "./SubmittedState";
 
 export function QuestionScreen() {
-  const { room, question, hasSubmitted, connected, sendHeart, reactionTap } =
+  const { room, question, isFullySubmitted, connected, sendHeart, reactionTap } =
     useParticipant();
   if (!room || !question) return null;
   return (
@@ -31,9 +31,9 @@ export function QuestionScreen() {
         <ResultsReveal />
       ) : question.revealMode === "live" &&
         !room.hidden &&
-        (hasSubmitted || !room.accepting) ? (
+        (isFullySubmitted || !room.accepting) ? (
         <LiveResultsReveal />
-      ) : hasSubmitted ? (
+      ) : isFullySubmitted ? (
         <SubmittedState />
       ) : !room.accepting ? (
         <PausedState />

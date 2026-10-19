@@ -20,7 +20,7 @@ export function Verdict({
     tone = "missed";
     title = "No answer this time";
   } else if (corrects?.length) {
-    const picked = Array.isArray(answer) ? answer : [];
+    const picked = Array.isArray(answer) ? (answer as number[]) : [];
     const right = picked.filter((index) => corrects.includes(index)).length;
     const wrong = picked.length - right;
     if (wrong === 0 && right === corrects.length) {

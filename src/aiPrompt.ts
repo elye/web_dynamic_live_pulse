@@ -32,8 +32,8 @@ export const slideSpecs: Record<Kind, SlideSpec> = {
   },
   cloud: {
     purpose:
-      "Word cloud. Each participant submits a short word or phrase; the most common words grow largest.",
-    rules: "options: []. correct: null. Title is an open prompt answerable in one or two words.",
+      "Word cloud. Each participant submits one or more short words or phrases; the most common words grow largest.",
+    rules: "options: []. correct: null. Title is an open prompt answerable in one or two words. Optional maxSubmissions: integer 1-5, default 1, controls how many times each participant may contribute.",
   },
   poll: {
     purpose: "Multiple choice poll with no correct answer. Participants pick one option, or several when multiple is true.",

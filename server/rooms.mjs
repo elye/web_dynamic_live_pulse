@@ -116,6 +116,14 @@ export function validateQuestions(input) {
         (question.multiple && question.type !== "poll" && question.type !== "quiz"))
     )
       throw new Error("Only multiple choice polls and quizzes can allow multiple answers.");
+    if (
+      question.maxSubmissions !== undefined &&
+      (question.type !== "cloud" ||
+        !Number.isInteger(question.maxSubmissions) ||
+        question.maxSubmissions < 1 ||
+        question.maxSubmissions > 5)
+    )
+      throw new Error("Word clouds can allow 1 to 5 submissions per participant.");
     return {
       id: randomUUID(),
       type: question.type,
@@ -130,6 +138,7 @@ export function validateQuestions(input) {
       ...(canCompete(question.type)
         ? { competitive: question.competitive !== false, showRanking: question.showRanking !== false }
         : {}),
+      ...(question.type === "cloud" ? { maxSubmissions: question.maxSubmissions ?? 1 } : {}),
       ...(question.type === "slide" ? { description: question.description.trim() } : {}),
       ...(question.type === "slider"
         ? { sliderMin: question.sliderMin, sliderMax: question.sliderMax, sliderStep: question.sliderStep }
@@ -289,7 +298,21 @@ export function submitVote(room, token, questionId, value, now = Date.now()) {
   if (!room.started || room.ended || !room.accepting || question.id !== questionId)
     throw new Error("This question is no longer accepting responses.");
   const votes = room.votes.get(question.id);
-  if (votes.has(token)) throw new Error("Your response is already in.");
+  if (question.type !== "cloud" && votes.has(token)) throw new Error("Your response is already in.");
+  if (question.type === "cloud") {
+    const entries = votes.get(token) ?? [];
+    const maxSubmissions = question.maxSubmissions ?? 1;
+    if (entries.length >= maxSubmissions) throw new Error("Your response is already in.");
+    if (
+      typeof value !== "string" ||
+      !value.trim() ||
+      value.trim().length > 30
+    )
+      throw new Error("Enter a response within the character limit.");
+    votes.set(token, [...entries, value.trim()]);
+    room.answeredAt.get(question.id).set(token, now);
+    return;
+  }
   if ((question.type === "poll" || question.type === "quiz") && question.multiple) {
     if (
       !Array.isArray(value) ||
@@ -531,7 +554,8 @@ export function controlRoom(room, token, action, index, now = Date.now()) {
 }
 
 function results(room, question) {
-  const values = [...room.votes.get(question.id).values()];
+  const rawValues = [...room.votes.get(question.id).values()];
+  const values = question.type === "cloud" ? rawValues.flat() : rawValues;
   if (question.type === "poll" || canCompete(question.type))
     return question.options.map((text, index) => ({
       text,
@@ -667,7 +691,13 @@ export function snapshot(room, host = false) {
                 : [],
           }
         : {}),
-      responses: room.votes.get(question.id).size,
+      responses:
+        question.type === "cloud"
+          ? [...room.votes.get(question.id).values()].reduce(
+              (total, entries) => total + entries.length,
+              0,
+            )
+          : room.votes.get(question.id).size,
       results:
         host ||
         question.type === "qna" ||

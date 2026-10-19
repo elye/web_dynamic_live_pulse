@@ -55,7 +55,12 @@ export function useParticipantController() {
         ? currentAnswer
         : null
       : null;
-  const hasSubmitted = !!question && submitted.includes(question.id);
+  const submissionCount = question
+    ? submitted.filter((id) => id === question.id).length
+    : 0;
+  const maxSubmissions = question?.type === "cloud" ? question.maxSubmissions ?? 1 : 1;
+  const hasSubmitted = submissionCount > 0;
+  const isFullySubmitted = !!question && submissionCount >= maxSubmissions;
   const isMultiple =
     (question?.type === "poll" || question?.type === "quiz") &&
     question.multiple === true;
@@ -105,8 +110,25 @@ export function useParticipantController() {
         questionId: question.id,
         value,
       });
-      live.setAnswers((items) => ({ ...items, [question.id]: value }));
+      live.setAnswers((items) => ({
+        ...items,
+        [question.id]:
+          question.type === "cloud"
+            ? [
+                ...(Array.isArray(items[question.id])
+                  ? (items[question.id] as string[])
+                  : items[question.id]
+                    ? [String(items[question.id])]
+                    : []),
+                String(value).trim(),
+              ]
+            : value,
+      }));
       live.setSubmitted((items) => [...items, question.id]);
+      if (question.type === "cloud") {
+        setAnswer("");
+        setAnswerQuestion(question.id);
+      }
     } catch (failure) {
       setError((failure as Error).message);
     } finally {
@@ -222,7 +244,10 @@ export function useParticipantController() {
     pointsAllocation,
     pointsAllocated,
     gridPoint,
+    submissionCount,
+    maxSubmissions,
     hasSubmitted,
+    isFullySubmitted,
     isMultiple,
     selectedOptions,
     join,

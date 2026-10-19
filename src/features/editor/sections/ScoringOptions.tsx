@@ -1,3 +1,4 @@
+import { NumberInput } from "../../../components/NumberInput";
 import { canCompete } from "../../../model";
 import { isMultiQuiz, type EditorSectionProps } from "../editorTypes";
 
@@ -59,6 +60,32 @@ export function ScoringOptions({ draft, setDraft }: EditorSectionProps) {
             </small>
           </span>
         </label>
+      )}
+      {draft.type === "cloud" && (
+        <fieldset className="cloud-submission-editor">
+          <label>
+            <span>
+              <b>Submissions per participant</b>
+              <small>
+                Let each participant contribute this many words or short
+                phrases. Default is 1.
+              </small>
+            </span>
+            <NumberInput
+              required
+              min={1}
+              max={5}
+              step={1}
+              value={draft.maxSubmissions ?? 1}
+              onValue={(value) =>
+                setDraft({
+                  ...draft,
+                  maxSubmissions: Math.max(1, Math.min(5, Math.round(value))),
+                })
+              }
+            />
+          </label>
+        </fieldset>
       )}
       {draft.type === "quiz" && (
         <label className="competitive-toggle">

@@ -45,6 +45,10 @@ export function isDraftSavable(draft: Question) {
     (options && blankOption) ||
     (draft.type === "grid2x2" && blankOption) ||
     (draft.type === "slide" && !draft.description?.trim()) ||
+    (draft.type === "cloud" &&
+      (!Number.isInteger(draft.maxSubmissions ?? 1) ||
+        (draft.maxSubmissions ?? 1) < 1 ||
+        (draft.maxSubmissions ?? 1) > 5)) ||
     (isMultiQuiz(draft) && !(draft.corrects ?? []).length) ||
     !isSliderRangeValid(draft)
   );

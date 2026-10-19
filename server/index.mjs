@@ -91,9 +91,14 @@ export function createAppServer() {
         token: memberToken,
         state: snapshot(room),
         submitted: [
-          ...room.questions
-            .filter((question) => room.votes.get(question.id).has(memberToken))
-            .map((question) => question.id),
+          ...room.questions.flatMap((question) => {
+            const votes = room.votes.get(question.id);
+            if (!votes.has(memberToken)) return [];
+            const answer = votes.get(memberToken);
+            return question.type === "cloud"
+              ? answer.map(() => question.id)
+              : [question.id];
+          }),
           ...(room.crowd?.pending.has(memberToken) ? ["crowd-authored"] : []),
         ],
         answers: Object.fromEntries(

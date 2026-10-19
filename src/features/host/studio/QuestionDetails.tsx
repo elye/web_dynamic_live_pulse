@@ -49,6 +49,8 @@ export function QuestionDetails() {
                               ? "Divide 100 points across what matters most."
                               : question.type === "grid2x2"
                                 ? "Place a point across two axes."
+                                : question.type === "peerpraise"
+                                  ? "Give each player someone else to write about."
                                 : question.type === "slide"
                                   ? "Just a title and description. No input needed."
                                   : "Space for the longer answer."}

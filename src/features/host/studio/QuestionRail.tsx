@@ -11,6 +11,7 @@ import {
   SlidersHorizontal,
   ToggleLeft,
   Trophy,
+  Users,
 } from "lucide-react";
 import { IconButton } from "../../../components/IconButton";
 import { icons } from "../../../constants/kinds";
@@ -124,6 +125,8 @@ export function QuestionRail() {
                   <Percent size={32} strokeWidth={1.5} />
                 ) : item.type === "grid2x2" ? (
                   <Grid2x2 size={32} strokeWidth={1.5} />
+                ) : item.type === "peerpraise" ? (
+                  <Users size={32} strokeWidth={1.5} />
                 ) : item.type === "slide" ? (
                   <div className="mini-slide">
                     <FileText size={26} />

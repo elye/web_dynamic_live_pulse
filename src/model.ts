@@ -10,6 +10,7 @@ export type Kind =
   | "qna"
   | "points100"
   | "grid2x2"
+  | "peerpraise"
   | "text";
 export type RevealMode = "live" | "onDone";
 export const revealModes: RevealMode[] = ["live", "onDone"];
@@ -23,9 +24,9 @@ export function canCompete(type: Kind) {
 }
 /** Two truths and a lie always asks the same question. */
 export const twoTruthsTitle = "Pick the one that is not true.";
-/** Questions with an answer hide responses until the host reveals them; all others show them live. */
+/** Scored questions and peer praises hide responses until the host reveals them. */
 export function defaultRevealMode(type: Kind): RevealMode {
-  return canCompete(type) ? "onDone" : "live";
+  return canCompete(type) || type === "peerpraise" ? "onDone" : "live";
 }
 export type Question = {
   id: string;
@@ -49,8 +50,10 @@ export type Question = {
   maxSubmissions?: number;
   /** Name of the player who wrote this question (player-made sessions only). */
   author?: string;
+  /** The participant-specific name assigned for a peer praise question. */
+  assignedTo?: string;
   responses?: number;
-  results?: { text: string; count: number; id?: string }[];
+  results?: { text: string; count: number; id?: string; target?: string }[];
 };
 export type Session = {
   id: string;
@@ -106,6 +109,7 @@ export const labels: Record<Kind, string> = {
   qna: "Q&A",
   points100: "100 Points",
   grid2x2: "2x2 Grid",
+  peerpraise: "Peer praise",
   text: "Open response",
 };
 
@@ -130,6 +134,7 @@ export function newQuestion(type: Kind): Question {
       qna: "Ask us anything",
       points100: "Allocate 100 points across what matters most to you",
       grid2x2: "Place your priority on the grid",
+      peerpraise: "Write a good word about this person.",
       text: "What is one thing we could do better?",
       slide: "A quick word before we dive in",
     }[type],
@@ -348,6 +353,7 @@ export function importSession(json: string): Session {
             "qna",
             "points100",
             "grid2x2",
+            "peerpraise",
             "text",
           ] as string[]
         ).includes(question.type)
@@ -593,7 +599,7 @@ export function exportResults(room: Room) {
         room.title,
         question.title,
         labels[question.type],
-        result.text,
+        result.target ? `For ${result.target}: ${result.text}` : result.text,
         result.count,
       ]),
     ),

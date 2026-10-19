@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { labels, importSession } from "../src/model.ts";
+import { labels, importSession, serializeSession } from "../src/model.ts";
 import {
   allKinds,
   buildClipboardPrompt,
@@ -24,6 +24,19 @@ test("the example JSON embedded in the AI prompt is importable", () => {
   const json = prompt.slice(prompt.lastIndexOf('{\n  "format": "pulse-session"'));
   const session = importSession(json);
   assert.equal(session.questions.length, allKinds.length);
+  const peerpraise = session.questions.find(
+    (question) => question.type === "peerpraise",
+  );
+  assert.equal(peerpraise?.revealMode, "onDone");
+  assert.equal(peerpraise?.correct, null);
+  assert.deepEqual(peerpraise?.options, []);
+  const exported = serializeSession(session);
+  const restored = importSession(exported);
+  assert.equal(
+    restored.questions.find((question) => question.type === "peerpraise")
+      ?.revealMode,
+    "onDone",
+  );
 });
 
 test("AI prompt explains surveys vs quizzes and every type is classified", () => {
@@ -35,7 +48,8 @@ test("AI prompt explains surveys vs quizzes and every type is classified", () =>
     [...allKinds].sort(),
   );
   assert.deepEqual(quiz.sort(), ["quiz", "truefalse", "twotruths"]);
-  assert.equal(promptExamples.length, 3);
+  assert.ok(prompt.includes("Best with 3 to 10 participants"));
+  assert.equal(promptExamples.length, 4);
 });
 
 test("clipboard prompt appends the user's request", () => {

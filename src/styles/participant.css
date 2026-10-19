@@ -203,10 +203,16 @@
   background: #86a975;
 }
 
+.participant-session > .eyebrow {
+  display: block;
+  line-height: 1.2;
+  margin-bottom: 16px;
+}
+
 .participant-session > h1 {
   font-size: 31px;
   line-height: 1.4;
-  margin: 14px 0 29px;
+  margin: 0 0 24px;
   overflow-wrap: anywhere;
 }
 
@@ -237,6 +243,28 @@
   margin-top: 2px;
   font-size: 2em;
   opacity: 1;
+}
+
+.peerpraise-target {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  margin: 0 0 28px;
+  padding: 18px 20px;
+  color: #254337;
+  text-align: center;
+  background: #edf5e8;
+  border: 1px solid #cfe0c7;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px #2b4a3712;
+}
+
+.peerpraise-target strong {
+  font-size: 31px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 .answer-form {

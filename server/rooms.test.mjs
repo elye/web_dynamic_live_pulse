@@ -81,6 +81,60 @@ test("reveal mode defaults to live without an answer and onDone with one, hides 
   rooms.delete(room.code);
 });
 
+test("peerpraise assignments are private, avoid self when possible, and reveal attributed responses", () => {
+  const room = createRoom("Kind words", [
+    {
+      type: "peerpraise",
+      title: "Write a good word about this person.",
+      options: [],
+    },
+  ]);
+  assert.equal(room.questions[0].revealMode, "onDone");
+  const tokens = ["Alex", "Sam", "Kim", "Lee"].map((name) =>
+    joinRoom(room, name),
+  );
+  controlRoom(room, room.hostToken, "start");
+  const question = room.questions[0];
+  const assignedNames = new Map();
+  for (const token of tokens) {
+    const assignedTo = snapshot(room, false, token).questions[0].assignedTo;
+    assert.ok(assignedTo);
+    assert.notEqual(assignedTo, room.participants.get(token).name);
+    assignedNames.set(token, assignedTo);
+  }
+  assert.equal(snapshot(room, true).questions[0].assignedTo, undefined);
+
+  tokens.forEach((token, index) =>
+    submitVote(room, token, question.id, `Kind word ${index + 1}`),
+  );
+  assert.deepEqual(snapshot(room).questions[0].results, []);
+  const hostResults = snapshot(room, true).questions[0].results;
+  assert.equal(hostResults.length, tokens.length);
+  assert.deepEqual(
+    hostResults.map((result) => result.target).sort(),
+    [...assignedNames.values()].sort(),
+  );
+  assert.equal(hostResults[0].count, 1);
+  controlRoom(room, room.hostToken, "reveal");
+  assert.equal(snapshot(room, false, tokens[0]).questions[0].results.length, 4);
+  rooms.delete(room.code);
+
+  const solo = createRoom("Solo kind words", [
+    {
+      type: "peerpraise",
+      title: "Write a good word about this person.",
+      options: [],
+    },
+  ]);
+  const onlyPlayer = joinRoom(solo, "Taylor");
+  controlRoom(solo, solo.hostToken, "start");
+  assert.equal(
+    snapshot(solo, false, onlyPlayer).questions[0].assignedTo,
+    "Taylor",
+  );
+  rooms.delete(solo.code);
+});
+
 test("competition mode scores correctness plus speed and only applies to quiz and true-or-false", () => {
   const base = { options: ["A", "B"], correct: 0 };
   assert.throws(
@@ -356,7 +410,7 @@ test("two truths and a lie has a fixed question, exactly 3 statements, and score
     /exactly 3/,
   );
   assert.throws(() => createRoom("Invalid", [{ ...twotruths, correct: 3 }]), /correct/);
-  const room = createRoom("Icebreaker", [twotruths]);
+  const room = createRoom("Peer praise", [twotruths]);
   assert.equal(room.questions[0].title, twoTruthsTitle);
   const right = joinRoom(room, "Alex");
   const wrong = joinRoom(room, "Sam");

@@ -1,7 +1,7 @@
 import { randomInt, randomUUID } from "node:crypto";
 
 export const rooms = new Map();
-const kinds = new Set(["slide", "cloud", "poll", "quiz", "truefalse", "twotruths", "ranking", "slider", "qna", "points100", "grid2x2", "text"]);
+const kinds = new Set(["slide", "cloud", "poll", "quiz", "truefalse", "twotruths", "ranking", "slider", "qna", "points100", "grid2x2", "peerpraise", "text"]);
 /** Two truths and a lie always asks the same question. */
 export const twoTruthsTitle = "Pick the one that is not true.";
 
@@ -12,8 +12,9 @@ const optionKinds = ["poll", "quiz", "truefalse", "twotruths", "ranking", "point
 const hasRevealMode = (type) => type !== "slide" && type !== "qna";
 /** Only questions with a correct answer can be competitive. */
 const canCompete = (type) => type === "quiz" || type === "truefalse" || type === "twotruths";
-/** Questions with a correct answer hide responses until revealed; all others show them live. */
-const defaultRevealMode = (type) => (canCompete(type) ? "onDone" : "live");
+/** Scored questions and peer praises hide responses until revealed. */
+const defaultRevealMode = (type) =>
+  canCompete(type) || type === "peerpraise" ? "onDone" : "live";
 export const baseScore = 500;
 export const speedBonus = 500;
 export const speedWindowMs = 20000;
@@ -189,6 +190,7 @@ export function createRoom(title, questions, crowdKind) {
     ended: false,
     hearts: 0,
     participants: new Map(),
+    peerPraiseTargets: new Map(),
     votes: new Map(),
     upvotes: new Map(),
     openedAt: new Map(),
@@ -217,14 +219,62 @@ export function authorize(room, token) {
   if (room.hostToken !== token) throw new Error("Only the host can do that.");
 }
 
+function assignPeerPraiseTargets(room, question) {
+  const tokens = [...room.participants.keys()];
+  const shuffled = [...tokens];
+  for (let index = shuffled.length - 1; index > 0; index--) {
+    const other = randomInt(index + 1);
+    [shuffled[index], shuffled[other]] = [shuffled[other], shuffled[index]];
+  }
+  const offset = tokens.length > 1 ? randomInt(1, tokens.length) : 0;
+  room.peerPraiseTargets.set(
+    question.id,
+    new Map(
+      shuffled.map((token, index) => [
+        token,
+        shuffled[(index + offset) % shuffled.length],
+      ]),
+    ),
+  );
+}
+
+function assignNewPeerPraisePlayer(room, token) {
+  if (!room.started) return;
+  for (const question of room.questions) {
+    if (question.type !== "peerpraise") continue;
+    const assignments =
+      room.peerPraiseTargets.get(question.id) ?? new Map();
+    room.peerPraiseTargets.set(question.id, assignments);
+    if (assignments.has(token)) continue;
+    const others = [...room.participants.keys()].filter(
+      (participant) => participant !== token,
+    );
+    assignments.set(
+      token,
+      others.length ? others[randomInt(others.length)] : token,
+    );
+    for (const other of others) {
+      if (
+        assignments.get(other) === other &&
+        !room.votes.get(question.id).has(other)
+      )
+        assignments.set(other, token);
+    }
+  }
+}
+
 export function joinRoom(room, name, token) {
-  if (token && room.participants.has(token)) return token;
+  if (token && room.participants.has(token)) {
+    assignNewPeerPraisePlayer(room, token);
+    return token;
+  }
   if (room.ended) throw new Error("This session has ended.");
   if (room.participants.size >= 500) throw new Error("This room is full.");
   if (typeof name !== "string" || !name.trim() || name.trim().length > 24)
     throw new Error("Enter a name with 1 to 24 characters.");
   const memberToken = randomUUID();
   room.participants.set(memberToken, { name: name.trim() });
+  assignNewPeerPraisePlayer(room, memberToken);
   return memberToken;
 }
 
@@ -501,6 +551,9 @@ export function controlRoom(room, token, action, index, now = Date.now()) {
     }
     room.started = true;
     room.active = 0;
+    for (const question of room.questions)
+      if (question.type === "peerpraise")
+        assignPeerPraiseTargets(room, question);
     room.accepting = room.questions[room.active].type !== "slide";
     markOpened(room, now);
   } else if (action === "select") {
@@ -607,6 +660,16 @@ function results(room, question) {
       }))
       .sort((first, second) => second.count - first.count);
   }
+  if (question.type === "peerpraise") {
+    const assignments = room.peerPraiseTargets.get(question.id);
+    return [...room.votes.get(question.id)]
+      .map(([token, text]) => ({
+        text,
+        count: 1,
+        target: room.participants.get(assignments?.get(token))?.name ?? "",
+      }))
+      .sort((first, second) => first.target.localeCompare(second.target));
+  }
   if (question.type === "grid2x2") {
     const points = values;
     const averageX = points.length
@@ -633,7 +696,7 @@ function results(room, question) {
     .sort((first, second) => second.count - first.count);
 }
 
-export function snapshot(room, host = false) {
+export function snapshot(room, host = false, token) {
   const visible = host || room.revealed;
   const leaderboard = visible
     ? [...room.participants]
@@ -677,34 +740,45 @@ export function snapshot(room, host = false) {
         }
       : null,
     leaderboard,
-    questions: room.questions.map((question, index) => ({
-      ...question,
-      correct:
-        host || (room.revealed && (index === room.active || room.ended))
-          ? question.correct
-          : null,
-      ...(question.corrects
-        ? {
-            corrects:
-              host || (room.revealed && (index === room.active || room.ended))
-                ? question.corrects
-                : [],
-          }
-        : {}),
-      responses:
-        question.type === "cloud"
-          ? [...room.votes.get(question.id).values()].reduce(
-              (total, entries) => total + entries.length,
-              0,
-            )
-          : room.votes.get(question.id).size,
-      results:
-        host ||
-        question.type === "qna" ||
-        (question.revealMode === "live" && index === room.active && !room.hidden) ||
-        (room.revealed && (index === room.active || room.ended))
-          ? results(room, question)
-          : [],
-    })),
+    questions: room.questions.map((question, index) => {
+      const assignedTo =
+        !host && token && index === room.active && question.type === "peerpraise"
+          ? room.participants.get(
+              room.peerPraiseTargets.get(question.id)?.get(token),
+            )?.name
+          : undefined;
+      return {
+        ...question,
+        ...(assignedTo ? { assignedTo } : {}),
+        correct:
+          host || (room.revealed && (index === room.active || room.ended))
+            ? question.correct
+            : null,
+        ...(question.corrects
+          ? {
+              corrects:
+                host || (room.revealed && (index === room.active || room.ended))
+                  ? question.corrects
+                  : [],
+            }
+          : {}),
+        responses:
+          question.type === "cloud"
+            ? [...room.votes.get(question.id).values()].reduce(
+                (total, entries) => total + entries.length,
+                0,
+              )
+            : room.votes.get(question.id).size,
+        results:
+          host ||
+          question.type === "qna" ||
+          (question.revealMode === "live" &&
+            index === room.active &&
+            !room.hidden) ||
+          (room.revealed && (index === room.active || room.ended))
+            ? results(room, question)
+            : [],
+      };
+    }),
   };
 }

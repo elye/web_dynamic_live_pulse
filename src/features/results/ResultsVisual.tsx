@@ -31,7 +31,12 @@ export function ResultsVisual({
   upvotedIds?: Set<string>;
 }) {
   if (question.type === "slide") return null;
-  const results: { text: string; count: number; id?: string }[] = preview
+  const results: {
+    text: string;
+    count: number;
+    id?: string;
+    target?: string;
+  }[] = preview
     ? question.type === "cloud"
       ? samples
       : question.type === "text"
@@ -39,32 +44,45 @@ export function ResultsVisual({
             { text: "More time to explore ideas together.", count: 1 },
             { text: "The energy we bring as a team!", count: 1 },
           ]
-        : question.type === "slider"
+        : question.type === "peerpraise"
           ? [
-              { text: "Average: 6.4", count: 5 },
-              { text: String(question.sliderMin ?? 0), count: 1 },
-              { text: "4", count: 2 },
-              { text: "7", count: 1 },
-              { text: String(question.sliderMax ?? 10), count: 1 },
+              {
+                text: "You make everyone feel welcome.",
+                target: "Alex",
+                count: 1,
+              },
+              {
+                text: "Your creativity inspires the team.",
+                target: "Sam",
+                count: 1,
+              },
             ]
-          : question.type === "qna"
+          : question.type === "slider"
             ? [
-                { id: "1", text: "What’s next for the roadmap?", count: 6 },
-                { id: "2", text: "Can we see this in action?", count: 3 },
+                { text: "Average: 6.4", count: 5 },
+                { text: String(question.sliderMin ?? 0), count: 1 },
+                { text: "4", count: 2 },
+                { text: "7", count: 1 },
+                { text: String(question.sliderMax ?? 10), count: 1 },
               ]
-            : question.type === "grid2x2"
+            : question.type === "qna"
               ? [
-                  { text: "Average: 24,18", count: 5 },
-                  { text: "40,30", count: 1 },
-                  { text: "10,20", count: 1 },
-                  { text: "-20,10", count: 1 },
-                  { text: "30,-5", count: 1 },
-                  { text: "60,35", count: 1 },
+                  { id: "1", text: "What’s next for the roadmap?", count: 6 },
+                  { id: "2", text: "Can we see this in action?", count: 3 },
                 ]
-              : question.options.map((text, index) => ({
-                  text,
-                  count: [8, 14, 6, 10, 4, 5][index],
-                }))
+              : question.type === "grid2x2"
+                ? [
+                    { text: "Average: 24,18", count: 5 },
+                    { text: "40,30", count: 1 },
+                    { text: "10,20", count: 1 },
+                    { text: "-20,10", count: 1 },
+                    { text: "30,-5", count: 1 },
+                    { text: "60,35", count: 1 },
+                  ]
+                : question.options.map((text, index) => ({
+                    text,
+                    count: [8, 14, 6, 10, 4, 5][index],
+                  }))
     : question.results?.length || !optionKinds.includes(question.type)
       ? question.results || []
       : question.options.map((text) => ({ text, count: 0 }));
@@ -237,13 +255,18 @@ export function ResultsVisual({
       </div>
     );
   }
-  if (question.type === "text")
+  if (question.type === "text" || question.type === "peerpraise")
     return (
       <div className="text-results">
         {results.map((item, index) => (
           <div className="text-response" key={`${item.text}-${index}`}>
             <MessageCircle size={18} />
-            <p>{item.text}</p>
+            <p>
+              {question.type === "peerpraise" && item.target && (
+                <strong>For {item.target}: </strong>
+              )}
+              {item.text}
+            </p>
             {item.count > 1 && <span>×{item.count}</span>}
           </div>
         ))}

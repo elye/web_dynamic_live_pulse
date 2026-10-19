@@ -55,9 +55,11 @@ export function AddQuestionModal() {
                                         ? "Allocate 100 points across a set of options to show priorities"
                                         : kind === "grid2x2"
                                           ? "Rate items across a two-axis graph"
-                                          : kind === "slide"
-                                            ? "Just a title and description, no input needed"
-                                            : "Give every thought a little room"}
+                                          : kind === "peerpraise"
+                                            ? kindHints.peerpraise
+                                            : kind === "slide"
+                                              ? "Just a title and description, no input needed"
+                                              : "Give every thought a little room"}
                     </small>
                   </span>
                   <Plus size={19} />

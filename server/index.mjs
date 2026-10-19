@@ -41,7 +41,11 @@ export function createAppServer() {
 
   function broadcast(room) {
     io.to(`host:${room.code}`).emit("room:state", snapshot(room, true));
-    io.to(`audience:${room.code}`).emit("room:state", snapshot(room));
+    for (const socket of io.sockets.sockets.values()) {
+      const token = socket.data.memberToken;
+      if (token && socket.rooms.has(`audience:${room.code}`))
+        socket.emit("room:state", snapshot(room, false, token));
+    }
   }
 
   io.on("connection", (socket) => {
@@ -65,6 +69,7 @@ export function createAppServer() {
         }
       });
     const leaveRooms = () => {
+      socket.data.memberToken = undefined;
       for (const channel of socket.rooms)
         if (channel !== socket.id) socket.leave(channel);
     };
@@ -86,10 +91,11 @@ export function createAppServer() {
       const memberToken = joinRoom(room, name, token);
       leaveRooms();
       socket.join(`audience:${room.code}`);
+      socket.data.memberToken = memberToken;
       broadcast(room);
       return {
         token: memberToken,
-        state: snapshot(room),
+        state: snapshot(room, false, memberToken),
         submitted: [
           ...room.questions.flatMap((question) => {
             const votes = room.votes.get(question.id);

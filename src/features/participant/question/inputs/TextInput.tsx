@@ -12,11 +12,21 @@ export function TextInput() {
   } = useParticipant();
   if (!room || !question) return null;
   const remaining = Math.max(0, maxSubmissions - submissionCount);
+  const answerLabel =
+    question.type === "cloud"
+      ? "Your word or short phrase"
+      : question.type === "peerpraise"
+        ? "Your kind word or message"
+        : "Your thoughts";
+  const placeholder =
+    question.type === "cloud"
+      ? "First thing that comes to mind..."
+      : question.type === "peerpraise"
+        ? "Write something kind..."
+        : "There are no wrong answers...";
   return (
     <label>
-      {question.type === "cloud"
-        ? "Your word or short phrase"
-        : "Your thoughts"}
+      {answerLabel}
       {question.type === "cloud" && (
         <small className="multi-hint cloud-submit-hint">
           You can contribute up to {maxSubmissions}{" "}
@@ -31,11 +41,7 @@ export function TextInput() {
         rows={question.type === "cloud" ? 2 : 5}
         maxLength={question.type === "cloud" ? 30 : 280}
         required
-        placeholder={
-          question.type === "cloud"
-            ? "First thing that comes to mind..."
-            : "There are no wrong answers..."
-        }
+        placeholder={placeholder}
         value={String(currentAnswer)}
         onChange={(event) => {
           setAnswer(event.target.value);

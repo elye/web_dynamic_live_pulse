@@ -77,6 +77,12 @@ export const slideSpecs: Record<Kind, SlideSpec> = {
     rules:
       "options: exactly 4 axis labels in this order: x-axis low, x-axis high, y-axis low, y-axis high (max 40 characters each). correct: null.",
   },
+  peerpraise: {
+    purpose:
+      "Peer praise. Each participant gets another participant's name and writes something kind about them.",
+    rules:
+      'options: []. correct: null. The title is the writing prompt (for example, "Write a good word about this person."). The server privately assigns one participant name to each player; assignments never point to the player themself when the room has more than one participant. For one participant, their own name is used. Best with 3 to 10 participants. Default revealMode: "onDone", so responses stay hidden until the host reveals them.',
+  },
   text: {
     purpose: "Open response. Participants type a free-text answer that the host reads.",
     rules: "options: []. correct: null.",
@@ -104,7 +110,13 @@ export const promptExamples = [
     id: "mix",
     label: "Survey + quiz",
     hint: "Combine both in one session.",
-    text: "Create a 10-question onboarding session for new hires. Begin with a welcome slide and a word cloud icebreaker, then survey questions about their expectations (poll, slider, open response), then a short quiz of 4 questions checking they understood our company values. End with an open response asking for feedback.",
+    text: "Create a 10-question onboarding session for new hires. Begin with a welcome slide and a word cloud check-in, then survey questions about their expectations (poll, slider, open response), then a short quiz of 4 questions checking they understood our company values. End with an open response asking for feedback.",
+  },
+  {
+    id: "peerpraise",
+    label: "Peer praise",
+    hint: "Give everyone another player to write something kind about.",
+    text: "Create a one-question peer praise activity for a team of 6. Give each participant another player's name and ask them to write one good word about that person. Keep the responses hidden until the host reveals them.",
   },
 ] as const;
 

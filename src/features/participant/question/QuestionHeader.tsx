@@ -31,6 +31,11 @@ export function QuestionHeader() {
         </span>
       )}
       <h1>{question.title}</h1>
+      {question.type === "peerpraise" && question.assignedTo && (
+        <div className="peerpraise-target">
+          <strong>{question.assignedTo}</strong>
+        </div>
+      )}
       {question.author &&
         question.author === live.credentials()?.name &&
         canCompete(question.type) && (

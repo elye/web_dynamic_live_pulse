@@ -11,6 +11,7 @@ import {
   SlidersHorizontal,
   ToggleLeft,
   Trophy,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import { type Kind } from "../model";
@@ -27,6 +28,7 @@ export const icons: Record<Kind, LucideIcon> = {
   qna: MessageCircleQuestion,
   points100: Percent,
   grid2x2: Grid2x2,
+  peerpraise: Users,
   text: MessageCircle,
 };
 
@@ -47,7 +49,7 @@ export const frameKinds: Kind[] = ["grid2x2", "slider"];
 export const kindGroups: { title: string; hint: string; kinds: Kind[] }[] = [
   {
     title: "Without an answer",
-    hint: "Gather opinions. Responses show live by default.",
+    hint: "Gather opinions and ideas. Responses can show live or after reveal.",
     kinds: [
       "slide",
       "cloud",
@@ -57,6 +59,7 @@ export const kindGroups: { title: string; hint: string; kinds: Kind[] }[] = [
       "qna",
       "points100",
       "grid2x2",
+      "peerpraise",
       "text",
     ],
   },
@@ -85,6 +88,7 @@ export const kindHints: Record<Kind, string> = {
   qna: "Participants submit and upvote live questions",
   points100: "Allocate 100 points across a set of options to show priorities",
   grid2x2: "Rate items across a two-axis graph",
+  peerpraise: "Write something kind about another player",
   text: "Give every thought a little room",
 };
 

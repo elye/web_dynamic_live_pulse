@@ -35,7 +35,9 @@
   height: 300px;
 }
 
-.cloud-simulator {
+.cloud-simulator,
+.peer-praise-simulator,
+.response-simulator {
   min-width: 0;
 }
 

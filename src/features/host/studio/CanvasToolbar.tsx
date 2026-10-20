@@ -23,13 +23,22 @@ export function CanvasToolbar() {
         </span>
       </div>
       <div className="canvas-tools">
-        {!isLive && question.type === "cloud" && (
-          <IconButton
-            icon={FlaskConical}
-            label="Simulate word cloud"
-            onClick={() => setModal("simulate")}
-          />
-        )}
+        {!isLive &&
+          ["cloud", "peerpraise", "text", "qna"].includes(question.type) && (
+            <IconButton
+              icon={FlaskConical}
+              label={
+                question.type === "cloud"
+                  ? "Simulate word cloud"
+                  : question.type === "peerpraise"
+                    ? "Simulate peer praise"
+                    : question.type === "qna"
+                      ? "Simulate Q&A"
+                      : "Simulate open responses"
+              }
+              onClick={() => setModal("simulate")}
+            />
+          )}
         {!isLive && (
           <button className="text-button" onClick={() => setEditing(question)}>
             <Pencil size={14} />

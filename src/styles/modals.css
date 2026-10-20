@@ -1,12 +1,14 @@
 /* Dialogs and the question editor form. */
 
 .modal {
+  box-sizing: border-box;
   padding: 25px;
   border: 1px solid var(--line);
   border-radius: 8px;
   width: 480px;
   max-width: calc(100vw - 32px);
   max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 24px 100px #142a3333;
   color: var(--ink);
   background: #fff;

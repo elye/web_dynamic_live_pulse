@@ -1,6 +1,8 @@
 import { CrowdWriting } from "../../crowd/CrowdWriting";
 import { WelcomeLobby } from "../../lobby/WelcomeLobby";
 import { CloudSimulator } from "../../results/CloudSimulator";
+import { PeerPraiseSimulator } from "../../results/PeerPraiseSimulator";
+import { ResponseSimulator } from "../../results/ResponseSimulator";
 import { ScoreStage } from "../../scoring/ScoreStage";
 import { QuestionStage } from "../../stage/QuestionStage";
 import { useHost } from "../HostContext";
@@ -22,13 +24,26 @@ export function CanvasStage() {
   const inLobby = isLive && !room.started;
   return (
     <>
-      {modal === "simulate" && (
-        <CloudSimulator
-          question={question}
-          theme={session.theme}
-          onClose={() => setModal(null)}
-        />
-      )}
+      {modal === "simulate" &&
+        (question.type === "peerpraise" ? (
+          <PeerPraiseSimulator
+            question={question}
+            theme={session.theme}
+            onClose={() => setModal(null)}
+          />
+        ) : question.type === "text" || question.type === "qna" ? (
+          <ResponseSimulator
+            question={question}
+            theme={session.theme}
+            onClose={() => setModal(null)}
+          />
+        ) : (
+          <CloudSimulator
+            question={question}
+            theme={session.theme}
+            onClose={() => setModal(null)}
+          />
+        ))}
       {inLobby && room.crowd?.authoring ? (
         <CrowdWriting
           room={room}

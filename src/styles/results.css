@@ -259,7 +259,19 @@
   flex: 1;
   justify-content: center;
   max-height: 400px;
-  overflow: auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* The simulator lets the modal provide the single scroll area, so entries are
+   not hidden behind a second nested scrollbar on small screens. */
+.peer-praise-simulator .text-results,
+.response-simulator .text-results,
+.response-simulator .qna-results {
+  max-height: none;
+  overflow: visible;
 }
 
 .text-response {

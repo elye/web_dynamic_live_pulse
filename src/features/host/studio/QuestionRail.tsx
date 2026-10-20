@@ -1,4 +1,5 @@
 import {
+  Copy,
   Drama,
   FileText,
   Grid2x2,
@@ -8,20 +9,26 @@ import {
   MessageCircleQuestion,
   Percent,
   Plus,
+  Settings2,
   SlidersHorizontal,
   ToggleLeft,
+  Trash2,
   Trophy,
   Users,
 } from "lucide-react";
 import { IconButton } from "../../../components/IconButton";
 import { icons } from "../../../constants/kinds";
-import { labels } from "../../../model";
+import { createId, labels } from "../../../model";
 import { useHost } from "../HostContext";
 
 export function QuestionRail() {
   const {
     setSelected,
     setModal,
+    setEditing,
+    setNotice,
+    session,
+    updateSession,
     busy,
     dragIndex,
     setDragIndex,
@@ -53,50 +60,51 @@ export function QuestionRail() {
           const Icon = icons[item.type];
           const draggable = !isLive && questionList.length > 1;
           return (
-            <button
-              className={`question-thumbnail ${!inLobby && index === currentIndex ? "selected" : ""} ${dragIndex === index ? "dragging" : ""} ${dragOverIndex === index && dragIndex !== null && dragIndex !== index ? "drag-over" : ""}`}
-              key={item.id}
-              draggable={draggable}
-              aria-grabbed={dragIndex === index}
-              onClick={() =>
-                isLive ? void control("select", index) : setSelected(index)
-              }
-              onDragStart={(event) => {
-                if (!draggable) return;
-                setDragIndex(index);
-                event.dataTransfer.effectAllowed = "move";
-              }}
-              onDragEnter={(event) => {
-                if (dragIndex === null) return;
-                event.preventDefault();
-                setDragOverIndex(index);
-              }}
-              onDragOver={(event) => {
-                if (dragIndex === null) return;
-                event.preventDefault();
-              }}
-              onDragEnd={() => {
-                setDragIndex(null);
-                setDragOverIndex(null);
-              }}
-              onDrop={(event) => {
-                event.preventDefault();
-                if (dragIndex !== null) moveQuestion(dragIndex, index);
-                setDragIndex(null);
-                setDragOverIndex(null);
-              }}
-              disabled={busy || inLobby}
-            >
-              {draggable && (
-                <span className="thumbnail-drag-handle" aria-hidden="true">
-                  <GripVertical size={13} />
+            <div className="question-item" key={item.id}>
+              <button
+                type="button"
+                className={`question-thumbnail ${!inLobby && index === currentIndex ? "selected" : ""} ${dragIndex === index ? "dragging" : ""} ${dragOverIndex === index && dragIndex !== null && dragIndex !== index ? "drag-over" : ""}`}
+                draggable={draggable}
+                aria-grabbed={dragIndex === index}
+                onClick={() =>
+                  isLive ? void control("select", index) : setSelected(index)
+                }
+                onDragStart={(event) => {
+                  if (!draggable) return;
+                  setDragIndex(index);
+                  event.dataTransfer.effectAllowed = "move";
+                }}
+                onDragEnter={(event) => {
+                  if (dragIndex === null) return;
+                  event.preventDefault();
+                  setDragOverIndex(index);
+                }}
+                onDragOver={(event) => {
+                  if (dragIndex === null) return;
+                  event.preventDefault();
+                }}
+                onDragEnd={() => {
+                  setDragIndex(null);
+                  setDragOverIndex(null);
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  if (dragIndex !== null) moveQuestion(dragIndex, index);
+                  setDragIndex(null);
+                  setDragOverIndex(null);
+                }}
+                disabled={busy || inLobby}
+              >
+                {draggable && (
+                  <span className="thumbnail-drag-handle" aria-hidden="true">
+                    <GripVertical size={13} />
+                  </span>
+                )}
+                <span className="thumbnail-number">
+                  {String(index + 1).padStart(2, "0")}
                 </span>
-              )}
-              <span className="thumbnail-number">
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              <div className={`thumbnail-art art-${item.type}`}>
-                {item.type === "cloud" ? (
+                <div className={`thumbnail-art art-${item.type}`}>
+                  {item.type === "cloud" ? (
                   <div className="mini-cloud">
                     <span>curious</span>
                     <b>excited</b>
@@ -145,8 +153,38 @@ export function QuestionRail() {
                 <Icon size={13} />
                 {labels[item.type]}
               </span>
-              <span className="thumbnail-title">{item.title}</span>
-            </button>
+                <span className="thumbnail-title">{item.title}</span>
+              </button>
+              <div className="question-item-actions" aria-label={`Actions for question ${index + 1}`}>
+                <IconButton
+                  icon={Settings2}
+                  label={`Customize question ${index + 1}`}
+                  disabled={isLive || inLobby || busy}
+                  onClick={() => setEditing(item)}
+                />
+                <IconButton
+                  icon={Copy}
+                  label={`Duplicate question ${index + 1}`}
+                  disabled={isLive || inLobby || busy || questionList.length >= 30}
+                  onClick={() => {
+                    const questions = [...session.questions];
+                    questions.splice(index + 1, 0, { ...item, id: createId() });
+                    updateSession({ questions });
+                    setSelected(index + 1);
+                    setNotice("Question duplicated");
+                  }}
+                />
+                <IconButton
+                  icon={Trash2}
+                  label={`Delete question ${index + 1}`}
+                  disabled={isLive || inLobby || busy || questionList.length <= 1}
+                  onClick={() => {
+                    setSelected(index);
+                    setModal("delete");
+                  }}
+                />
+              </div>
+            </div>
           );
         })}
       </div>

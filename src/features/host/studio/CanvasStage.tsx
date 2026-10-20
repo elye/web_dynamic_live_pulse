@@ -2,6 +2,7 @@ import { CrowdWriting } from "../../crowd/CrowdWriting";
 import { WelcomeLobby } from "../../lobby/WelcomeLobby";
 import { CloudSimulator } from "../../results/CloudSimulator";
 import { PeerPraiseSimulator } from "../../results/PeerPraiseSimulator";
+import { PollSimulator } from "../../results/PollSimulator";
 import { ResponseSimulator } from "../../results/ResponseSimulator";
 import { ScoreStage } from "../../scoring/ScoreStage";
 import { QuestionStage } from "../../stage/QuestionStage";
@@ -25,7 +26,13 @@ export function CanvasStage() {
   return (
     <>
       {modal === "simulate" &&
-        (question.type === "peerpraise" ? (
+        (question.type === "poll" ? (
+          <PollSimulator
+            question={question}
+            theme={session.theme}
+            onClose={() => setModal(null)}
+          />
+        ) : question.type === "peerpraise" ? (
           <PeerPraiseSimulator
             question={question}
             theme={session.theme}

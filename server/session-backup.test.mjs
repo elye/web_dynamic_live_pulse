@@ -7,6 +7,7 @@ test("session JSON round-trips all question types without credentials, results, 
   original.theme = "peach";
   original.hostedRooms = [{ code: "123456", token: "private-host-token" }];
   original.questions[0].results = [{ text: "private response", count: 1 }];
+  original.questions[1].pollDisplay = "pie";
   const json = serializeSession(original);
   for (const secret of [
     original.id,
@@ -22,6 +23,7 @@ test("session JSON round-trips all question types without credentials, results, 
   assert.notEqual(restored.questions[0].id, original.questions[0].id);
   assert.equal(restored.hostedRooms, undefined);
   assert.equal(restored.questions[2].correct, 1);
+  assert.equal(restored.questions[1].pollDisplay, "pie");
 });
 
 test("malformed and invalid backups are rejected without partial imports", () => {
@@ -50,6 +52,10 @@ test("malformed and invalid backups are rejected without partial imports", () =>
     [
       { ...valid, questions: [{ ...valid.questions[0], options: ["A"] }] },
       /empty options/,
+    ],
+    [
+      { ...valid, questions: [{ ...valid.questions[1], pollDisplay: "donut" }] },
+      /pollDisplay/,
     ],
   ];
   for (const [input, message] of invalid)

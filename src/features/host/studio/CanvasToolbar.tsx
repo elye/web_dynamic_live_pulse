@@ -24,13 +24,17 @@ export function CanvasToolbar() {
       </div>
       <div className="canvas-tools">
         {!isLive &&
-          ["cloud", "peerpraise", "text", "qna"].includes(question.type) && (
+          ["cloud", "poll", "peerpraise", "text", "qna"].includes(
+            question.type,
+          ) && (
             <IconButton
               icon={FlaskConical}
               label={
                 question.type === "cloud"
                   ? "Simulate word cloud"
-                  : question.type === "peerpraise"
+                  : question.type === "poll"
+                    ? "Simulate multiple choice"
+                    : question.type === "peerpraise"
                     ? "Simulate peer praise"
                     : question.type === "qna"
                       ? "Simulate Q&A"

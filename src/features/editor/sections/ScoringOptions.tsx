@@ -44,22 +44,44 @@ export function ScoringOptions({ draft, setDraft }: EditorSectionProps) {
         </label>
       )}
       {draft.type === "poll" && (
-        <label className="competitive-toggle">
-          <input
-            type="checkbox"
-            checked={draft.multiple === true}
-            onChange={(event) =>
-              setDraft({ ...draft, multiple: event.target.checked })
-            }
-          />
-          <span>
-            <b>Allow multiple answers</b>
-            <small>
-              Participants can select more than one option. Percentages show how
-              many participants picked each option.
-            </small>
-          </span>
-        </label>
+        <>
+          <label className="competitive-toggle">
+            <input
+              type="checkbox"
+              checked={draft.multiple === true}
+              onChange={(event) =>
+                setDraft({ ...draft, multiple: event.target.checked })
+              }
+            />
+            <span>
+              <b>Allow multiple answers</b>
+              <small>
+                Participants can select more than one option. Percentages show how
+                many participants picked each option.
+              </small>
+            </span>
+          </label>
+          <label>
+            <span>Response display</span>
+            <select
+              aria-label="Response display"
+              value={draft.pollDisplay ?? "list"}
+              onChange={(event) =>
+                setDraft({
+                  ...draft,
+                  pollDisplay: event.target.value as NonNullable<
+                    typeof draft.pollDisplay
+                  >,
+                })
+              }
+            >
+              <option value="list">Current response display</option>
+              <option value="pie">Pie chart</option>
+              <option value="stacked">Single stack horizontal bar</option>
+              <option value="bar">Vertical bars</option>
+            </select>
+          </label>
+        </>
       )}
       {draft.type === "cloud" && (
         <fieldset className="cloud-submission-editor">

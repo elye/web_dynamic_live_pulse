@@ -37,7 +37,7 @@ export const slideSpecs: Record<Kind, SlideSpec> = {
   },
   poll: {
     purpose: "Multiple choice poll with no correct answer. Participants pick one option, or several when multiple is true.",
-    rules: "options: 2-6 strings (max 100 characters each). correct: null. Optional: multiple (boolean, default false; true lets participants select more than one option).",
+    rules: "options: 2-6 strings (max 100 characters each). correct: null. Optional: multiple (boolean, default false; true lets participants select more than one option). Optional pollDisplay (\"list\", \"pie\", \"stacked\", or \"bar\", default \"list\") controls the results visualization.",
   },
   quiz: {
     purpose: "Multiple choice quiz with one correct answer. Scored and ranked.",

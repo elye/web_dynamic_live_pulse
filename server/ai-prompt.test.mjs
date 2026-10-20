@@ -12,6 +12,7 @@ import {
 
 test("AI system prompt documents every slide type", () => {
   const prompt = buildSystemPrompt();
+  assert.match(prompt, /pollDisplay.*list.*pie.*stacked.*bar/);
   for (const kind of Object.keys(labels)) {
     assert.ok(slideSpecs[kind], `aiPrompt.ts is missing a spec for "${kind}"`);
     assert.ok(prompt.includes(`- "${kind}"`), `prompt omits "${kind}"`);

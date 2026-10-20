@@ -28,6 +28,8 @@ export const twoTruthsTitle = "Pick the one that is not true.";
 export function defaultRevealMode(type: Kind): RevealMode {
   return canCompete(type) || type === "peerpraise" ? "onDone" : "live";
 }
+export type PollDisplay = "list" | "pie" | "stacked" | "bar";
+
 export type Question = {
   id: string;
   type: Kind;
@@ -42,6 +44,8 @@ export type Question = {
   competitive?: boolean;
   /** Multiple choice polls and quizzes: participants may pick more than one option. */
   multiple?: boolean;
+  /** How poll responses are displayed on the results slide. */
+  pollDisplay?: PollDisplay;
   /** Multi-answer quizzes: every correct option (zero-based). Points need exactly these. */
   corrects?: number[];
   /** Show the top-10 ranking after this question's results (answered questions only). */
@@ -150,6 +154,7 @@ export function newQuestion(type: Kind): Question {
     ...(hasRevealMode(type) ? { revealMode: defaultRevealMode(type) } : {}),
     ...(canCompete(type) ? { competitive: true, showRanking: true } : {}),
     ...(type === "poll" || type === "quiz" ? { multiple: false } : {}),
+    ...(type === "poll" ? { pollDisplay: "list" as const } : {}),
     ...(type === "cloud" ? { maxSubmissions: 1 } : {}),
     options:
       type === "quiz"
@@ -264,6 +269,7 @@ export function serializeSession(session: Session): string {
           competitive,
           showRanking,
           multiple,
+          pollDisplay,
           corrects,
           maxSubmissions,
         }) => ({
@@ -274,6 +280,7 @@ export function serializeSession(session: Session): string {
           ...(type === "poll" || type === "quiz"
             ? { multiple: multiple === true }
             : {}),
+          ...(type === "poll" ? { pollDisplay: pollDisplay ?? "list" } : {}),
           ...(type === "quiz" && multiple === true
             ? { corrects: corrects?.length ? corrects : [correct ?? 0] }
             : {}),
@@ -497,6 +504,16 @@ export function importSession(json: string): Session {
           prefix + "only poll and quiz questions can set multiple to true.",
         );
       if (
+        question.pollDisplay !== undefined &&
+        (question.type !== "poll" ||
+          !(["list", "pie", "stacked", "bar"] as unknown[]).includes(
+            question.pollDisplay,
+          ))
+      )
+        throw new Error(
+          prefix + "pollDisplay must be list, pie, stacked, or bar.",
+        );
+      if (
         question.maxSubmissions !== undefined &&
         (question.type !== "cloud" ||
           typeof question.maxSubmissions !== "number" ||
@@ -507,11 +524,15 @@ export function importSession(json: string): Session {
         throw new Error(
           prefix + "word clouds can allow 1 to 5 submissions per participant.",
         );
+      const pollDisplay = question.pollDisplay as PollDisplay | undefined;
       return {
         id: createId(),
         type: question.type as Kind,
         ...(question.type === "poll" || question.type === "quiz"
           ? { multiple: question.multiple === true }
+          : {}),
+        ...(question.type === "poll"
+          ? { pollDisplay: pollDisplay ?? "list" }
           : {}),
         ...(multiQuiz
           ? {

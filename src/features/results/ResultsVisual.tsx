@@ -308,6 +308,7 @@ export function ResultsVisual({
       total={total}
       reveal={reveal}
       fit={fit}
+      display={question.type === "poll" ? question.pollDisplay : undefined}
     />
   );
 }

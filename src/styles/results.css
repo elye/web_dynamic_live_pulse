@@ -542,6 +542,10 @@
   font-weight: 700;
 }
 
+.response-hidden .response-summary {
+  font-size: 32px;
+}
+
 .response-hidden h3 {
   font-size: 24px;
   font-weight: 650;

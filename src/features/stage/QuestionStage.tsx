@@ -15,6 +15,7 @@ export function QuestionStage({
   total = 4,
   reveal = false,
   hidden = false,
+  totalPlayers = 0,
   showQr = false,
 }: {
   question: Question;
@@ -27,9 +28,12 @@ export function QuestionStage({
   reveal?: boolean;
   /** The host hid this on-the-fly question's responses. */
   hidden?: boolean;
+  /** Number of players who have joined the room, including those who have not responded. */
+  totalPlayers?: number;
   showQr?: boolean;
 }) {
   const Icon = icons[question.type];
+  const responseSummary = `${question.responses || 0} of ${totalPlayers} ${totalPlayers === 1 ? "player" : "players"} responded`;
   return (
     <section
       className={`question-stage theme-${theme} ${code && showQr ? "has-qr" : ""}`}
@@ -85,9 +89,7 @@ export function QuestionStage({
               hideCounts
             />
             <p className="response-hidden-note">
-              <strong>{question.responses || 0}</strong>{" "}
-              {question.responses === 1 ? "person has" : "people have"}{" "}
-              responded.{" "}
+              <strong>{responseSummary}</strong>.{" "}
               {hidden
                 ? "The host has hidden the responses for now."
                 : "Results stay hidden until the host clicks Reveal results."}
@@ -97,9 +99,7 @@ export function QuestionStage({
           <>
             <ResultsVisual question={question} fit concealed />
             <p className="response-hidden-note">
-              <strong>{question.responses || 0}</strong>{" "}
-              {question.responses === 1 ? "person has" : "people have"}{" "}
-              responded.{" "}
+              <strong>{responseSummary}</strong>.{" "}
               {hidden
                 ? "The host has hidden the responses for now."
                 : "Results stay hidden until the host clicks Reveal results."}
@@ -107,11 +107,7 @@ export function QuestionStage({
           </>
         ) : (
           <div className="response-hidden">
-            <strong>{question.responses || 0}</strong>
-            <h3>
-              {question.responses === 1 ? "person has" : "people have"}{" "}
-              responded
-            </h3>
+            <strong className="response-summary">{responseSummary}</strong>
             <p>
               {hidden
                 ? "The host has hidden the responses for now."

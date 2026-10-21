@@ -88,6 +88,7 @@ export function CanvasStage() {
           total={questionList.length}
           reveal={room?.revealed}
           hidden={isLive && room?.hidden}
+          totalPlayers={isLive ? room.participants : 0}
           showQr={session.showQr !== false}
         />
       )}

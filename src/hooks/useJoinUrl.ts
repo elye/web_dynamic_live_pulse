@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 /** The participant join link; on localhost it uses the LAN address so phones can reach it. */
-export function useJoinUrl(code: string) {
+export function useJoinUrl(code: string, nameless = false) {
   const [origin, setOrigin] = useState(window.location.origin);
   useEffect(() => {
     if (["localhost", "127.0.0.1"].includes(window.location.hostname))
@@ -15,5 +15,5 @@ export function useJoinUrl(code: string) {
         })
         .catch(() => {});
   }, []);
-  return `${origin}/join?code=${code}`;
+  return `${origin}/join?code=${code}${nameless ? "&nameless=1" : ""}`;
 }

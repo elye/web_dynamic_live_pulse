@@ -36,6 +36,14 @@
   overflow-wrap: anywhere;
 }
 
+.leader-name-source {
+  display: inline-block;
+  margin-left: 0.35em;
+  font-size: 0.75em;
+  line-height: 1;
+  vertical-align: 0.08em;
+}
+
 .leader-row > strong {
   color: #6d8e58;
   font-size: 12px;
@@ -221,6 +229,23 @@
 
 .place-1 .podium-name {
   font-size: clamp(20px, 5.4vw, 52px);
+}
+
+.podium-name-line {
+  font-size: clamp(18px, 4.6vw, 42px);
+  text-align: center;
+  max-width: 100%;
+}
+
+.place-1 .podium-name-line {
+  font-size: clamp(20px, 5.4vw, 52px);
+}
+
+.podium-name-source {
+  display: inline;
+  margin-left: 6px;
+  font-size: calc(1em - 4px);
+  line-height: 1;
 }
 
 .podium-score {

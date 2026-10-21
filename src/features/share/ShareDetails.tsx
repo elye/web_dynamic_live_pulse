@@ -6,15 +6,18 @@ import { useJoinUrl } from "../../hooks/useJoinUrl";
 
 export function ShareDetails({
   code,
+  nameless = false,
   inline = false,
 }: {
   code: string;
+  nameless?: boolean;
   inline?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState("");
   const linkInput = useRef<HTMLInputElement>(null);
-  const url = useJoinUrl(code);
+  const url = useJoinUrl(code, nameless);
+  const participantPath = `/join?code=${code}${nameless ? "&nameless=1" : ""}`;
   async function copy() {
     setCopyError("");
     try {
@@ -67,7 +70,7 @@ export function ShareDetails({
       </p>
       <a
         className={inline ? "lobby-open-link" : "button primary full"}
-        href={`/join?code=${code}`}
+        href={participantPath}
         target="_blank"
         rel="noreferrer"
       >

@@ -28,7 +28,25 @@ export function Podium({ room }: { room: Room }) {
             >
               {index + 1}
             </span>
-            <strong className="podium-name">{winners[index].name}</strong>
+            <div className="podium-name-line">
+              <strong className="podium-name">{winners[index].name}</strong>
+              <span
+                className="podium-name-source"
+                role="img"
+                aria-label={
+                  winners[index].generated
+                    ? "Generated name"
+                    : "Provided name"
+                }
+                title={
+                  winners[index].generated
+                    ? "Generated participant name"
+                    : "Name provided by the participant"
+                }
+              >
+                {winners[index].generated ? "✨" : "👤"}
+              </span>
+            </div>
             <span className="podium-score">
               {winners[index].score.toLocaleString()} pts
             </span>

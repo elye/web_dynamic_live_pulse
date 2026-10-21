@@ -86,6 +86,7 @@ export function useHostController() {
     const original = sessions.find(
       (item) =>
         item.title === restoredRoom.title &&
+        (item.nameless === true) === restoredRoom.nameless &&
         JSON.stringify(
           item.questions.map(({ type, title, options, correct }) => ({
             type,
@@ -195,6 +196,7 @@ export function useHostController() {
       const reply = await request("room:create", {
         title: session.title,
         questions: session.questions,
+        nameless: session.nameless === true,
       });
       const credentials = { code: reply.state!.code, token: reply.token! };
       live.saveCredentials({ ...credentials, sessionId: session.id });

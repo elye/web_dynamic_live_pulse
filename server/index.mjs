@@ -10,6 +10,7 @@ import {
   createRoom,
   getRoom,
   joinRoom,
+  renameParticipant,
   reactionKinds,
   reactRoom,
   rooms,
@@ -73,11 +74,15 @@ export function createAppServer() {
       for (const channel of socket.rooms)
         if (channel !== socket.id) socket.leave(channel);
     };
-    listen("room:create", ({ title, questions, crowdKind }) => {
-      const room = createRoom(title, questions, crowdKind);
+    listen("room:create", ({ title, questions, crowdKind, nameless }) => {
+      const room = createRoom(title, questions, crowdKind, nameless);
       leaveRooms();
       socket.join(`host:${room.code}`);
       return { token: room.hostToken, state: snapshot(room, true) };
+    });
+    listen("room:info", ({ code }) => {
+      const room = getRoom(code);
+      return { nameless: room.nameless === true };
     });
     listen("room:host", ({ code, token }) => {
       const room = getRoom(code);
@@ -89,12 +94,16 @@ export function createAppServer() {
     listen("room:join", ({ code, name, token }) => {
       const room = getRoom(code);
       const memberToken = joinRoom(room, name, token);
+      const member = room.participants.get(memberToken);
       leaveRooms();
       socket.join(`audience:${room.code}`);
       socket.data.memberToken = memberToken;
       broadcast(room);
       return {
         token: memberToken,
+        name: member.name,
+        generated: member.generated === true,
+        nameChangeUsed: member.nameChanged === true,
         state: snapshot(room, false, memberToken),
         submitted: [
           ...room.questions.flatMap((question) => {
@@ -116,6 +125,20 @@ export function createAppServer() {
             ]),
         ),
         authored: authoredDraft(room, memberToken),
+      };
+    });
+    listen("room:rename", ({ code, token, name }) => {
+      const room = getRoom(code);
+      const member = renameParticipant(room, token, name);
+      // Send the acknowledgement before the state broadcast. The rename has
+      // already been applied, so a large or slow state update must not make a
+      // successful name change look like a request timeout to the player.
+      queueMicrotask(() => broadcast(room));
+      return {
+        name: member.name,
+        generated: member.generated === true,
+        nameChangeUsed: member.nameChanged === true,
+        state: snapshot(room, false, token),
       };
     });
     listen("room:author", ({ code, token, question }) => {

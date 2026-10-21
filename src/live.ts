@@ -8,6 +8,8 @@ type Credentials = {
   code: string;
   token: string;
   name?: string;
+  generated?: boolean;
+  nameChangeUsed?: boolean;
   sessionId?: string;
 };
 type Reply = {
@@ -15,6 +17,10 @@ type Reply = {
   error?: string;
   state?: Room;
   token?: string;
+  name?: string;
+  generated?: boolean;
+  nameChangeUsed?: boolean;
+  nameless?: boolean;
   submitted?: string[];
   answers?: Record<string, Answer>;
   authored?: AuthoredQuestion;
@@ -91,6 +97,13 @@ export function useLive(
         setSubmitted(reply.submitted || []);
         setAnswers(reply.answers || {});
         setAuthored(reply.authored);
+        if (role === "audience" && saved && reply.name)
+          store(key, {
+            ...saved,
+            name: reply.name,
+            generated: reply.generated === true,
+            nameChangeUsed: reply.nameChangeUsed === true,
+          });
         notifyRestored(reply.state!);
       } catch (failure) {
         setError((failure as Error).message);

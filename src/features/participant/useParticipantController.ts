@@ -1,13 +1,40 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { request, useLive } from "../../live";
 import { readStored, store } from "../../model";
 import { type Authored } from "../crowd/authoring";
 
+type ParticipantCredentials = {
+  token?: string;
+  name?: string;
+  generated?: boolean;
+  nameChangeUsed?: boolean;
+};
+
 export function useParticipantController() {
-  const initialCode =
-    new URLSearchParams(window.location.search).get("code") || "";
+  const searchParams = new URLSearchParams(window.location.search);
+  const initialCode = searchParams.get("code") || "";
+  const hintedNameless = searchParams.get("nameless") === "1";
   const [code, setCode] = useState(initialCode);
   const [name, setName] = useState("");
+  const storedParticipant = readStored<ParticipantCredentials | null>(
+    `pulse:participant:${initialCode}`,
+    null,
+  );
+  const [participantName, setParticipantName] = useState(
+    storedParticipant?.name || "",
+  );
+  const [participantNameGenerated, setParticipantNameGenerated] = useState(
+    storedParticipant?.generated === true ||
+      (storedParticipant?.generated === undefined &&
+        hintedNameless &&
+        storedParticipant?.nameChangeUsed !== true),
+  );
+  const [nameChangeUsed, setNameChangeUsed] = useState(
+    storedParticipant?.nameChangeUsed === true,
+  );
+  const [nameless, setNameless] = useState<boolean | null>(
+    hintedNameless ? true : null,
+  );
   const [busy, setBusy] = useState(false);
   const [answer, setAnswer] = useState<
     string | number | number[] | { x: number; y: number }
@@ -18,6 +45,9 @@ export function useParticipantController() {
   const [reactionTap, setReactionTap] = useState({ kind: "", count: 0 });
   const live = useLive("audience", initialCode);
   const { room, connected, error, setError, submitted, answers } = live;
+  const detectedNameless = room?.nameless ?? nameless;
+  const participantNameIsGenerated =
+    participantNameGenerated || (room?.nameless === true && !nameChangeUsed);
   const question = room?.questions[room.active];
   const currentUpvoted =
     upvotedQuestion === question?.id ? upvoted : new Set<string>();
@@ -58,13 +88,38 @@ export function useParticipantController() {
   const submissionCount = question
     ? submitted.filter((id) => id === question.id).length
     : 0;
-  const maxSubmissions = question?.type === "cloud" ? question.maxSubmissions ?? 1 : 1;
+  const maxSubmissions =
+    question?.type === "cloud" ? (question.maxSubmissions ?? 1) : 1;
   const hasSubmitted = submissionCount > 0;
   const isFullySubmitted = !!question && submissionCount >= maxSubmissions;
   const isMultiple =
     (question?.type === "poll" || question?.type === "quiz") &&
     question.multiple === true;
   const selectedOptions = Array.isArray(currentAnswer) ? currentAnswer : [];
+
+  function setParticipantCode(nextCode: string) {
+    setCode(nextCode);
+    if (!(nextCode === initialCode && hintedNameless)) setNameless(null);
+  }
+
+  useEffect(() => {
+    if (code.length !== 6) return;
+    let active = true;
+    if (!connected)
+      return () => {
+        active = false;
+      };
+    void request("room:info", { code })
+      .then((reply) => {
+        if (active) setNameless(reply.nameless === true);
+      })
+      .catch(() => {
+        if (active) setNameless(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [code, connected]);
 
   async function join(event: FormEvent) {
     event.preventDefault();
@@ -75,15 +130,68 @@ export function useParticipantController() {
         `pulse:participant:${code}`,
         {},
       );
+      let roomIsNameless = detectedNameless;
+      if (roomIsNameless === null) {
+        const info = await request("room:info", { code });
+        roomIsNameless = info.nameless === true;
+        setNameless(roomIsNameless);
+      }
       const reply = await request("room:join", {
         code,
-        name,
+        name: roomIsNameless ? undefined : name,
         token: saved.token,
       });
-      store(`pulse:participant:${code}`, { code, name, token: reply.token });
-      window.location.assign(`/join?code=${code}`);
+      const assignedName = reply.name || name;
+      const generated = reply.generated === true;
+      const nameChangeUsed = reply.nameChangeUsed === true;
+      store(`pulse:participant:${code}`, {
+        code,
+        name: assignedName,
+        generated,
+        nameChangeUsed,
+        token: reply.token,
+      });
+      setParticipantName(assignedName);
+      setParticipantNameGenerated(generated);
+      setNameChangeUsed(nameChangeUsed);
+      window.location.assign(
+        `/join?code=${code}${reply.state?.nameless ? "&nameless=1" : ""}`,
+      );
     } catch (failure) {
       setError((failure as Error).message);
+      setBusy(false);
+    }
+  }
+  async function renameParticipant(nextName: string) {
+    const credentials = live.credentials();
+    if (!credentials) {
+      setError("Join the room before changing your name.");
+      return false;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const reply = await request("room:rename", {
+        ...credentials,
+        name: nextName,
+      });
+      const updatedName = reply.name || nextName.trim();
+      const generated = reply.generated === true;
+      const nameChangeUsed = reply.nameChangeUsed === true;
+      store(`pulse:participant:${credentials.code}`, {
+        ...credentials,
+        name: updatedName,
+        generated,
+        nameChangeUsed,
+      });
+      setParticipantName(updatedName);
+      setParticipantNameGenerated(generated);
+      setNameChangeUsed(nameChangeUsed);
+      return true;
+    } catch (failure) {
+      setError((failure as Error).message);
+      return false;
+    } finally {
       setBusy(false);
     }
   }
@@ -214,9 +322,15 @@ export function useParticipantController() {
   return {
     initialCode,
     code,
-    setCode,
+    setCode: setParticipantCode,
     name,
     setName,
+    participantName,
+    participantNameGenerated: participantNameIsGenerated,
+    nameChangeUsed,
+    renameParticipant,
+    nameless: detectedNameless,
+    setNameless,
     busy,
     setBusy,
     answer,

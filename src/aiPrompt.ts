@@ -156,6 +156,7 @@ TOP-LEVEL SHAPE
   "title": string (1-100 characters),
   "theme": "mint" | "peach" | "lilac" | "sky",
   "showQr": boolean (true shows the join QR code on every slide),
+  "nameless": boolean (true generates a unique name for each participant and shows only a count in the welcome lobby),
   "questions": [ ... 1 to 30 items ... ]
 }
 

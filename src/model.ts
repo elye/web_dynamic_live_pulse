@@ -65,6 +65,8 @@ export type Session = {
   theme: string;
   /** Show the join QR code in the corner of every live slide (default on). */
   showQr?: boolean;
+  /** Generate name-like participant labels instead of asking for names. */
+  nameless?: boolean;
   questions: Question[];
   updated: number;
   hostedRooms?: { code: string; token: string }[];
@@ -72,6 +74,8 @@ export type Session = {
 export type Room = {
   code: string;
   title: string;
+  /** Participants receive generated names and the welcome lobby shows only a count. */
+  nameless: boolean;
   active: number;
   started: boolean;
   accepting: boolean;
@@ -99,7 +103,7 @@ export type Room = {
     /** Names of players who have not submitted yet. */
     waiting: string[];
   } | null;
-  leaderboard: { name: string; score: number }[];
+  leaderboard: { name: string; score: number; generated: boolean }[];
 };
 export const labels: Record<Kind, string> = {
   slide: "Title & description",
@@ -255,6 +259,7 @@ export function serializeSession(session: Session): string {
       title: session.title,
       theme: session.theme,
       showQr: session.showQr !== false,
+      nameless: session.nameless === true,
       questions: session.questions.map(
         ({
           type,
@@ -333,6 +338,8 @@ export function importSession(json: string): Session {
     throw new Error("Choose a supported theme: mint, peach, lilac, or sky.");
   if (data.showQr !== undefined && typeof data.showQr !== "boolean")
     throw new Error("showQr must be true or false.");
+  if (data.nameless !== undefined && typeof data.nameless !== "boolean")
+    throw new Error("nameless must be true or false.");
   if (
     !Array.isArray(data.questions) ||
     !data.questions.length ||
@@ -583,6 +590,7 @@ export function importSession(json: string): Session {
     title: data.title.trim(),
     theme: data.theme,
     showQr: data.showQr !== false,
+    nameless: data.nameless === true,
     questions,
     updated: Date.now(),
   };

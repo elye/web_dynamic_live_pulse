@@ -139,6 +139,11 @@
   font-size: 13px;
 }
 
+.lobby-anonymous {
+  color: #72806b;
+  text-align: center;
+}
+
 .lobby-footer {
   display: flex;
   justify-content: space-between;
@@ -366,6 +371,10 @@
   opacity: 1;
   color: #72806b;
   text-align: center;
+}
+
+.host-lobby .lobby-anonymous {
+  min-height: 240px;
 }
 
 .host-lobby .lobby-footer {

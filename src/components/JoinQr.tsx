@@ -2,8 +2,14 @@ import { QRCodeSVG } from "qrcode.react";
 import { useJoinUrl } from "../hooks/useJoinUrl";
 
 /** Small join QR pinned to the top right of a live slide. */
-export function JoinQr({ code }: { code: string }) {
-  const url = useJoinUrl(code);
+export function JoinQr({
+  code,
+  nameless = false,
+}: {
+  code: string;
+  nameless?: boolean;
+}) {
+  const url = useJoinUrl(code, nameless);
   return (
     <div
       className="join-qr"

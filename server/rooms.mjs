@@ -9,6 +9,144 @@ export const twoTruthsTitle = "Pick the one that is not true.";
 export const crowdKinds = [...kinds].filter((kind) => kind !== "slide");
 const optionKinds = ["poll", "quiz", "truefalse", "twotruths", "ranking", "points100", "grid2x2"];
 
+// Nameless rooms still need stable labels for peer praise, authored questions,
+// and the leaderboard. Combining two name-like words gives us many more
+// choices than the room's 500-person capacity without exposing a real name.
+const generatedFirstNames = [
+  "Ava",
+  "Mia",
+  "Zoe",
+  "Emma",
+  "Maya",
+  "Nora",
+  "Lily",
+  "Isla",
+  "Ruby",
+  "Ivy",
+  "Ella",
+  "Aria",
+  "Leah",
+  "Lucy",
+  "Clara",
+  "Alice",
+  "Grace",
+  "Sophie",
+  "Chloe",
+  "Elena",
+  "Nina",
+  "Sadie",
+  "Cora",
+  "Eva",
+  "Anna",
+  "Rose",
+  "June",
+  "Wren",
+  "Theo",
+  "Leo",
+  "Luca",
+  "Noah",
+  "Eli",
+  "Milo",
+  "Owen",
+  "Liam",
+  "Ezra",
+  "Finn",
+  "Arlo",
+  "Jude",
+  "Kai",
+  "Sam",
+  "Max",
+  "Cole",
+  "Ryan",
+  "Evan",
+  "Adam",
+  "Alex",
+  "Ben",
+  "Luke",
+  "Jack",
+  "James",
+  "Oscar",
+  "Felix",
+  "Rowan",
+  "Robin",
+  "Jamie",
+  "Morgan",
+  "Taylor",
+  "Jordan",
+  "Casey",
+  "Quinn",
+  "Avery",
+  "Riley",
+  "Hayden",
+  "Emery",
+];
+const generatedLastNames = [
+  "Harper",
+  "Bennett",
+  "Brooks",
+  "Carter",
+  "Ellis",
+  "Foster",
+  "Hayes",
+  "Hudson",
+  "James",
+  "Jordan",
+  "Lane",
+  "Lennox",
+  "Morgan",
+  "Parker",
+  "Reed",
+  "Rivers",
+  "Sawyer",
+  "Spencer",
+  "Taylor",
+  "West",
+  "Blake",
+  "Blair",
+  "Cameron",
+  "Casey",
+  "Clarke",
+  "Collins",
+  "Dawson",
+  "Finley",
+  "Gray",
+  "Green",
+  "Hall",
+  "Hart",
+  "Kennedy",
+  "King",
+  "Logan",
+  "Mason",
+  "Miller",
+  "North",
+  "Palmer",
+  "Quinn",
+  "Reese",
+  "Riley",
+  "Rose",
+  "Sage",
+  "Scott",
+  "Sloan",
+  "Stone",
+  "Sutton",
+  "Walker",
+  "Wells",
+  "Wilder",
+  "Wilson",
+  "Wright",
+  "Young",
+  "Bell",
+  "Cross",
+  "Dean",
+  "Ford",
+  "Grant",
+  "Lake",
+  "Perry",
+  "Shaw",
+  "Avery",
+  "Drew",
+];
+
 const hasRevealMode = (type) => type !== "slide" && type !== "qna";
 /** Only questions with a correct answer can be competitive. */
 const canCompete = (type) => type === "quiz" || type === "truefalse" || type === "twotruths";
@@ -154,11 +292,28 @@ export function validateQuestions(input) {
   });
 }
 
+function generatedName(room) {
+  const used = new Set(
+    [...room.participants.values()].map((member) => member.name),
+  );
+  for (let attempt = 0; attempt < 100; attempt++) {
+    const name = `${generatedFirstNames[randomInt(generatedFirstNames.length)]} ${generatedLastNames[randomInt(generatedLastNames.length)]}`;
+    if (!used.has(name)) return name;
+  }
+  throw new Error("Could not create a unique participant name.");
+}
+
+function participantName(name) {
+  if (typeof name !== "string" || !name.trim() || name.trim().length > 24)
+    throw new Error("Enter a name with 1 to 24 characters.");
+  return name.trim();
+}
+
 /**
  * With `crowdKind`, players write the questions: the room starts with none, collects one
  * question of that type from each player, then plays them in random order.
  */
-export function createRoom(title, questions, crowdKind) {
+export function createRoom(title, questions, crowdKind, nameless = false) {
   if (rooms.size >= 1000)
     throw new Error("The server is full. Please try again later.");
   if (crowdKind !== undefined && !crowdKinds.includes(crowdKind))
@@ -170,6 +325,7 @@ export function createRoom(title, questions, crowdKind) {
   const room = {
     code,
     hostToken: randomUUID(),
+    nameless: nameless === true,
     title: String(title || "Untitled session")
       .trim()
       .slice(0, 100),
@@ -265,17 +421,37 @@ function assignNewPeerPraisePlayer(room, token) {
 
 export function joinRoom(room, name, token) {
   if (token && room.participants.has(token)) {
+    const member = room.participants.get(token);
+    member.generated ??= room.nameless === true;
+    member.nameChanged ??= false;
     assignNewPeerPraisePlayer(room, token);
     return token;
   }
   if (room.ended) throw new Error("This session has ended.");
   if (room.participants.size >= 500) throw new Error("This room is full.");
-  if (typeof name !== "string" || !name.trim() || name.trim().length > 24)
-    throw new Error("Enter a name with 1 to 24 characters.");
+  const generated = room.nameless === true;
+  const assignedName = generated ? generatedName(room) : participantName(name);
   const memberToken = randomUUID();
-  room.participants.set(memberToken, { name: name.trim() });
+  room.participants.set(memberToken, {
+    name: assignedName,
+    generated,
+    nameChanged: false,
+  });
   assignNewPeerPraisePlayer(room, memberToken);
   return memberToken;
+}
+
+export function renameParticipant(room, token, name) {
+  const member = room.participants.get(token);
+  if (!member) throw new Error("Join the room before changing your name.");
+  if (room.ended)
+    throw new Error("Your name can only be changed while the session is active.");
+  if (member.nameChanged === true)
+    throw new Error("Your name can only be changed once.");
+  member.name = participantName(name);
+  member.generated = false;
+  member.nameChanged = true;
+  return member;
 }
 
 /** Stores (or replaces) a player's own question while the host is collecting them. */
@@ -702,6 +878,7 @@ export function snapshot(room, host = false, token) {
     ? [...room.participants]
         .map(([token, member]) => ({
           name: member.name,
+          generated: member.generated === true,
           score: room.questions.reduce(
             (score, question) => score + scoreAnswer(room, question, token),
             0,
@@ -713,6 +890,7 @@ export function snapshot(room, host = false, token) {
   return {
     code: room.code,
     title: room.title,
+    nameless: room.nameless === true,
     active: room.active,
     started: room.started,
     accepting: room.accepting,

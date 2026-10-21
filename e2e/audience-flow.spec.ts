@@ -201,6 +201,9 @@ test("two audiences answer all types, reconnect, receive reveals, and finish wit
     await expect(audience.locator(".leaderboard.compact")).toContainText(
       "Alex",
     );
+    await expect(
+      audience.locator('.leaderboard.compact [aria-label="Provided name"]'),
+    ).toHaveCount(2);
     await page
       .getByRole("button", { name: "Next question", exact: true })
       .last()
@@ -228,6 +231,9 @@ test("two audiences answer all types, reconnect, receive reveals, and finish wit
       .getByRole("button", { name: "Show podium", exact: true })
       .click();
     await expect(audience.locator(".podium-section")).toContainText("Alex");
+    await expect(
+      audience.locator('.podium-section [aria-label="Provided name"]'),
+    ).toHaveCount(1);
     await page
       .getByRole("button", { name: "Finish session", exact: true })
       .click();

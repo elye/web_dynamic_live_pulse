@@ -1,4 +1,11 @@
-import { Expand, FlaskConical, Monitor, Pencil, QrCode } from "lucide-react";
+import {
+  Expand,
+  FlaskConical,
+  Monitor,
+  Pencil,
+  QrCode,
+  Users,
+} from "lucide-react";
 import { IconButton } from "../../../components/IconButton";
 import { useHost } from "../HostContext";
 
@@ -47,6 +54,22 @@ export function CanvasToolbar() {
           <button className="text-button" onClick={() => setEditing(question)}>
             <Pencil size={14} />
             Edit question
+          </button>
+        )}
+        {!isLive && (
+          <button
+            type="button"
+            className={`session-mode-button ${session.nameless ? "active" : ""}`}
+            aria-pressed={session.nameless === true}
+            title={
+              session.nameless
+                ? "Participants receive generated names"
+                : "Participants will be asked for their names"
+            }
+            onClick={() => updateSession({ nameless: session.nameless !== true })}
+          >
+            <Users size={14} />
+            {session.nameless ? "Nameless session" : "Ask for names"}
           </button>
         )}
         <IconButton

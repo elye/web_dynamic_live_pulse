@@ -10,6 +10,7 @@ export function QuestionStage({
   preview = false,
   theme = "mint",
   code,
+  nameless = false,
   index = 0,
   total = 4,
   reveal = false,
@@ -20,6 +21,7 @@ export function QuestionStage({
   preview?: boolean;
   theme?: string;
   code?: string;
+  nameless?: boolean;
   index?: number;
   total?: number;
   reveal?: boolean;
@@ -32,7 +34,7 @@ export function QuestionStage({
     <section
       className={`question-stage theme-${theme} ${code && showQr ? "has-qr" : ""}`}
     >
-      {code && showQr && <JoinQr code={code} />}
+      {code && showQr && <JoinQr code={code} nameless={nameless} />}
       <div className="stage-top">
         <span className="stage-kind">
           <Icon size={15} />

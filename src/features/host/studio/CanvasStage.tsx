@@ -83,6 +83,7 @@ export function CanvasStage() {
           preview={!isLive}
           theme={session.theme}
           code={isLive ? room.code : undefined}
+          nameless={isLive ? room.nameless : false}
           index={currentIndex}
           total={questionList.length}
           reveal={room?.revealed}

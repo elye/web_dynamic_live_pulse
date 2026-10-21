@@ -68,7 +68,11 @@ export function HostModals() {
       {modal === "add" && <AddQuestionModal />}
       {modal === "crowd" && <CrowdModal />}
       {modal === "share" && room && (
-        <ShareModal code={room.code} onClose={() => setModal(null)} />
+        <ShareModal
+          code={room.code}
+          nameless={room.nameless}
+          onClose={() => setModal(null)}
+        />
       )}
       {modal === "new" && <NewSessionModal />}
       {modal === "end" && <EndSessionModal />}

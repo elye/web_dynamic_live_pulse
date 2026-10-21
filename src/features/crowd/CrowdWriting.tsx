@@ -44,7 +44,7 @@ export function CrowdWriting({
       <div className="lobby-body">
         <div className="lobby-join">
           <h2>Join the session</h2>
-          <ShareDetails code={room.code} inline />
+          <ShareDetails code={room.code} nameless={room.nameless} inline />
         </div>
         <div className="lobby-roster">
           <div

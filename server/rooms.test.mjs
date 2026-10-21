@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   createRoom,
   joinRoom,
+  renameParticipant,
   submitVote,
   submitUpvote,
   submitAuthored,
@@ -289,6 +290,58 @@ test("one vote per participant, private answers, and server-calculated scores", 
     /no longer/,
   );
   rooms.delete(room.code);
+});
+
+test("nameless rooms assign unique name-like labels and preserve them on rejoin", () => {
+  const room = createRoom("Anonymous check-in", questions, undefined, true);
+  assert.equal(room.nameless, true);
+  const first = joinRoom(room);
+  const second = joinRoom(room, "This name is ignored");
+  const firstName = room.participants.get(first).name;
+  const secondName = room.participants.get(second).name;
+  assert.equal(room.participants.get(first).generated, true);
+  assert.equal(room.participants.get(second).generated, true);
+  assert.match(firstName, /^[A-Za-z]+ [A-Za-z]+$/);
+  assert.match(secondName, /^[A-Za-z]+ [A-Za-z]+$/);
+  assert.notEqual(firstName, secondName);
+  assert.equal(joinRoom(room, "Another name", first), first);
+  assert.equal(room.participants.get(first).name, firstName);
+  assert.equal(snapshot(room).nameless, true);
+  assert.deepEqual(snapshot(room).participantNames, [firstName, secondName]);
+  rooms.delete(room.code);
+
+  const named = createRoom("Named check-in", questions);
+  assert.throws(() => joinRoom(named), /Enter a name/);
+  rooms.delete(named.code);
+});
+
+test("participants can rename themselves once while the session is active", () => {
+  const room = createRoom("Rename check-in", questions, undefined, true);
+  const token = joinRoom(room);
+  const generatedName = room.participants.get(token).name;
+  controlRoom(room, room.hostToken, "start");
+  const member = renameParticipant(room, token, "Taylor");
+  assert.equal(member.name, "Taylor");
+  assert.equal(member.generated, false);
+  assert.equal(member.nameChanged, true);
+  assert.notEqual(member.name, generatedName);
+  assert.throws(
+    () => renameParticipant(room, token, "Another name"),
+    /only be changed once/,
+  );
+  assert.equal(snapshot(room, true).leaderboard[0].generated, false);
+  controlRoom(room, room.hostToken, "end");
+  assert.throws(
+    () => renameParticipant(room, token, "Too late"),
+    /while the session is active/,
+  );
+  rooms.delete(room.code);
+
+  const generatedRoom = createRoom("Generated podium", questions, undefined, true);
+  joinRoom(generatedRoom);
+  controlRoom(generatedRoom, generatedRoom.hostToken, "start");
+  assert.equal(snapshot(generatedRoom, true).leaderboard[0].generated, true);
+  rooms.delete(generatedRoom.code);
 });
 
 test("question changes reject stale answers and aggregate words case-insensitively", () => {
@@ -820,13 +873,34 @@ test("websocket host and audience complete a live round and reconnect", async ()
     });
     assert.equal(created.ok, true);
     const code = created.state.code;
+    const info = await request(audience, "room:info", { code });
+    assert.equal(info.nameless, false);
     const joined = await request(audience, "room:join", {
       code,
       name: "Taylor",
     });
+    assert.equal(joined.name, "Taylor");
+    assert.equal(joined.generated, false);
+    assert.equal(joined.nameChangeUsed, false);
     assert.equal(joined.state.questions[0].correct, null);
     assert.equal(joined.state.started, false);
     assert.deepEqual(joined.state.participantNames, ["Taylor"]);
+    const renamed = await request(audience, "room:rename", {
+      code,
+      token: joined.token,
+      name: "Taylor Prime",
+    });
+    assert.equal(renamed.name, "Taylor Prime");
+    assert.equal(renamed.generated, false);
+    assert.equal(renamed.nameChangeUsed, true);
+    assert.deepEqual(renamed.state.participantNames, ["Taylor Prime"]);
+    const renamedAgain = await request(audience, "room:rename", {
+      code,
+      token: joined.token,
+      name: "Taylor Final",
+    });
+    assert.equal(renamedAgain.ok, false);
+    assert.match(renamedAgain.error, /only be changed once/);
     const started = new Promise((resolve) => audience.once("room:state", resolve));
     await request(host, "room:control", { code, token: created.token, action: "start" });
     assert.equal((await started).started, true);

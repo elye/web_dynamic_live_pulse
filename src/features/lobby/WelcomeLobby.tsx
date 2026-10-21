@@ -49,7 +49,7 @@ export function WelcomeLobby({
         {host ? (
           <div className="lobby-join">
             <h2>Join the session</h2>
-            <ShareDetails code={room.code} inline />
+            <ShareDetails code={room.code} nameless={room.nameless} inline />
           </div>
         ) : (
           <div className="lobby-code">
@@ -73,7 +73,14 @@ export function WelcomeLobby({
                 : "participants joined"}
             </span>
           </div>
-          <LobbyNames names={room.participantNames} max={host ? 120 : 56} />
+          {room.nameless ? (
+            <div className="lobby-empty lobby-anonymous">
+              <Users size={32} strokeWidth={1.3} />
+              <p>Participant names are generated for this session</p>
+            </div>
+          ) : (
+            <LobbyNames names={room.participantNames} max={host ? 120 : 56} />
+          )}
         </div>
       </div>
       <div className="lobby-footer">

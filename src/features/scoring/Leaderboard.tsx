@@ -33,7 +33,21 @@ export function Leaderboard({
             {room.leaderboard.map((entry, index) => (
               <div className="leader-row" key={index}>
                 <b>{index + 1}</b>
-                <span>{entry.name}</span>
+                <span>
+                  {entry.name}
+                  <span
+                    className="leader-name-source"
+                    role="img"
+                    aria-label={entry.generated ? "Generated name" : "Provided name"}
+                    title={
+                      entry.generated
+                        ? "Generated participant name"
+                        : "Name provided by the participant"
+                    }
+                  >
+                    {entry.generated ? "✨" : "👤"}
+                  </span>
+                </span>
                 <strong>{entry.score.toLocaleString()} pts</strong>
               </div>
             ))}
@@ -48,7 +62,21 @@ export function Leaderboard({
       {room.leaderboard.map((entry, index) => (
         <div className="leader-row" key={index}>
           <b>{index + 1}</b>
-          <span>{entry.name}</span>
+          <span>
+            {entry.name}
+            <span
+              className="leader-name-source"
+              role="img"
+              aria-label={entry.generated ? "Generated name" : "Provided name"}
+              title={
+                entry.generated
+                  ? "Generated participant name"
+                  : "Name provided by the participant"
+              }
+            >
+              {entry.generated ? "✨" : "👤"}
+            </span>
+          </span>
           <strong>{entry.score.toLocaleString()} pts</strong>
         </div>
       ))}

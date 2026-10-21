@@ -17,7 +17,7 @@ export function ScoreStage({
     <section
       className={`question-stage score-stage theme-${theme} ${showQr ? "has-qr" : ""}`}
     >
-      {showQr && <JoinQr code={room.code} />}
+      {showQr && <JoinQr code={room.code} nameless={room.nameless} />}
       {room.podium ? (
         room.leaderboard.some((entry) => entry.score > 0) ? (
           <Podium room={room} />

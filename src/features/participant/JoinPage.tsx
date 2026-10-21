@@ -9,7 +9,7 @@ import {
 import { useParticipant } from "./ParticipantContext";
 
 export function JoinPage() {
-  const { code, setCode, name, setName, busy, connected, join } =
+  const { code, setCode, name, setName, nameless, busy, connected, join } =
     useParticipant();
   return (
     <main className="join-page">
@@ -49,20 +49,31 @@ export function JoinPage() {
             className="code-input"
           />
         </label>
-        <label>
-          Your name
-          <input
-            required
-            maxLength={24}
-            placeholder="What should we call you?"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            autoComplete="given-name"
-          />
-        </label>
+        {nameless === true ? (
+          <p className="nameless-note">
+            You’ll join anonymously. Pulse will give you a name for this room.
+          </p>
+        ) : (
+          <label>
+            Your name
+            <input
+              required
+              maxLength={24}
+              placeholder="What should we call you?"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              autoComplete="given-name"
+            />
+          </label>
+        )}
         <button
           className="button primary full"
-          disabled={busy || !connected || !name.trim() || code.length !== 6}
+          disabled={
+            busy ||
+            !connected ||
+            (nameless !== true && !name.trim()) ||
+            code.length !== 6
+          }
         >
           {busy ? (
             <LoaderCircle size={18} className="spin" />

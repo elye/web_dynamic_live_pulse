@@ -180,6 +180,7 @@ SURVEY vs QUIZ (decide from the user's request, and freely combine them in one s
 GENERAL GUIDANCE
 - Choose the slide types that fit the user's goal; mix types for variety.
 - Start with a "slide" welcome slide and end with an open-ended question when it suits the request.
+- Set top-level "nameless": true when participants should receive generated names instead of being asked for names. A participant can replace their generated name once while the session is active.
 - Write concise, friendly, audience-ready text. Keep every string within its limit.
 - For scored types (quiz, truefalse, twotruths) make sure "correct" really points at the right option.
 

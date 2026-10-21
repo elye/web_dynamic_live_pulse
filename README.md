@@ -20,7 +20,7 @@ Open http://localhost:5173. The command starts Vite and the live server together
 3. Select **Present live** to open the welcome screen. The QR code, room code, and selectable participant URL are always visible beside the live participant roster. Use the copy icon to copy the URL, or select the field to copy it manually.
   Select **Start questions** when everyone is ready. Participants wait in the welcome lobby until then.
    Before presenting, switch **Ask for names** to **Nameless session** in the studio toolbar if you want Pulse to assign each participant a unique name-like label. The welcome lobby then shows only the number of people who have joined.
-4. Participants visit `/join`, enter the room code, and submit one response per question. Named sessions ask for a display name; nameless sessions assign a unique generated name automatically. The participant console shows `✨ generated` beside an assigned name, and the player can replace it once before the questions start.
+4. Participants visit `/join`, enter the room code, and submit one response per question. Named sessions ask for a display name; nameless sessions assign a unique generated name automatically. The participant console shows `✨` beside an assigned name, and the player can click it to replace the generated name once at any time while the session is active.
 5. Pause or reopen voting, reveal results, and advance questions. Each correct quiz or true-or-false answer earns up to 1,000 points: the faster the answer, the more points. Multi-answer quizzes award partial credit (see below).
 6. End the session to view the summary and leaderboard. Export aggregated responses to CSV before stopping the server or starting another room.
 
@@ -127,7 +127,7 @@ Select a word-cloud question in the studio and click the flask icon (**Simulate 
 - **Delete:** Select the trash icon on a session card or **Delete session** in the studio. The confirmation includes an **Export JSON** button for making a backup first. Confirming deletes all questions and linked hosted rooms, including live or ended rooms and their responses. Participants in deleted rooms are notified and can no longer submit or rejoin. Deleting the last session leaves an empty library, including after refresh.
 - Deleting a hosted session requires a connection to the server; if deletion fails, the local session is kept. Already expired or missing rooms do not prevent deletion. Draft-only sessions can be deleted without a server connection.
 
-JSON backups contain reusable content, not participant identities, responses, scores, room codes, host tokens, or internal IDs. Use **Export CSV** separately for response data before deleting. Import accepts files up to 128 KB and validates every question before creating a session.
+JSON backups contain reusable content, including the session's `nameless` setting, but not participant identities, responses, scores, room codes, host tokens, or internal IDs. Use **Export CSV** separately for response data before deleting. Import accepts files up to 128 KB and validates every question before creating a session.
 
 The versioned format is:
 
@@ -137,6 +137,7 @@ The versioned format is:
   "version": 1,
   "title": "Team check-in",
   "theme": "mint",
+  "nameless": false,
   "questions": [
     {
       "type": "cloud",

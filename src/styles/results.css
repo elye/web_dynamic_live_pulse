@@ -879,7 +879,14 @@
   --many-gap: calc(min(100cqh, 100cqw) * 0.015);
 }
 
+.many-fit .many-label {
+  display: block;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
 .many-fit .many-box {
+  overflow: hidden;
   height: calc((100cqh - (var(--rows) - 1) * var(--many-gap)) / var(--rows));
 }
 

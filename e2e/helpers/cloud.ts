@@ -7,6 +7,14 @@ export async function checkCloudGeometry(page: Page | Locator, count: number) {
   const canvas = page.locator(".cloud-canvas");
   await expect(canvas).toHaveAttribute("data-ready", "true");
   await expect(canvas).toHaveAttribute("data-words", String(count));
+  await expect
+    .poll(() =>
+      canvas.evaluate(
+        (surface: HTMLCanvasElement) =>
+          JSON.parse(surface.dataset.testDraws || "[]").length,
+      ),
+    )
+    .toBe(count);
   const geometry = await canvas.evaluate((surface: HTMLCanvasElement) => {
     const pixels = surface
       .getContext("2d")!

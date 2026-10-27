@@ -55,6 +55,25 @@ test("cloud simulator previews many words without changing the session", async (
     dialog.getByText("300 sample participants", { exact: true }),
   ).toBeVisible();
   await checkCloudGeometry(dialog, 30);
+  await slider.fill("300");
+  await checkCloudGeometry(dialog, 300);
+  await slider.fill("30");
+  await checkCloudGeometry(dialog, 30);
+  const wordsBox = dialog.getByLabel("Words", { exact: true });
+  const emojiBox = dialog.getByLabel("Emoji", { exact: true });
+  await expect(wordsBox).toBeChecked();
+  await expect(wordsBox).toBeDisabled();
+  await emojiBox.check();
+  await expect(wordsBox).toBeEnabled();
+  await checkCloudGeometry(dialog, 30);
+  await wordsBox.uncheck();
+  await expect(emojiBox).toBeDisabled();
+  await expect(dialog.locator(".cloud-word").first()).toHaveText(
+    /\p{Extended_Pictographic}/u,
+  );
+  await checkCloudGeometry(dialog, 30);
+  await wordsBox.check();
+  await emojiBox.uncheck();
   await page.setViewportSize({ width: 390, height: 844 });
   await slider.fill("60");
   await checkCloudGeometry(dialog, 60);

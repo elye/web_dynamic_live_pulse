@@ -19,10 +19,16 @@ const fontReady = new FontFace("Pulse Cloud", `url(${fontUrl})`, {
   .then((font) => document.fonts.add(font))
   .catch(() => undefined);
 
-export default function WordCloud({ results }: { results: Entry[] }) {
+export default function WordCloud({
+  results,
+  limit = 60,
+}: {
+  results: Entry[];
+  limit?: number;
+}) {
   const container = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const entries = results.slice(0, 60);
+  const entries = results.slice(0, limit);
   const signature = JSON.stringify(entries);
 
   useEffect(() => {
@@ -76,7 +82,9 @@ export default function WordCloud({ results }: { results: Entry[] }) {
       surface!.style.transform = "";
       await fontReady;
       if (disposed || currentRevision !== revision) return;
-      const height = words.length > 30 && width < 480 ? 420 : 300;
+      const height =
+        (words.length > 30 && width < 480 ? 420 : 300) +
+        Math.max(0, words.length - 60) * 2.5;
       element!.style.height = `${height}px`;
       element!.style.minHeight = `${height}px`;
       element!.style.flexBasis = `${height}px`;

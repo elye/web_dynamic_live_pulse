@@ -68,6 +68,9 @@ test("title-and-description slides show no input to participants or reveal contr
   ).toHaveCount(0);
   // The default session has a quiz, so it closes on the podium before finishing.
   await page.getByRole("button", { name: "Show podium", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Reveal the final podium", exact: true })
+    .click();
   await expect(
     page.getByRole("button", { name: "Finish session", exact: true }),
   ).toBeVisible();

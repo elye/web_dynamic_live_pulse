@@ -1065,3 +1065,33 @@ test("player-made questions: collect one per player, shuffle, credit the author,
   assert.throws(() => createRoom("Bad", [], "slide"), /Choose a question type/);
   rooms.delete(room.code);
 });
+
+test("players see their own rank beyond the top 10, and the podium waits on a suspense step", () => {
+  const room = createRoom("Crowd", [
+    { type: "quiz", title: "Q", options: ["A", "B"], correct: 0 },
+  ]);
+  const tokens = Array.from({ length: 12 }, (_, index) => joinRoom(room, `P${index}`));
+  controlRoom(room, room.hostToken, "start", undefined, 1000);
+  tokens.forEach((token, index) => {
+    // The first eleven are right; later answers score less.
+    submitVote(room, token, room.questions[0].id, index === 11 ? 1 : 0, 2000 + index * 1000);
+  });
+  controlRoom(room, room.hostToken, "ranking");
+  assert.equal(snapshot(room, false, tokens[0]).leaderboard.length, 10);
+  assert.equal(snapshot(room, false, tokens[0]).me.rank, 1);
+  const last = snapshot(room, false, tokens[11]).me;
+  assert.equal(last.rank, 12);
+  assert.equal(last.total, 12);
+  assert.equal(last.score, 0);
+  assert.equal(snapshot(room, true).me, null);
+  controlRoom(room, room.hostToken, "suspense");
+  let state = snapshot(room);
+  assert.equal(state.suspense, true);
+  assert.equal(state.podium, false);
+  assert.equal(state.ranking, false);
+  controlRoom(room, room.hostToken, "podium");
+  state = snapshot(room);
+  assert.equal(state.suspense, false);
+  assert.equal(state.podium, true);
+  rooms.delete(room.code);
+});

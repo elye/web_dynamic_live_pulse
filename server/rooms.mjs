@@ -342,6 +342,8 @@ export function createRoom(title, questions, crowdKind, nameless = false) {
     /** The host has hidden the live responses of an on-the-fly question. */
     hidden: false,
     ranking: false,
+    /** The host is holding the room before revealing the final podium. */
+    suspense: false,
     podium: false,
     ended: false,
     hearts: 0,
@@ -740,6 +742,7 @@ export function controlRoom(room, token, action, index, now = Date.now()) {
     room.revealed = false;
     room.hidden = false;
     room.ranking = false;
+    room.suspense = false;
     room.podium = false;
     markOpened(room, now);
   } else if (action === "toggle") {
@@ -748,6 +751,7 @@ export function controlRoom(room, token, action, index, now = Date.now()) {
     if (room.accepting) {
       room.revealed = false;
       room.ranking = false;
+      room.suspense = false;
       room.podium = false;
     }
     markOpened(room, now);
@@ -767,6 +771,15 @@ export function controlRoom(room, token, action, index, now = Date.now()) {
     room.revealed = true;
     room.accepting = false;
     room.ranking = true;
+    room.suspense = false;
+    room.podium = false;
+  } else if (action === "suspense") {
+    if (!room.questions.some((question) => canCompete(question.type)))
+      throw new Error("This session has no questions with answers to rank.");
+    room.revealed = true;
+    room.accepting = false;
+    room.ranking = false;
+    room.suspense = true;
     room.podium = false;
   } else if (action === "podium") {
     if (!room.questions.some((question) => canCompete(question.type)))
@@ -774,6 +787,7 @@ export function controlRoom(room, token, action, index, now = Date.now()) {
     room.revealed = true;
     room.accepting = false;
     room.ranking = false;
+    room.suspense = false;
     room.podium = true;
   } else if (action === "end") {
     room.ended = true;
@@ -874,19 +888,34 @@ function results(room, question) {
 
 export function snapshot(room, host = false, token) {
   const visible = host || room.revealed;
-  const leaderboard = visible
+  const standings = visible
     ? [...room.participants]
-        .map(([token, member]) => ({
+        .map(([memberToken, member]) => ({
+          token: memberToken,
           name: member.name,
           generated: member.generated === true,
           score: room.questions.reduce(
-            (score, question) => score + scoreAnswer(room, question, token),
+            (score, question) => score + scoreAnswer(room, question, memberToken),
             0,
           ),
         }))
         .sort((first, second) => second.score - first.score)
-        .slice(0, 10)
     : [];
+  const leaderboard = standings
+    .slice(0, 10)
+    .map(({ name, generated, score }) => ({ name, generated, score }));
+  // The asking player's own place, so it stays visible beyond the top 10.
+  const position = !host && token ? standings.findIndex((entry) => entry.token === token) : -1;
+  const me =
+    position >= 0
+      ? {
+          rank: position + 1,
+          total: standings.length,
+          name: standings[position].name,
+          generated: standings[position].generated,
+          score: standings[position].score,
+        }
+      : null;
   return {
     code: room.code,
     title: room.title,
@@ -897,6 +926,7 @@ export function snapshot(room, host = false, token) {
     revealed: room.revealed,
     hidden: room.hidden,
     ranking: room.ranking,
+    suspense: room.suspense,
     podium: room.podium,
     ended: room.ended,
     participants: room.participants.size,
@@ -918,6 +948,7 @@ export function snapshot(room, host = false, token) {
         }
       : null,
     leaderboard,
+    me,
     questions: room.questions.map((question, index) => {
       const assignedTo =
         !host && token && index === room.active && question.type === "peerpraise"

@@ -65,7 +65,8 @@ export function LiveControls() {
           canCompete(question.type) &&
           question.showRanking !== false &&
           !room.ranking;
-        const showPodium = !showFirst && last && room.scored && !room.podium;
+        const showPodium =
+          !showFirst && last && room.scored && !room.podium && !room.suspense;
         return (
           <button
             className="button primary"
@@ -75,12 +76,17 @@ export function LiveControls() {
                 : showRanking
                   ? void control("ranking")
                   : showPodium
-                    ? void control("podium")
+                    ? void control("suspense")
                     : last
                       ? setModal("end")
                       : move(1)
             }
-            disabled={busy}
+            disabled={busy || (room.suspense && !room.podium)}
+            title={
+              room.suspense && !room.podium
+                ? "Use the big button on the slide to reveal the podium"
+                : undefined
+            }
           >
             {showFirst ? (
               <>

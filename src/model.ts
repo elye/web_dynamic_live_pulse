@@ -84,6 +84,8 @@ export type Room = {
   hidden?: boolean;
   /** The host is showing the top-10 ranking. */
   ranking: boolean;
+  /** The host is holding the room just before revealing the final podium. */
+  suspense: boolean;
   /** The host is showing the final podium. */
   podium: boolean;
   ended: boolean;
@@ -104,6 +106,14 @@ export type Room = {
     waiting: string[];
   } | null;
   leaderboard: { name: string; score: number; generated: boolean }[];
+  /** The asking player's own place (participants only), even beyond the top 10. */
+  me?: {
+    rank: number;
+    total: number;
+    name: string;
+    score: number;
+    generated: boolean;
+  } | null;
 };
 export const labels: Record<Kind, string> = {
   slide: "Title & description",
@@ -178,13 +188,18 @@ export function newQuestion(type: Kind): Question {
                   "I speak three languages.",
                   "I have met a famous person.",
                 ]
-            : type === "ranking"
-              ? ["Speed", "Quality", "Cost", "Communication"]
-              : type === "points100"
-                ? ["Design", "Performance", "Reliability", "Cost"]
-                : type === "grid2x2"
-                  ? ["Low urgency", "High urgency", "Low impact", "High impact"]
-                  : [],
+              : type === "ranking"
+                ? ["Speed", "Quality", "Cost", "Communication"]
+                : type === "points100"
+                  ? ["Design", "Performance", "Reliability", "Cost"]
+                  : type === "grid2x2"
+                    ? [
+                        "Low urgency",
+                        "High urgency",
+                        "Low impact",
+                        "High impact",
+                      ]
+                    : [],
     correct:
       type === "quiz"
         ? 1
@@ -385,9 +400,7 @@ export function importSession(json: string): Session {
           !question.description.trim() ||
           question.description.length > 280)
       )
-        throw new Error(
-          prefix + "add a description with 1 to 280 characters.",
-        );
+        throw new Error(prefix + "add a description with 1 to 280 characters.");
       const options = question.options;
       if (
         !Array.isArray(options) ||
@@ -410,20 +423,21 @@ export function importSession(json: string): Session {
           )
         )
           throw new Error(
-            prefix + "add exactly 3 nonempty statements, up to 200 characters each.",
+            prefix +
+              "add exactly 3 nonempty statements, up to 200 characters each.",
           );
       } else if (question.type === "grid2x2") {
         if (
           options.length !== 4 ||
-          options.some(
-            (option: string) => !option.trim() || option.length > 40,
-          )
+          options.some((option: string) => !option.trim() || option.length > 40)
         )
           throw new Error(
             prefix +
               "add exactly 4 axis labels (x-low, x-high, y-low, y-high), up to 40 characters each.",
           );
-      } else if (["poll", "quiz", "ranking", "points100"].includes(question.type)) {
+      } else if (
+        ["poll", "quiz", "ranking", "points100"].includes(question.type)
+      ) {
         if (
           options.length < 2 ||
           options.length > 6 ||
@@ -493,7 +507,8 @@ export function importSession(json: string): Session {
           (question.competitive && !canCompete(question.type as Kind)))
       )
         throw new Error(
-          prefix + "only quiz, truefalse and twotruths questions can set competitive to true.",
+          prefix +
+            "only quiz, truefalse and twotruths questions can set competitive to true.",
         );
       if (
         question.showRanking !== undefined &&
@@ -543,13 +558,15 @@ export function importSession(json: string): Session {
           : {}),
         ...(multiQuiz
           ? {
-              corrects: [
-                ...new Set(question.corrects as number[]),
-              ].sort((first, second) => first - second),
+              corrects: [...new Set(question.corrects as number[])].sort(
+                (first, second) => first - second,
+              ),
             }
           : {}),
         title:
-          question.type === "twotruths" ? twoTruthsTitle : question.title.trim(),
+          question.type === "twotruths"
+            ? twoTruthsTitle
+            : question.title.trim(),
         ...(canCompete(question.type as Kind)
           ? {
               competitive: question.competitive !== false,

@@ -83,6 +83,19 @@
   overflow: hidden;
 }
 
+/* Too many names to fit at the smallest size: scroll them from the top. */
+
+.lobby-people.scrolling {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.lobby-people.scrolling ul {
+  top: 0;
+  transform: none;
+}
+
 /* The list sits out of flow so its size never changes the box it is fitted into. */
 
 .lobby-people ul {

@@ -230,6 +230,11 @@ test("two audiences answer all types, reconnect, receive reveals, and finish wit
     await page
       .getByRole("button", { name: "Show podium", exact: true })
       .click();
+    // A suspense slide holds the room until the host reveals the winners.
+    await expect(audience.locator(".podium-section")).toHaveCount(0);
+    await page
+      .getByRole("button", { name: "Reveal the final podium", exact: true })
+      .click();
     await expect(audience.locator(".podium-section")).toContainText("Alex");
     await expect(
       audience.locator('.podium-section [aria-label="Provided name"]'),

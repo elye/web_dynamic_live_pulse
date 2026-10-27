@@ -79,11 +79,13 @@ export function CanvasStage() {
           }
           onStart={() => void control(room.crowd ? "collect" : "start")}
         />
-      ) : isLive && (room.ranking || room.podium) ? (
+      ) : isLive && (room.ranking || room.suspense || room.podium) ? (
         <ScoreStage
           room={room}
           theme={session.theme}
           showQr={session.showQr !== false}
+          onReveal={() => void control("podium")}
+          disabled={busy || !connected}
         />
       ) : (
         <QuestionStage

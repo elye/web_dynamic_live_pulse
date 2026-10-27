@@ -305,3 +305,94 @@
       rotate(var(--confetti-spin, 540deg));
   }
 }
+
+/* The player's own row: highlighted in the top 10, or pinned below it. */
+
+.leaderboard .leader-row.mine {
+  background: #fff3c4;
+  border-radius: 0.5em;
+  box-shadow: inset 0 0 0 2px #e0b83c;
+  font-weight: 800;
+}
+
+.leader-row.mine > b,
+.leader-row.mine > strong {
+  color: #6b4f00;
+}
+
+.leader-you {
+  display: inline-block;
+  margin-left: 0.5em;
+  padding: 0.05em 0.5em;
+  border-radius: 999px;
+  background: #e0b83c;
+  color: #3f2f00;
+  font-size: 0.65em;
+  font-style: normal;
+  font-weight: 800;
+  vertical-align: 0.1em;
+}
+
+.leader-position {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  flex-shrink: 0;
+  margin: 0 auto 10px;
+  padding: 8px 18px;
+  border-radius: 14px;
+  background: #fff3c4;
+  box-shadow: inset 0 0 0 2px #e0b83c;
+  color: #3f2f00;
+  font-size: 14px;
+}
+
+.leader-position strong {
+  font-size: 1.8em;
+  line-height: 1;
+}
+
+.participant-you-note {
+  margin: 14px auto 0;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: #fff3c4;
+  box-shadow: inset 0 0 0 2px #e0b83c;
+  color: #3f2f00;
+  font-weight: 700;
+  text-align: center;
+}
+
+.suspense-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  text-align: center;
+  padding: 24px;
+}
+
+.suspense-stage h2 {
+  margin: 0;
+  font-size: clamp(28px, 5vw, 56px);
+}
+
+.suspense-stage p {
+  margin: 0;
+  opacity: 0.75;
+}
+
+.suspense-stage .suspense-icon {
+  color: #b59a62;
+}
+
+.suspense-button {
+  padding: 28px 48px;
+  border-radius: 24px;
+  font-size: clamp(22px, 3.2vw, 40px);
+  font-weight: 800;
+  gap: 14px;
+}

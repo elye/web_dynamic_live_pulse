@@ -5,6 +5,7 @@ import { AnswerForm } from "./AnswerForm";
 import { LiveResultsReveal } from "./LiveResultsReveal";
 import { PausedState } from "./PausedState";
 import { PodiumReveal } from "./PodiumReveal";
+import { SuspenseReveal } from "./SuspenseReveal";
 import { QnaSession } from "./QnaSession";
 import { QuestionHeader } from "./QuestionHeader";
 import { RankingReveal } from "./RankingReveal";
@@ -13,14 +14,22 @@ import { SlideView } from "./SlideView";
 import { SubmittedState } from "./SubmittedState";
 
 export function QuestionScreen() {
-  const { room, question, isFullySubmitted, connected, sendHeart, reactionTap } =
-    useParticipant();
+  const {
+    room,
+    question,
+    isFullySubmitted,
+    connected,
+    sendHeart,
+    reactionTap,
+  } = useParticipant();
   if (!room || !question) return null;
   return (
     <main className="participant-session">
       <QuestionHeader />
       {room.podium && room.scored ? (
         <PodiumReveal />
+      ) : room.suspense && room.scored ? (
+        <SuspenseReveal />
       ) : room.ranking ? (
         <RankingReveal />
       ) : question.type === "slide" ? (

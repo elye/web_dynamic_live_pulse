@@ -1,5 +1,5 @@
 import { Users } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useFitFont } from "../../hooks/useFitFont";
 
 /** A stable pseudo-random number between -1 and 1 for a name, so the layout looks scattered but never jumps. */
@@ -14,9 +14,17 @@ function jitter(name: string) {
 export function LobbyNames({ names, max }: { names: string[]; max: number }) {
   const box = useRef<HTMLDivElement>(null);
   const list = useRef<HTMLUListElement>(null);
-  useFitFont(box, list, 12, max, names.join("\n"));
+  // With a crowd too large to fit at the smallest size, the list scrolls instead.
+  const [overflowing, setOverflowing] = useState(false);
+  useFitFont(box, list, 12, max, names.join("\n"), (fits) =>
+    setOverflowing(!fits),
+  );
   return (
-    <div className="lobby-people" aria-label="Joined participants" ref={box}>
+    <div
+      className={`lobby-people ${overflowing ? "scrolling" : ""}`}
+      aria-label="Joined participants"
+      ref={box}
+    >
       {names.length ? (
         <ul ref={list}>
           {names.map((name, index) => (

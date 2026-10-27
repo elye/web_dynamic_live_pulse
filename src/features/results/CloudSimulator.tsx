@@ -80,15 +80,16 @@ export function CloudSimulator({
     "connection",
     "inspiration",
   ];
-  const weights = Array.from({ length: count }, (_, index) =>
-    distribution === "equal" ? 1 : Math.pow(1 - index / count, 3),
+  // Each participant submits one word, so there can't be more words than participants.
+  const shown = Math.min(count, participants);
+  const weights = Array.from({ length: shown }, (_, index) =>
+    distribution === "equal" ? 1 : Math.pow(1 - index / shown, 3),
   );
   const weightTotal = weights.reduce((sum, weight) => sum + weight, 0);
-  const exactCounts = weights.map((weight) =>
-    (weight / weightTotal) * participants,
-  );
+  const spare = participants - shown;
+  const exactCounts = weights.map((weight) => (weight / weightTotal) * spare);
   const counts = exactCounts.map(Math.floor);
-  const remaining = participants - counts.reduce((sum, value) => sum + value, 0);
+  const remaining = spare - counts.reduce((sum, value) => sum + value, 0);
   exactCounts
     .map((value, index) => ({ index, fraction: value - Math.floor(value) }))
     .sort((first, second) => second.fraction - first.fraction)
@@ -96,9 +97,9 @@ export function CloudSimulator({
     .forEach(({ index }) => {
       counts[index] += 1;
     });
-  const results = counts.map((wordCount, index) => ({
+  const results = counts.map((extra, index) => ({
     text: words[(index + generation * 13) % words.length],
-    count: wordCount,
+    count: extra + 1,
   }));
   const responses = results.reduce((sum, word) => sum + word.count, 0);
   return (
@@ -156,7 +157,7 @@ export function CloudSimulator({
           <div className="simulation-summary">
             <span>
               <Cloud size={15} />
-              {count} distinct words
+              {results.length} distinct {results.length === 1 ? "word" : "words"}
             </span>
             <span>
               <Users size={15} />

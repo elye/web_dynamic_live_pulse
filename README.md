@@ -116,6 +116,10 @@ Word clouds use WordCloud2's canvas glyph-occupancy layout: frequent responses a
 
 Each word reserves an invisible margin around its letters, with extra spacing for small clouds. Dense mobile clouds use a taller drawing area to preserve readable gaps. This relies on the tracked WordCloud2 patch in `patches/`, applied automatically by `npm install` via `patch-package`; installations that skip lifecycle scripts must run `npm run postinstall` before building.
 
+### Present with Simulation
+
+Click the flask icon next to **Present live** to rehearse with a simulated audience. Choose 1 to 300 simulated players. They join at random moments during the first 10 seconds, then answer every question you open (and wait while responses are paused). Real players can join and answer alongside them. The simulation lives in `server/simulation.mjs` and only uses the public room functions, so the normal room logic is unchanged. It is not available for player-made sessions.
+
 ### Quick Word Cloud Simulation
 
 Select a word-cloud question in the studio and click the flask icon (**Simulate word cloud**) above the slide preview. The simulator opens with 60 sample words. Adjust **Distinct words** from 10 to 60, choose popular or equal frequencies, and use **Regenerate sample** to try another mix. It uses the real cloud renderer but never creates a live room, adds votes, or modifies saved questions. Close the dialog to return to the usual preview.

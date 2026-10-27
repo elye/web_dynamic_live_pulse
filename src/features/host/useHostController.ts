@@ -41,6 +41,7 @@ export function useHostController() {
     | "import"
     | "aiprompt"
     | "simulate"
+    | "presentsim"
     | "crowd"
     | null
   >(null);
@@ -189,7 +190,7 @@ export function useHostController() {
       setBusy(false);
     }
   }
-  async function startSession() {
+  async function startSession(simulatedPlayers?: number) {
     setBusy(true);
     setError("");
     try {
@@ -197,6 +198,9 @@ export function useHostController() {
         title: session.title,
         questions: session.questions,
         nameless: session.nameless === true,
+        ...(simulatedPlayers
+          ? { simulation: { players: simulatedPlayers } }
+          : {}),
       });
       const credentials = { code: reply.state!.code, token: reply.token! };
       live.saveCredentials({ ...credentials, sessionId: session.id });

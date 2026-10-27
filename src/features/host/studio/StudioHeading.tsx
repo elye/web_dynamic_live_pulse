@@ -1,6 +1,7 @@
 import {
   CheckCheck,
   Download,
+  FlaskConical,
   Pencil,
   Play,
   Square,
@@ -98,6 +99,12 @@ export function StudioHeading() {
               <CheckCheck size={16} />
               Saved on this device
             </span>
+            <IconButton
+              icon={FlaskConical}
+              label="Present with simulation"
+              disabled={!connected || busy}
+              onClick={() => setModal("presentsim")}
+            />
             <button
               className="button primary"
               onClick={() => void startSession()}

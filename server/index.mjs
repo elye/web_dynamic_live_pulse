@@ -20,6 +20,10 @@ import {
   submitUpvote,
   submitVote,
 } from "./rooms.mjs";
+import {
+  createSimulationManager,
+  parseSimulatedPlayers,
+} from "./simulation.mjs";
 
 export function createAppServer() {
   const app = express();
@@ -33,6 +37,9 @@ export function createAppServer() {
         (entry) => entry && entry.family === "IPv4" && !entry.internal,
       )?.address;
     response.json({ address });
+  });
+  const simulations = createSimulationManager({
+    onChange: (room) => broadcast(room),
   });
   const dist = fileURLToPath(new URL("../dist", import.meta.url));
   app.use(express.static(dist));
@@ -74,12 +81,22 @@ export function createAppServer() {
       for (const channel of socket.rooms)
         if (channel !== socket.id) socket.leave(channel);
     };
-    listen("room:create", ({ title, questions, crowdKind, nameless }) => {
-      const room = createRoom(title, questions, crowdKind, nameless);
-      leaveRooms();
-      socket.join(`host:${room.code}`);
-      return { token: room.hostToken, state: snapshot(room, true) };
-    });
+    listen(
+      "room:create",
+      ({ title, questions, crowdKind, nameless, simulation }) => {
+        const players =
+          simulation === undefined
+            ? 0
+            : parseSimulatedPlayers(simulation?.players);
+        if (players && crowdKind !== undefined)
+          throw new Error("Player-made sessions cannot be simulated.");
+        const room = createRoom(title, questions, crowdKind, nameless);
+        if (players) simulations.start(room, players);
+        leaveRooms();
+        socket.join(`host:${room.code}`);
+        return { token: room.hostToken, state: snapshot(room, true) };
+      },
+    );
     listen("room:info", ({ code }) => {
       const room = getRoom(code);
       return { nameless: room.nameless === true };
@@ -203,6 +220,7 @@ export function createAppServer() {
           .emit("room:deleted", { code: room.code });
         io.in(`host:${room.code}`).socketsLeave(`host:${room.code}`);
         io.in(`audience:${room.code}`).socketsLeave(`audience:${room.code}`);
+        simulations.stop(room.code);
         rooms.delete(room.code);
       }
       return {};
@@ -214,12 +232,16 @@ export function createAppServer() {
         io.to(`host:${code}`).to(`audience:${code}`).emit("room:expired");
         io.in(`host:${code}`).socketsLeave(`host:${code}`);
         io.in(`audience:${code}`).socketsLeave(`audience:${code}`);
+        simulations.stop(code);
         rooms.delete(code);
       }
     }
   }, 60_000);
   expiry.unref();
-  http.on("close", () => clearInterval(expiry));
+  http.on("close", () => {
+    clearInterval(expiry);
+    simulations.stopAll();
+  });
   return { http, io };
 }
 

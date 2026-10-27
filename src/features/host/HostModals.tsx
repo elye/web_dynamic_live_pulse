@@ -10,6 +10,7 @@ import { DeleteSessionModal } from "./modals/DeleteSessionModal";
 import { EndSessionModal } from "./modals/EndSessionModal";
 import { HelpModal } from "./modals/HelpModal";
 import { NewSessionModal } from "./modals/NewSessionModal";
+import { PresentSimulatedModal } from "./modals/PresentSimulatedModal";
 
 export function HostModals() {
   const {
@@ -75,6 +76,7 @@ export function HostModals() {
         />
       )}
       {modal === "new" && <NewSessionModal />}
+      {modal === "presentsim" && <PresentSimulatedModal />}
       {modal === "end" && <EndSessionModal />}
       {modal === "delete" && <DeleteQuestionModal />}
       {modal === "help" && <HelpModal />}

@@ -4,6 +4,7 @@ import { CloudSimulator } from "../../results/CloudSimulator";
 import { PeerPraiseSimulator } from "../../results/PeerPraiseSimulator";
 import { PollSimulator } from "../../results/PollSimulator";
 import { ResponseSimulator } from "../../results/ResponseSimulator";
+import { SliderSimulator } from "../../results/SliderSimulator";
 import { ScoreStage } from "../../scoring/ScoreStage";
 import { QuestionStage } from "../../stage/QuestionStage";
 import { useHost } from "../HostContext";
@@ -23,10 +24,11 @@ export function CanvasStage() {
   } = useHost();
   const isLive = !!room && !room.ended;
   const inLobby = isLive && !room.started;
+  const optionSimulationKinds = ["poll", "quiz", "truefalse", "twotruths"];
   return (
     <>
       {modal === "simulate" &&
-        (question.type === "poll" ? (
+        (optionSimulationKinds.includes(question.type) ? (
           <PollSimulator
             question={question}
             theme={session.theme}
@@ -40,6 +42,12 @@ export function CanvasStage() {
           />
         ) : question.type === "text" || question.type === "qna" ? (
           <ResponseSimulator
+            question={question}
+            theme={session.theme}
+            onClose={() => setModal(null)}
+          />
+        ) : question.type === "slider" ? (
+          <SliderSimulator
             question={question}
             theme={session.theme}
             onClose={() => setModal(null)}

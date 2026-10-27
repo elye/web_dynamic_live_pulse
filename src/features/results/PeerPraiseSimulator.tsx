@@ -66,7 +66,7 @@ export function PeerPraiseSimulator({
               aria-label="Praise entries"
               type="range"
               min={7}
-              max={30}
+              max={300}
               step={1}
               value={count}
               onChange={(event) => setCount(Number(event.target.value))}

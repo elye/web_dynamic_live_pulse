@@ -21,6 +21,7 @@ export function CanvasToolbar() {
     room,
   } = useHost();
   const isLive = !!room && !room.ended;
+  const optionSimulationKinds = ["poll", "quiz", "truefalse", "twotruths"];
   return (
     <div className="canvas-toolbar">
       <div className="view-tabs">
@@ -31,7 +32,14 @@ export function CanvasToolbar() {
       </div>
       <div className="canvas-tools">
         {!isLive &&
-          ["cloud", "poll", "peerpraise", "text", "qna"].includes(
+          [
+            "cloud",
+            "peerpraise",
+            "text",
+            "qna",
+            "slider",
+            ...optionSimulationKinds,
+          ].includes(
             question.type,
           ) && (
             <IconButton
@@ -39,13 +47,15 @@ export function CanvasToolbar() {
               label={
                 question.type === "cloud"
                   ? "Simulate word cloud"
-                  : question.type === "poll"
+                  : optionSimulationKinds.includes(question.type)
                     ? "Simulate multiple choice"
                     : question.type === "peerpraise"
                     ? "Simulate peer praise"
                     : question.type === "qna"
                       ? "Simulate Q&A"
-                      : "Simulate open responses"
+                      : question.type === "slider"
+                        ? "Simulate slider"
+                        : "Simulate open responses"
               }
               onClick={() => setModal("simulate")}
             />

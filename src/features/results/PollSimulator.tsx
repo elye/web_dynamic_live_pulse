@@ -22,7 +22,7 @@ export function PollSimulator({
   const changingOptions = Math.max(1, question.options.length - 1);
   const initialWinner = generation % changingOptions;
   const challenger = (initialWinner + 1) % changingOptions;
-  const progress = (responses - 1) / 99;
+  const progress = (responses - 1) / 299;
   const remainingActive = Math.max(0, changingOptions - 2);
   const weights = question.options.map((_, index) => {
     if (index === question.options.length - 1) return 0.02;
@@ -61,7 +61,7 @@ export function PollSimulator({
               aria-label="Responses"
               type="range"
               min={1}
-              max={100}
+              max={300}
               step={1}
               value={responses}
               onChange={(event) => setResponses(Number(event.target.value))}

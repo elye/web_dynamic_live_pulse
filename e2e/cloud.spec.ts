@@ -43,7 +43,16 @@ test("cloud simulator previews many words without changing the session", async (
     .getByLabel("Frequency distribution", { exact: true })
     .selectOption("equal");
   await expect(
-    dialog.getByText("150 sample responses", { exact: true }),
+    dialog.getByText("150 sample participants", { exact: true }),
+  ).toBeVisible();
+  await checkCloudGeometry(dialog, 30);
+  const participants = dialog.getByRole("slider", {
+    name: "Participants",
+    exact: true,
+  });
+  await participants.fill("300");
+  await expect(
+    dialog.getByText("300 sample participants", { exact: true }),
   ).toBeVisible();
   await checkCloudGeometry(dialog, 30);
   await page.setViewportSize({ width: 390, height: 844 });

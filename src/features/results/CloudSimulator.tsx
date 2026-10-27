@@ -15,6 +15,7 @@ export function CloudSimulator({
   onClose: () => void;
 }) {
   const [count, setCount] = useState(60);
+  const [participants, setParticipants] = useState(150);
   const [distribution, setDistribution] = useState("popular");
   const [generation, setGeneration] = useState(0);
   const words = [
@@ -79,12 +80,25 @@ export function CloudSimulator({
     "connection",
     "inspiration",
   ];
-  const results = Array.from({ length: count }, (_, index) => ({
+  const weights = Array.from({ length: count }, (_, index) =>
+    distribution === "equal" ? 1 : Math.pow(1 - index / count, 3),
+  );
+  const weightTotal = weights.reduce((sum, weight) => sum + weight, 0);
+  const exactCounts = weights.map((weight) =>
+    (weight / weightTotal) * participants,
+  );
+  const counts = exactCounts.map(Math.floor);
+  const remaining = participants - counts.reduce((sum, value) => sum + value, 0);
+  exactCounts
+    .map((value, index) => ({ index, fraction: value - Math.floor(value) }))
+    .sort((first, second) => second.fraction - first.fraction)
+    .slice(0, remaining)
+    .forEach(({ index }) => {
+      counts[index] += 1;
+    });
+  const results = counts.map((wordCount, index) => ({
     text: words[(index + generation * 13) % words.length],
-    count:
-      distribution === "equal"
-        ? 5
-        : Math.max(1, Math.round(50 * Math.pow(1 - index / count, 3))),
+    count: wordCount,
   }));
   const responses = results.reduce((sum, word) => sum + word.count, 0);
   return (
@@ -101,6 +115,18 @@ export function CloudSimulator({
               step={10}
               value={count}
               onChange={(event) => setCount(Number(event.target.value))}
+            />
+          </label>
+          <label className="simulation-count">
+            Participants <output>{participants}</output>
+            <input
+              aria-label="Participants"
+              type="range"
+              min={1}
+              max={300}
+              step={1}
+              value={participants}
+              onChange={(event) => setParticipants(Number(event.target.value))}
             />
           </label>
           <label>
@@ -134,7 +160,7 @@ export function CloudSimulator({
             </span>
             <span>
               <Users size={15} />
-              {responses.toLocaleString()} sample responses
+              {responses.toLocaleString()} sample participants
             </span>
           </div>
         </section>

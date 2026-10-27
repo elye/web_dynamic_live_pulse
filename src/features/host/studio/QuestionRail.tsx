@@ -14,6 +14,7 @@ import {
   ToggleLeft,
   Trash2,
   Trophy,
+  LayoutGrid,
   Users,
 } from "lucide-react";
 import { IconButton } from "../../../components/IconButton";
@@ -105,57 +106,62 @@ export function QuestionRail() {
                 </span>
                 <div className={`thumbnail-art art-${item.type}`}>
                   {item.type === "cloud" ? (
-                  <div className="mini-cloud">
-                    <span>curious</span>
-                    <b>excited</b>
-                    <span>inspired</span>
-                  </div>
-                ) : item.type === "poll" ? (
-                  <div className="mini-bars">
-                    <i />
-                    <i />
-                    <i />
-                    <i />
-                  </div>
-                ) : item.type === "quiz" ? (
-                  <Trophy size={32} strokeWidth={1.5} />
-                ) : item.type === "truefalse" ? (
-                  <ToggleLeft size={32} strokeWidth={1.5} />
-                ) : item.type === "twotruths" ? (
-                  <Drama size={32} strokeWidth={1.5} />
-                ) : item.type === "ranking" ? (
-                  <ListOrdered size={32} strokeWidth={1.5} />
-                ) : item.type === "slider" ? (
-                  <SlidersHorizontal size={32} strokeWidth={1.5} />
-                ) : item.type === "qna" ? (
-                  <MessageCircleQuestion size={32} strokeWidth={1.5} />
-                ) : item.type === "points100" ? (
-                  <Percent size={32} strokeWidth={1.5} />
-                ) : item.type === "grid2x2" ? (
-                  <Grid2x2 size={32} strokeWidth={1.5} />
-                ) : item.type === "peerpraise" ? (
-                  <Users size={32} strokeWidth={1.5} />
-                ) : item.type === "slide" ? (
-                  <div className="mini-slide">
-                    <FileText size={26} />
-                    <i />
-                    <i />
-                  </div>
-                ) : (
-                  <div className="mini-message">
-                    <MessageCircle size={30} />
-                    <i />
-                    <i />
-                  </div>
-                )}
-              </div>
-              <span className="thumbnail-caption">
-                <Icon size={13} />
-                {labels[item.type]}
-              </span>
+                    <div className="mini-cloud">
+                      <span>curious</span>
+                      <b>excited</b>
+                      <span>inspired</span>
+                    </div>
+                  ) : item.type === "poll" ? (
+                    <div className="mini-bars">
+                      <i />
+                      <i />
+                      <i />
+                      <i />
+                    </div>
+                  ) : item.type === "quiz" ? (
+                    <Trophy size={32} strokeWidth={1.5} />
+                  ) : item.type === "truefalse" ? (
+                    <ToggleLeft size={32} strokeWidth={1.5} />
+                  ) : item.type === "twotruths" ? (
+                    <Drama size={32} strokeWidth={1.5} />
+                  ) : item.type === "ranking" ? (
+                    <ListOrdered size={32} strokeWidth={1.5} />
+                  ) : item.type === "slider" ? (
+                    <SlidersHorizontal size={32} strokeWidth={1.5} />
+                  ) : item.type === "qna" ? (
+                    <MessageCircleQuestion size={32} strokeWidth={1.5} />
+                  ) : item.type === "points100" ? (
+                    <Percent size={32} strokeWidth={1.5} />
+                  ) : item.type === "grid2x2" ? (
+                    <Grid2x2 size={32} strokeWidth={1.5} />
+                  ) : item.type === "manyoptions" ? (
+                    <LayoutGrid size={32} strokeWidth={1.5} />
+                  ) : item.type === "peerpraise" ? (
+                    <Users size={32} strokeWidth={1.5} />
+                  ) : item.type === "slide" ? (
+                    <div className="mini-slide">
+                      <FileText size={26} />
+                      <i />
+                      <i />
+                    </div>
+                  ) : (
+                    <div className="mini-message">
+                      <MessageCircle size={30} />
+                      <i />
+                      <i />
+                    </div>
+                  )}
+                </div>
+                <span className="thumbnail-caption">
+                  <Icon size={13} />
+                  {labels[item.type]}
+                </span>
                 <span className="thumbnail-title">{item.title}</span>
               </button>
-              <div className="question-item-actions" aria-label={`Actions for question ${index + 1}`}>
+              <div
+                className="question-item-actions"
+                aria-label={`Actions for question ${index + 1}`}
+              >
                 <IconButton
                   icon={Settings2}
                   label={`Customize question ${index + 1}`}
@@ -165,7 +171,9 @@ export function QuestionRail() {
                 <IconButton
                   icon={Copy}
                   label={`Duplicate question ${index + 1}`}
-                  disabled={isLive || inLobby || busy || questionList.length >= 30}
+                  disabled={
+                    isLive || inLobby || busy || questionList.length >= 30
+                  }
                   onClick={() => {
                     const questions = [...session.questions];
                     questions.splice(index + 1, 0, { ...item, id: createId() });
@@ -177,7 +185,9 @@ export function QuestionRail() {
                 <IconButton
                   icon={Trash2}
                   label={`Delete question ${index + 1}`}
-                  disabled={isLive || inLobby || busy || questionList.length <= 1}
+                  disabled={
+                    isLive || inLobby || busy || questionList.length <= 1
+                  }
                   onClick={() => {
                     setSelected(index);
                     setModal("delete");

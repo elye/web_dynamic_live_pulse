@@ -2,6 +2,7 @@ import { canCompete } from "../../../model";
 import { useParticipant } from "../ParticipantContext";
 import { ChoiceInput } from "./inputs/ChoiceInput";
 import { GridInput } from "./inputs/GridInput";
+import { ManyOptionsInput } from "./inputs/ManyOptionsInput";
 import { PointsInput } from "./inputs/PointsInput";
 import { RankingInput } from "./inputs/RankingInput";
 import { SliderInput } from "./inputs/SliderInput";
@@ -15,6 +16,8 @@ export function AnswerForm() {
     <form onSubmit={vote} className="answer-form">
       {question.type === "poll" || canCompete(question.type) ? (
         <ChoiceInput />
+      ) : question.type === "manyoptions" ? (
+        <ManyOptionsInput />
       ) : question.type === "ranking" ? (
         <RankingInput />
       ) : question.type === "slider" ? (

@@ -1,7 +1,13 @@
 import { Eye, FileText, Users, Zap } from "lucide-react";
 import { JoinQr } from "../../components/JoinQr";
 import { frameKinds, icons, optionKinds } from "../../constants/kinds";
-import { hasRevealMode, labels, type Question } from "../../model";
+import {
+  hasRevealMode,
+  labels,
+  manyOptionLabels,
+  type Question,
+} from "../../model";
+import { ManyOptionsResults } from "../results/ManyOptionsResults";
 import { PollResults } from "../results/PollResults";
 import { ResultsVisual } from "../results/ResultsVisual";
 
@@ -80,14 +86,25 @@ export function QuestionStage({
       !reveal ? (
         optionKinds.includes(question.type) ? (
           <>
-            <PollResults
-              question={question}
-              results={question.options.map((text) => ({ text, count: 0 }))}
-              total={0}
-              reveal={false}
-              fit
-              hideCounts
-            />
+            {question.type === "manyoptions" ? (
+              <ManyOptionsResults
+                results={manyOptionLabels(question).map((text) => ({
+                  text,
+                  count: 0,
+                }))}
+                fit
+                hideCounts
+              />
+            ) : (
+              <PollResults
+                question={question}
+                results={question.options.map((text) => ({ text, count: 0 }))}
+                total={0}
+                reveal={false}
+                fit
+                hideCounts
+              />
+            )}
             <p className="response-hidden-note">
               <strong>{responseSummary}</strong>.{" "}
               {hidden

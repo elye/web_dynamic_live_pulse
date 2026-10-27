@@ -677,6 +677,56 @@ test("multi-answer poll: results count every selected option and responses count
   rooms.delete(room.code);
 });
 
+test("many options validates its limits, colours and the Others box", () => {
+  const options = (count, text = "x") => Array.from({ length: count }, (_, index) => `${text}${index}`);
+  const make = (extra) => ({ type: "manyoptions", title: "Pick", options: options(12), ...extra });
+  rooms.delete(createRoom("Ok", [make({ others: true })]).code);
+  rooms.delete(createRoom("Max", [make({ options: options(30) })]).code);
+  assert.throws(() => createRoom("Few", [make({ options: ["only"] })]), /options/);
+  assert.throws(() => createRoom("Many", [make({ options: options(31) })]), /options/);
+  assert.throws(() => createRoom("Long", [make({ options: ["a".repeat(31), "b"] })]), /30 characters/);
+  assert.throws(() => createRoom("Colour", [make({ voteColors: [{ min: 1, color: "#ffffff" }] })]), /colour/i);
+  assert.throws(() => createRoom("Colour", [make({ voteColors: [{ min: 0, color: "red" }] })]), /colour/i);
+  const room = createRoom("Colours", [
+    make({ voteColors: [{ min: 0, color: "#AA0000" }, { min: 5, color: "#00BB00" }] }),
+  ]);
+  assert.deepEqual(room.questions[0].voteColors, [
+    { min: 0, color: "#aa0000" },
+    { min: 5, color: "#00bb00" },
+  ]);
+  rooms.delete(room.code);
+});
+
+test("many options counts votes per box in order, with an optional Others box", () => {
+  const room = createRoom("Many", [
+    { type: "manyoptions", title: "Pick", options: ["A", "B", "C"], others: true },
+    { type: "manyoptions", title: "Any", options: ["A", "B", "C"], multiple: true },
+  ]);
+  const a = joinRoom(room, "A");
+  const b = joinRoom(room, "B");
+  const c = joinRoom(room, "C");
+  controlRoom(room, room.hostToken, "start");
+  const [single, multiple] = room.questions.map((question) => question.id);
+  submitVote(room, a, single, 3);
+  submitVote(room, b, single, 0);
+  assert.throws(() => submitVote(room, c, single, 4), /option/i);
+  assert.throws(() => submitVote(room, c, single, [0, 1]), /option|answer/i);
+  let [question] = snapshot(room, true).questions;
+  assert.deepEqual(question.results.map((item) => [item.text, item.count]), [
+    ["A", 1],
+    ["B", 0],
+    ["C", 0],
+    ["Others", 1],
+  ]);
+  controlRoom(room, room.hostToken, "select", 1);
+  submitVote(room, a, multiple, [0, 2]);
+  submitVote(room, b, multiple, [2]);
+  assert.throws(() => submitVote(room, c, multiple, [3]), /option/i);
+  question = snapshot(room, true).questions[1];
+  assert.deepEqual(question.results.map((item) => item.count), [1, 0, 2]);
+  rooms.delete(room.code);
+});
+
 test("single-answer quizzes still score all or nothing", () => {
   const room = createRoom("Single", [{ type: "quiz", title: "One", options: ["A", "B"], correct: 1, competitive: false }]);
   const right = joinRoom(room, "Right");

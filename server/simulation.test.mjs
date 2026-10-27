@@ -24,6 +24,14 @@ const questions = [
     correct: 1,
   },
   { type: "poll", title: "Many?", options: ["A", "B", "C"], multiple: true },
+  { type: "manyoptions", title: "Boxes", options: ["A", "B", "C"], others: true },
+  {
+    type: "manyoptions",
+    title: "Any boxes",
+    options: ["A", "B", "C"],
+    others: true,
+    multiple: true,
+  },
   { type: "ranking", title: "Rank", options: ["A", "B", "C"] },
   { type: "points100", title: "Points", options: ["A", "B", "C"] },
   {

@@ -11,6 +11,7 @@ export type Kind =
   | "points100"
   | "grid2x2"
   | "peerpraise"
+  | "manyoptions"
   | "text";
 export type RevealMode = "live" | "onDone";
 export const revealModes: RevealMode[] = ["live", "onDone"];
@@ -30,6 +31,72 @@ export function defaultRevealMode(type: Kind): RevealMode {
 }
 export type PollDisplay = "list" | "pie" | "stacked" | "bar";
 
+/** Many options: at most this many options, each at most this many characters. */
+export const manyOptionsMax = 30;
+export const manyOptionLength = 30;
+export const manyOptionsMaxColumns = 6;
+export const manyOptionsMaxRows = 5;
+export const othersLabel = "Others";
+/** Many options: at most this many vote-count colour steps. */
+export const voteColorsMax = 8;
+export type VoteColor = { min: number; color: string };
+/** Red with no votes, green from the first vote. */
+export const defaultVoteColors: VoteColor[] = [
+  { min: 0, color: "#e5484d" },
+  { min: 1, color: "#30a46c" },
+];
+
+/** Every box of a many options question: the options, then "Others" when enabled. */
+export function manyOptionLabels(question: {
+  options: string[];
+  others?: boolean;
+}) {
+  return question.others
+    ? [...question.options, othersLabel]
+    : [...question.options];
+}
+
+/**
+ * Box layout for `count` options: at most 6 columns by 5 rows, with columns
+ * equal to rows or one more. A short last row is centred by the renderer.
+ */
+export function manyOptionsGrid(count: number) {
+  const total = Math.max(1, count);
+  for (let rows = 1; rows <= manyOptionsMaxRows; rows++) {
+    if (rows * rows >= total) return { columns: rows, rows };
+    if (rows * (rows + 1) >= total) return { columns: rows + 1, rows };
+  }
+  return { columns: manyOptionsMaxColumns, rows: manyOptionsMaxRows };
+}
+
+/** The colour of the step with the highest `min` that the vote count reaches. */
+export function voteColor(colors: VoteColor[] | undefined, count: number) {
+  const steps = colors?.length ? colors : defaultVoteColors;
+  let match = steps[0];
+  for (const step of steps) if (count >= step.min && step.min >= match.min) match = step;
+  return match.color;
+}
+
+/** Steps must start at 0 votes, rise strictly, and use #rrggbb colours. */
+export function isVoteColorsValid(colors: unknown): colors is VoteColor[] {
+  return (
+    Array.isArray(colors) &&
+    colors.length >= 1 &&
+    colors.length <= voteColorsMax &&
+    colors.every(
+      (step, index) =>
+        !!step &&
+        typeof step === "object" &&
+        Number.isInteger(step.min) &&
+        step.min >= 0 &&
+        step.min <= 100000 &&
+        typeof step.color === "string" &&
+        /^#[0-9a-fA-F]{6}$/.test(step.color) &&
+        (index === 0 ? step.min === 0 : step.min > colors[index - 1].min),
+    )
+  );
+}
+
 export type Question = {
   id: string;
   type: Kind;
@@ -42,8 +109,12 @@ export type Question = {
   sliderStep?: number;
   revealMode?: RevealMode;
   competitive?: boolean;
-  /** Multiple choice polls and quizzes: participants may pick more than one option. */
+  /** Multiple choice polls, quizzes and many options: participants may pick more than one option. */
   multiple?: boolean;
+  /** Many options: add an "Others" box after the options. */
+  others?: boolean;
+  /** Many options: box colour by vote count (default red at 0, green from 1). */
+  voteColors?: VoteColor[];
   /** How poll responses are displayed on the results slide. */
   pollDisplay?: PollDisplay;
   /** Multi-answer quizzes: every correct option (zero-based). Points need exactly these. */
@@ -128,6 +199,7 @@ export const labels: Record<Kind, string> = {
   points100: "100 Points",
   grid2x2: "2x2 Grid",
   peerpraise: "Peer praise",
+  manyoptions: "Many options",
   text: "Open response",
 };
 
@@ -153,6 +225,7 @@ export function newQuestion(type: Kind): Question {
       points100: "Allocate 100 points across what matters most to you",
       grid2x2: "Place your priority on the grid",
       peerpraise: "Write a good word about this person.",
+      manyoptions: "Which topics would you like us to cover?",
       text: "What is one thing we could do better?",
       slide: "A quick word before we dive in",
     }[type],
@@ -167,7 +240,10 @@ export function newQuestion(type: Kind): Question {
       : {}),
     ...(hasRevealMode(type) ? { revealMode: defaultRevealMode(type) } : {}),
     ...(canCompete(type) ? { competitive: true, showRanking: true } : {}),
-    ...(type === "poll" || type === "quiz" ? { multiple: false } : {}),
+    ...(type === "poll" || type === "quiz" || type === "manyoptions"
+      ? { multiple: false }
+      : {}),
+    ...(type === "manyoptions" ? { others: true } : {}),
     ...(type === "poll" ? { pollDisplay: "list" as const } : {}),
     ...(type === "cloud" ? { maxSubmissions: 1 } : {}),
     options:
@@ -199,7 +275,22 @@ export function newQuestion(type: Kind): Question {
                         "Low impact",
                         "High impact",
                       ]
-                    : [],
+                    : type === "manyoptions"
+                      ? [
+                          "Planning",
+                          "Design",
+                          "Testing",
+                          "Security",
+                          "Hiring",
+                          "Culture",
+                          "Budget",
+                          "Roadmap",
+                          "Support",
+                          "Tooling",
+                          "Metrics",
+                          "Training",
+                        ]
+                      : [],
     correct:
       type === "quiz"
         ? 1
@@ -289,6 +380,8 @@ export function serializeSession(session: Session): string {
           competitive,
           showRanking,
           multiple,
+          others,
+          voteColors,
           pollDisplay,
           corrects,
           maxSubmissions,
@@ -297,8 +390,14 @@ export function serializeSession(session: Session): string {
           title,
           options,
           correct,
-          ...(type === "poll" || type === "quiz"
+          ...(type === "poll" || type === "quiz" || type === "manyoptions"
             ? { multiple: multiple === true }
+            : {}),
+          ...(type === "manyoptions"
+            ? {
+                others: others === true,
+                ...(voteColors ? { voteColors } : {}),
+              }
             : {}),
           ...(type === "poll" ? { pollDisplay: pollDisplay ?? "list" } : {}),
           ...(type === "quiz" && multiple === true
@@ -383,6 +482,7 @@ export function importSession(json: string): Session {
             "points100",
             "grid2x2",
             "peerpraise",
+            "manyoptions",
             "text",
           ] as string[]
         ).includes(question.type)
@@ -434,6 +534,18 @@ export function importSession(json: string): Session {
           throw new Error(
             prefix +
               "add exactly 4 axis labels (x-low, x-high, y-low, y-high), up to 40 characters each.",
+          );
+      } else if (question.type === "manyoptions") {
+        if (
+          options.length < 2 ||
+          options.length > manyOptionsMax ||
+          options.some(
+            (option: string) => !option.trim() || option.length > manyOptionLength,
+          )
+        )
+          throw new Error(
+            prefix +
+              `add 2 to ${manyOptionsMax} nonempty options, up to ${manyOptionLength} characters each.`,
           );
       } else if (
         ["poll", "quiz", "ranking", "points100"].includes(question.type)
@@ -520,10 +632,27 @@ export function importSession(json: string): Session {
         (typeof question.multiple !== "boolean" ||
           (question.multiple &&
             question.type !== "poll" &&
-            question.type !== "quiz"))
+            question.type !== "quiz" &&
+            question.type !== "manyoptions"))
       )
         throw new Error(
-          prefix + "only poll and quiz questions can set multiple to true.",
+          prefix +
+            "only poll, quiz and manyoptions questions can set multiple to true.",
+        );
+      if (
+        question.others !== undefined &&
+        (question.type !== "manyoptions" || typeof question.others !== "boolean")
+      )
+        throw new Error(
+          prefix + "only manyoptions questions can set others to true or false.",
+        );
+      if (
+        question.voteColors !== undefined &&
+        (question.type !== "manyoptions" || !isVoteColorsValid(question.voteColors))
+      )
+        throw new Error(
+          prefix +
+            "voteColors must list up to 8 steps with rising minimum votes starting at 0 and #rrggbb colours.",
         );
       if (
         question.pollDisplay !== undefined &&
@@ -550,8 +679,18 @@ export function importSession(json: string): Session {
       return {
         id: createId(),
         type: question.type as Kind,
-        ...(question.type === "poll" || question.type === "quiz"
+        ...(question.type === "poll" ||
+        question.type === "quiz" ||
+        question.type === "manyoptions"
           ? { multiple: question.multiple === true }
+          : {}),
+        ...(question.type === "manyoptions"
+          ? {
+              others: question.others === true,
+              ...(question.voteColors
+                ? { voteColors: question.voteColors as VoteColor[] }
+                : {}),
+            }
           : {}),
         ...(question.type === "poll"
           ? { pollDisplay: pollDisplay ?? "list" }

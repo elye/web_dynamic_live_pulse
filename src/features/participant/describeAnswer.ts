@@ -1,11 +1,14 @@
 import { type Answer } from "../../live";
-import { type Question } from "../../model";
+import { manyOptionLabels, type Question } from "../../model";
 
 /** Describes what a player sent for a question, e.g. the options they ticked. */
 export function describeAnswer(question: Question, answer: Answer | undefined) {
   if (answer === undefined || answer === null || answer === "") return "";
+  const labels = manyOptionLabels(question);
   const label = (index: number) =>
-    `${String.fromCharCode(65 + index)}. ${question.options[index] ?? ""}`;
+    question.type === "manyoptions"
+      ? (labels[index] ?? "")
+      : `${String.fromCharCode(65 + index)}. ${question.options[index] ?? ""}`;
   if (Array.isArray(answer)) {
     if (question.type === "cloud") return answer.join(" · ");
     const numericAnswer = answer as number[];

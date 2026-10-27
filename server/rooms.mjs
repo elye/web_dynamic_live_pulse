@@ -1,12 +1,37 @@
 import { randomInt, randomUUID } from "node:crypto";
 
 export const rooms = new Map();
-const kinds = new Set(["slide", "cloud", "poll", "quiz", "truefalse", "twotruths", "ranking", "slider", "qna", "points100", "grid2x2", "peerpraise", "text"]);
+const kinds = new Set(["slide", "cloud", "poll", "quiz", "truefalse", "twotruths", "ranking", "slider", "qna", "points100", "grid2x2", "peerpraise", "manyoptions", "text"]);
 /** Two truths and a lie always asks the same question. */
 export const twoTruthsTitle = "Pick the one that is not true.";
 
 /** Question types players can write themselves (everything that collects a response). */
-export const crowdKinds = [...kinds].filter((kind) => kind !== "slide");
+export const crowdKinds = [...kinds].filter((kind) => kind !== "slide" && kind !== "manyoptions");
+
+/** Many options: up to 30 options of up to 30 characters, plus an optional "Others" box. */
+const manyOptionsMax = 30;
+const manyOptionLength = 30;
+const voteColorsMax = 8;
+const othersLabel = "Others";
+/** Every box of a many options question: the options, then "Others" when enabled. */
+const manyOptionLabels = (question) =>
+  question.others ? [...question.options, othersLabel] : [...question.options];
+/** Steps start at 0 votes, rise strictly, and use #rrggbb colours. */
+const validVoteColors = (colors) =>
+  Array.isArray(colors) &&
+  colors.length >= 1 &&
+  colors.length <= voteColorsMax &&
+  colors.every(
+    (step, index) =>
+      !!step &&
+      typeof step === "object" &&
+      Number.isInteger(step.min) &&
+      step.min >= 0 &&
+      step.min <= 100000 &&
+      typeof step.color === "string" &&
+      /^#[0-9a-fA-F]{6}$/.test(step.color) &&
+      (index === 0 ? step.min === 0 : step.min > colors[index - 1].min),
+  );
 const optionKinds = ["poll", "quiz", "truefalse", "twotruths", "ranking", "points100", "grid2x2"];
 
 // Nameless rooms still need stable labels for peer praise, authored questions,
@@ -200,6 +225,15 @@ export function validateQuestions(input) {
         options.some((option) => !option || option.length > 100))
     )
       throw new Error("Add 2 to 6 answer options, up to 100 characters each.");
+    if (
+      question.type === "manyoptions" &&
+      (options.length < 2 ||
+        options.length > manyOptionsMax ||
+        options.some((option) => !option || option.length > manyOptionLength))
+    )
+      throw new Error(
+        `Add 2 to ${manyOptionsMax} options, up to ${manyOptionLength} characters each.`,
+      );
     const multiQuiz = question.type === "quiz" && question.multiple === true;
     const corrects = multiQuiz
       ? Array.isArray(question.corrects)
@@ -252,9 +286,22 @@ export function validateQuestions(input) {
     if (
       question.multiple !== undefined &&
       (typeof question.multiple !== "boolean" ||
-        (question.multiple && question.type !== "poll" && question.type !== "quiz"))
+        (question.multiple &&
+          question.type !== "poll" &&
+          question.type !== "quiz" &&
+          question.type !== "manyoptions"))
     )
-      throw new Error("Only multiple choice polls and quizzes can allow multiple answers.");
+      throw new Error("Only multiple choice polls, quizzes and many options questions can allow multiple answers.");
+    if (
+      question.others !== undefined &&
+      (question.type !== "manyoptions" || typeof question.others !== "boolean")
+    )
+      throw new Error("Only many options questions can add an Others option.");
+    if (
+      question.voteColors !== undefined &&
+      (question.type !== "manyoptions" || !validVoteColors(question.voteColors))
+    )
+      throw new Error("Vote colours need up to 8 steps with rising vote counts starting at 0 and #rrggbb colours.");
     if (
       question.maxSubmissions !== undefined &&
       (question.type !== "cloud" ||
@@ -267,8 +314,16 @@ export function validateQuestions(input) {
       id: randomUUID(),
       type: question.type,
       title: question.title.trim(),
-      ...(question.type === "poll" || question.type === "quiz"
+      ...(question.type === "poll" || question.type === "quiz" || question.type === "manyoptions"
         ? { multiple: question.multiple === true }
+        : {}),
+      ...(question.type === "manyoptions"
+        ? {
+            others: question.others === true,
+            ...(question.voteColors
+              ? { voteColors: question.voteColors.map(({ min, color }) => ({ min, color: color.toLowerCase() })) }
+              : {}),
+          }
         : {}),
       ...(multiQuiz ? { corrects } : {}),
       ...(hasRevealMode(question.type)
@@ -541,24 +596,28 @@ export function submitVote(room, token, questionId, value, now = Date.now()) {
     room.answeredAt.get(question.id).set(token, now);
     return;
   }
-  if ((question.type === "poll" || question.type === "quiz") && question.multiple) {
+  const choiceCount =
+    question.type === "manyoptions" ? manyOptionLabels(question).length : question.options.length;
+  if (
+    (question.type === "poll" || question.type === "quiz" || question.type === "manyoptions") &&
+    question.multiple
+  ) {
     if (
       !Array.isArray(value) ||
       !value.length ||
       new Set(value).size !== value.length ||
       value.some(
-        (index) =>
-          !Number.isInteger(index) || index < 0 || index >= question.options.length,
+        (index) => !Number.isInteger(index) || index < 0 || index >= choiceCount,
       )
     )
       throw new Error("Choose one or more of the available options.");
     value = [...value].sort((first, second) => first - second);
-  } else if (question.type === "poll" || canCompete(question.type)) {
-    if (
-      !Number.isInteger(value) ||
-      value < 0 ||
-      value >= question.options.length
-    )
+  } else if (
+    question.type === "poll" ||
+    question.type === "manyoptions" ||
+    canCompete(question.type)
+  ) {
+    if (!Number.isInteger(value) || value < 0 || value >= choiceCount)
       throw new Error("Choose one of the available options.");
   } else if (question.type === "ranking") {
     const order = question.options.map((_, index) => index);
@@ -799,8 +858,8 @@ export function controlRoom(room, token, action, index, now = Date.now()) {
 function results(room, question) {
   const rawValues = [...room.votes.get(question.id).values()];
   const values = question.type === "cloud" ? rawValues.flat() : rawValues;
-  if (question.type === "poll" || canCompete(question.type))
-    return question.options.map((text, index) => ({
+  if (question.type === "poll" || question.type === "manyoptions" || canCompete(question.type))
+    return (question.type === "manyoptions" ? manyOptionLabels(question) : question.options).map((text, index) => ({
       text,
       count: values.filter((value) =>
         Array.isArray(value) ? value.includes(index) : value === index,

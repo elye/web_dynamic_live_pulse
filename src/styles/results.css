@@ -811,3 +811,95 @@
     font-size: 8px;
   }
 }
+
+/* Many options: a centred grid of vote boxes, at most 6 columns by 5 rows. */
+
+.many-results {
+  --many-gap: 0.55em;
+  width: 100%;
+  container: many / inline-size;
+}
+
+.many-fit {
+  flex: 1;
+  min-height: 0;
+  container-type: size;
+  margin: 8px 0 4px;
+}
+
+.many-grid {
+  --cols: var(--cols-wide);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  gap: var(--many-gap);
+  width: 100%;
+  height: 100%;
+}
+
+.many-box {
+  flex: 0 0 calc((100% - (var(--cols) - 1) * var(--many-gap)) / var(--cols));
+  box-sizing: border-box;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15em;
+  padding: 0.4em 0.5em;
+  border-radius: 0.5em;
+  text-align: center;
+  transition: background-color 0.3s ease;
+}
+
+.many-count {
+  font-size: 1.7em;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.many-label {
+  font-size: 0.9em;
+  font-weight: 650;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.many-fit .many-grid {
+  /* Sizes scale with the stage: limited by the box height and by its width. */
+  font-size: min(
+    calc(100cqh / var(--rows) * 0.22),
+    calc(100cqw / var(--cols) * 0.1)
+  );
+  --many-gap: calc(min(100cqh, 100cqw) * 0.015);
+}
+
+.many-fit .many-box {
+  height: calc((100cqh - (var(--rows) - 1) * var(--many-gap)) / var(--rows));
+}
+
+.many-flow .many-grid {
+  font-size: 14px;
+  height: auto;
+  margin: 14px 0;
+}
+
+.many-flow .many-box {
+  min-height: 64px;
+}
+
+.many-box-plain {
+  border: 1px solid #c8d8c2;
+}
+
+/* Narrow screens (phones) show at most two columns. */
+@container many (max-width: 520px) {
+  .many-flow .many-grid {
+    --cols: 2;
+  }
+}

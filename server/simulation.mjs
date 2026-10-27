@@ -122,6 +122,16 @@ function splitHundred(random, parts) {
 export function simulatedAnswer(question, random = Math.random) {
   const options = question.options?.length ?? 0;
   switch (question.type) {
+    case "manyoptions": {
+      // "Others" is one more box after the listed options.
+      const boxes = options + (question.others ? 1 : 0);
+      const pickBox = () => Math.min(boxes - 1, Math.floor(random() ** 1.6 * boxes));
+      if (!question.multiple) return pickBox();
+      const count = 1 + Math.floor(random() * Math.min(boxes, 4));
+      return [...new Set(Array.from({ length: count }, pickBox))].sort(
+        (first, second) => first - second,
+      );
+    }
     case "poll":
     case "quiz":
     case "truefalse":

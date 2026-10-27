@@ -4,6 +4,7 @@ import {
   Drama,
   FileText,
   Grid2x2,
+  LayoutGrid,
   ListOrdered,
   MessageCircle,
   MessageCircleQuestion,
@@ -29,6 +30,7 @@ export const icons: Record<Kind, LucideIcon> = {
   points100: Percent,
   grid2x2: Grid2x2,
   peerpraise: Users,
+  manyoptions: LayoutGrid,
   text: MessageCircle,
 };
 
@@ -40,6 +42,7 @@ export const optionKinds: Kind[] = [
   "twotruths",
   "ranking",
   "points100",
+  "manyoptions",
 ];
 
 /** Kinds with a frame (axes / range) that can be shown while responses are hidden. */
@@ -54,6 +57,7 @@ export const kindGroups: { title: string; hint: string; kinds: Kind[] }[] = [
       "slide",
       "cloud",
       "poll",
+      "manyoptions",
       "ranking",
       "slider",
       "qna",
@@ -73,7 +77,9 @@ export const kindGroups: { title: string; hint: string; kinds: Kind[] }[] = [
 /** Question types a player can write themselves (everything that collects a response). */
 export const crowdGroups = kindGroups.map((group) => ({
   ...group,
-  kinds: group.kinds.filter((kind) => kind !== "slide"),
+  kinds: group.kinds.filter(
+    (kind) => kind !== "slide" && kind !== "manyoptions",
+  ),
 }));
 
 export const kindHints: Record<Kind, string> = {
@@ -89,6 +95,7 @@ export const kindHints: Record<Kind, string> = {
   points100: "Allocate 100 points across a set of options to show priorities",
   grid2x2: "Rate items across a two-axis graph",
   peerpraise: "Write something kind about another player",
+  manyoptions: "Pick from up to 30 short options shown as a grid of boxes",
   text: "Give every thought a little room",
 };
 

@@ -83,6 +83,12 @@ export const slideSpecs: Record<Kind, SlideSpec> = {
     rules:
       'options: []. correct: null. The title is the writing prompt (for example, "Write a good word about this person."). The server privately assigns one participant name to each player; assignments never point to the player themself when the room has more than one participant. For one participant, their own name is used. Best with 3 to 10 participants. Default revealMode: "onDone", so responses stay hidden until the host reveals them.',
   },
+  manyoptions: {
+    purpose:
+      "Participants pick from a large set of short options (shown as a grid of boxes on the stage with a live vote count per box). Players get a search filter. Use it for choosing from many topics, names or items.",
+    rules:
+      'options: 2-30 strings (max 30 characters each). correct: null. Optional "multiple": boolean (true lets participants pick several options, default false). Optional "others": boolean (true adds an extra "Others" box after the options, default false). Optional "voteColors": array of up to 8 steps {"min": number of votes, "color": "#rrggbb"}; the first step must have min 0 and min must rise strictly (default: red at 0 votes, green from 1 vote). Optional revealMode as for poll.',
+  },
   text: {
     purpose: "Open response. Participants type a free-text answer that the host reads.",
     rules: "options: []. correct: null.",

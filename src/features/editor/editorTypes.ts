@@ -1,4 +1,9 @@
-import type { Question } from "../../model";
+import {
+  isVoteColorsValid,
+  manyOptionLength,
+  manyOptionsMax,
+  type Question,
+} from "../../model";
 
 /** Props shared by every editor section: the question being edited and its setter. */
 export type EditorSectionProps = {
@@ -36,6 +41,19 @@ export function isMultiQuiz(draft: Question) {
   return draft.type === "quiz" && draft.multiple === true;
 }
 
+/** Many options: 2–30 non-blank options of at most 30 characters, valid colour steps. */
+export function isManyOptionsValid(draft: Question) {
+  if (draft.type !== "manyoptions") return true;
+  return (
+    draft.options.length >= 2 &&
+    draft.options.length <= manyOptionsMax &&
+    draft.options.every(
+      (option) => !!option.trim() && option.length <= manyOptionLength,
+    ) &&
+    (!draft.voteColors || isVoteColorsValid(draft.voteColors))
+  );
+}
+
 /** Whether the draft has everything required to be saved. */
 export function isDraftSavable(draft: Question) {
   const options = hasOptionList(draft);
@@ -50,6 +68,7 @@ export function isDraftSavable(draft: Question) {
         (draft.maxSubmissions ?? 1) < 1 ||
         (draft.maxSubmissions ?? 1) > 5)) ||
     (isMultiQuiz(draft) && !(draft.corrects ?? []).length) ||
-    !isSliderRangeValid(draft)
+    !isSliderRangeValid(draft) ||
+    !isManyOptionsValid(draft)
   );
 }

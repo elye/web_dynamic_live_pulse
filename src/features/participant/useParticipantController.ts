@@ -93,7 +93,9 @@ export function useParticipantController() {
   const hasSubmitted = submissionCount > 0;
   const isFullySubmitted = !!question && submissionCount >= maxSubmissions;
   const isMultiple =
-    (question?.type === "poll" || question?.type === "quiz") &&
+    (question?.type === "poll" ||
+      question?.type === "quiz" ||
+      question?.type === "manyoptions") &&
     question.multiple === true;
   const selectedOptions = Array.isArray(currentAnswer) ? currentAnswer : [];
 

@@ -4,6 +4,7 @@ import { Modal } from "../../components/Modal";
 import type { Question } from "../../model";
 import { isDraftSavable } from "./editorTypes";
 import { GridAxisEditor } from "./sections/GridAxisEditor";
+import { ManyOptionsEditor } from "./sections/ManyOptionsEditor";
 import { OptionsEditor } from "./sections/OptionsEditor";
 import { RevealModeEditor } from "./sections/RevealModeEditor";
 import { ScoringOptions } from "./sections/ScoringOptions";
@@ -40,6 +41,7 @@ export function QuestionEditor({
         <RevealModeEditor {...section} />
         <GridAxisEditor {...section} />
         <OptionsEditor {...section} />
+        <ManyOptionsEditor {...section} />
         <div className="modal-actions">
           <button className="button secondary" type="button" onClick={onClose}>
             Cancel

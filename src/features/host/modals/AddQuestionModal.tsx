@@ -37,29 +37,31 @@ export function AddQuestionModal() {
                     <small>
                       {kind === "cloud"
                         ? "One word, a whole room of perspectives"
-                        : kind === "poll"
-                          ? "Let everyone pick their favorite"
-                          : kind === "quiz"
-                            ? "A correct answer and a little competition"
-                            : kind === "truefalse"
-                              ? "A binary choice: true or false"
-                              : kind === "twotruths"
-                                ? kindHints.twotruths
-                                : kind === "ranking"
-                                  ? "Drag to sort items from most to least important"
-                                  : kind === "slider"
-                                    ? "Estimate a numeric value on a sliding scale"
-                                    : kind === "qna"
-                                      ? "Participants submit and upvote live questions"
-                                      : kind === "points100"
-                                        ? "Allocate 100 points across a set of options to show priorities"
-                                        : kind === "grid2x2"
-                                          ? "Rate items across a two-axis graph"
-                                          : kind === "peerpraise"
-                                            ? kindHints.peerpraise
-                                            : kind === "slide"
-                                              ? "Just a title and description, no input needed"
-                                              : "Give every thought a little room"}
+                        : kind === "manyoptions"
+                          ? kindHints.manyoptions
+                          : kind === "poll"
+                            ? "Let everyone pick their favorite"
+                            : kind === "quiz"
+                              ? "A correct answer and a little competition"
+                              : kind === "truefalse"
+                                ? "A binary choice: true or false"
+                                : kind === "twotruths"
+                                  ? kindHints.twotruths
+                                  : kind === "ranking"
+                                    ? "Drag to sort items from most to least important"
+                                    : kind === "slider"
+                                      ? "Estimate a numeric value on a sliding scale"
+                                      : kind === "qna"
+                                        ? "Participants submit and upvote live questions"
+                                        : kind === "points100"
+                                          ? "Allocate 100 points across a set of options to show priorities"
+                                          : kind === "grid2x2"
+                                            ? "Rate items across a two-axis graph"
+                                            : kind === "peerpraise"
+                                              ? kindHints.peerpraise
+                                              : kind === "slide"
+                                                ? "Just a title and description, no input needed"
+                                                : "Give every thought a little room"}
                     </small>
                   </span>
                   <Plus size={19} />

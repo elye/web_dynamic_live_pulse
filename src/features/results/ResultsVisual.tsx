@@ -7,8 +7,9 @@ import {
 } from "lucide-react";
 import WordCloud from "../../WordCloud";
 import { optionKinds, samples } from "../../constants/kinds";
-import { type Question } from "../../model";
+import { manyOptionLabels, type Question } from "../../model";
 import { GridAxisLabel } from "./GridAxisLabel";
+import { ManyOptionsResults } from "./ManyOptionsResults";
 import { PollResults } from "./PollResults";
 import { SliderResults } from "./SliderResults";
 
@@ -37,55 +38,63 @@ export function ResultsVisual({
     id?: string;
     target?: string;
   }[] = preview
-    ? question.type === "cloud"
-      ? samples
-      : question.type === "text"
-        ? [
-            { text: "More time to explore ideas together.", count: 1 },
-            { text: "The energy we bring as a team!", count: 1 },
-          ]
-        : question.type === "peerpraise"
+    ? question.type === "manyoptions"
+      ? manyOptionLabels(question).map((text, index) => ({
+          text,
+          count: [3, 0, 7, 1, 0, 4][index % 6],
+        }))
+      : question.type === "cloud"
+        ? samples
+        : question.type === "text"
           ? [
-              {
-                text: "You make everyone feel welcome.",
-                target: "Alex",
-                count: 1,
-              },
-              {
-                text: "Your creativity inspires the team.",
-                target: "Sam",
-                count: 1,
-              },
+              { text: "More time to explore ideas together.", count: 1 },
+              { text: "The energy we bring as a team!", count: 1 },
             ]
-          : question.type === "slider"
+          : question.type === "peerpraise"
             ? [
-                { text: "Average: 6.4", count: 5 },
-                { text: String(question.sliderMin ?? 0), count: 1 },
-                { text: "4", count: 2 },
-                { text: "7", count: 1 },
-                { text: String(question.sliderMax ?? 10), count: 1 },
+                {
+                  text: "You make everyone feel welcome.",
+                  target: "Alex",
+                  count: 1,
+                },
+                {
+                  text: "Your creativity inspires the team.",
+                  target: "Sam",
+                  count: 1,
+                },
               ]
-            : question.type === "qna"
+            : question.type === "slider"
               ? [
-                  { id: "1", text: "What’s next for the roadmap?", count: 6 },
-                  { id: "2", text: "Can we see this in action?", count: 3 },
+                  { text: "Average: 6.4", count: 5 },
+                  { text: String(question.sliderMin ?? 0), count: 1 },
+                  { text: "4", count: 2 },
+                  { text: "7", count: 1 },
+                  { text: String(question.sliderMax ?? 10), count: 1 },
                 ]
-              : question.type === "grid2x2"
+              : question.type === "qna"
                 ? [
-                    { text: "Average: 24,18", count: 5 },
-                    { text: "40,30", count: 1 },
-                    { text: "10,20", count: 1 },
-                    { text: "-20,10", count: 1 },
-                    { text: "30,-5", count: 1 },
-                    { text: "60,35", count: 1 },
+                    { id: "1", text: "What’s next for the roadmap?", count: 6 },
+                    { id: "2", text: "Can we see this in action?", count: 3 },
                   ]
-                : question.options.map((text, index) => ({
-                    text,
-                    count: [8, 14, 6, 10, 4, 5][index],
-                  }))
+                : question.type === "grid2x2"
+                  ? [
+                      { text: "Average: 24,18", count: 5 },
+                      { text: "40,30", count: 1 },
+                      { text: "10,20", count: 1 },
+                      { text: "-20,10", count: 1 },
+                      { text: "30,-5", count: 1 },
+                      { text: "60,35", count: 1 },
+                    ]
+                  : question.options.map((text, index) => ({
+                      text,
+                      count: [8, 14, 6, 10, 4, 5][index],
+                    }))
     : question.results?.length || !optionKinds.includes(question.type)
       ? question.results || []
-      : question.options.map((text) => ({ text, count: 0 }));
+      : (question.type === "manyoptions"
+          ? manyOptionLabels(question)
+          : question.options
+        ).map((text) => ({ text, count: 0 }));
   const total =
     question.type === "qna"
       ? results.length
@@ -125,6 +134,14 @@ export function ResultsVisual({
               : "Responses will appear here as they arrive."}
         </p>
       </div>
+    );
+  if (question.type === "manyoptions")
+    return (
+      <ManyOptionsResults
+        results={results}
+        voteColors={question.voteColors}
+        fit={fit}
+      />
     );
   if (question.type === "cloud") return <WordCloud results={results} />;
   if (question.type === "points100") {

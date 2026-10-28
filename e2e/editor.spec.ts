@@ -75,3 +75,23 @@ test("edit, duplicate, reorder, delete, and save a question on a LAN-compatible 
   );
   await expect(page.locator(".question-thumbnail")).toHaveCount(3);
 });
+
+test("insert a question directly after a chosen question", async ({ page }) => {
+  await gotoStudio(page);
+  const titles = () => page.locator(".question-thumbnail .thumbnail-title");
+  const before = await titles().allTextContents();
+  await page
+    .getByRole("button", { name: "Add question after question 1", exact: true })
+    .click();
+  await page.getByRole("button", { name: /Quiz A correct answer/ }).click();
+  await page
+    .getByRole("button", { name: "Save question", exact: true })
+    .click();
+  await expect(titles()).toHaveCount(before.length + 1);
+  await expect(
+    page.locator(".question-thumbnail.selected .thumbnail-number"),
+  ).toHaveText("02");
+  const after = await titles().allTextContents();
+  expect(after[0]).toBe(before[0]);
+  expect(after.slice(2)).toEqual(before.slice(1));
+});

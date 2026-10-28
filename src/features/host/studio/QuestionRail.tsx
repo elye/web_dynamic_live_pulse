@@ -9,6 +9,7 @@ export function QuestionRail() {
   const {
     setSelected,
     setModal,
+    setInsertIndex,
     setEditing,
     setNotice,
     session,
@@ -36,7 +37,10 @@ export function QuestionRail() {
           icon={Plus}
           label="Add question"
           disabled={isLive || questionList.length >= 30}
-          onClick={() => setModal("add")}
+          onClick={() => {
+            setInsertIndex(null);
+            setModal("add");
+          }}
         />
       </div>
       <div className="question-list">
@@ -102,6 +106,17 @@ export function QuestionRail() {
                 aria-label={`Actions for question ${index + 1}`}
               >
                 <IconButton
+                  icon={Plus}
+                  label={`Add question after question ${index + 1}`}
+                  disabled={
+                    isLive || inLobby || busy || questionList.length >= 30
+                  }
+                  onClick={() => {
+                    setInsertIndex(index + 1);
+                    setModal("add");
+                  }}
+                />
+                <IconButton
                   icon={Settings2}
                   label={`Customize question ${index + 1}`}
                   disabled={isLive || inLobby || busy}
@@ -141,7 +156,10 @@ export function QuestionRail() {
         className="add-question"
         aria-label="Add question"
         disabled={isLive || questionList.length >= 30}
-        onClick={() => setModal("add")}
+        onClick={() => {
+          setInsertIndex(null);
+          setModal("add");
+        }}
       >
         <Plus size={17} />
         Add question

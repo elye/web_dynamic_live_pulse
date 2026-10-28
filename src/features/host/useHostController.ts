@@ -53,6 +53,8 @@ export function useHostController() {
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState("");
   const [notice, setNotice] = useState("");
+  // Position the next added question is inserted at; null appends to the end.
+  const [insertIndex, setInsertIndex] = useState<number | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const live = useLive("host", "", restoreSessionRoom);
@@ -327,6 +329,8 @@ export function useHostController() {
     setSearch,
     notice,
     setNotice,
+    insertIndex,
+    setInsertIndex,
     dragIndex,
     setDragIndex,
     dragOverIndex,

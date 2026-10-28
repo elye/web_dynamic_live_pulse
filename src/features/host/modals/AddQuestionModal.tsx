@@ -5,8 +5,14 @@ import { labels, newQuestion } from "../../../model";
 import { useHost } from "../HostContext";
 
 export function AddQuestionModal() {
-  const { setSelected, setModal, setEditing, session, updateSession } =
-    useHost();
+  const {
+    setSelected,
+    setModal,
+    setEditing,
+    session,
+    updateSession,
+    insertIndex,
+  } = useHost();
   return (
     <Modal title="What would you like to ask?" onClose={() => setModal(null)}>
       {kindGroups.map((group) => (
@@ -21,10 +27,14 @@ export function AddQuestionModal() {
                   key={kind}
                   onClick={() => {
                     const created = newQuestion(kind);
-                    updateSession({
-                      questions: [...session.questions, created],
-                    });
-                    setSelected(session.questions.length);
+                    const at = Math.min(
+                      insertIndex ?? session.questions.length,
+                      session.questions.length,
+                    );
+                    const questions = [...session.questions];
+                    questions.splice(at, 0, created);
+                    updateSession({ questions });
+                    setSelected(at);
                     setModal(null);
                     setEditing(created);
                   }}

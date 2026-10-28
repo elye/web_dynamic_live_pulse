@@ -23,9 +23,10 @@ export function QuestionScreen() {
   } = useParticipant();
   if (!room || !question) return null;
   const { Screen } = inputOf(question.type);
+  const finale = room.scored && (room.podium || room.suspense);
   return (
     <main className="participant-session">
-      <QuestionHeader />
+      <QuestionHeader finale={finale} />
       {room.podium && room.scored ? (
         <PodiumReveal />
       ) : room.suspense && room.scored ? (

@@ -1,5 +1,6 @@
 import { ArrowRight, CheckCheck } from "lucide-react";
 import { Leaderboard } from "../scoring/Leaderboard";
+import { PlayerResult } from "../scoring/PlayerResult";
 import { Podium } from "../scoring/Podium";
 import { useParticipant } from "./ParticipantContext";
 
@@ -18,6 +19,7 @@ export function FinishPage() {
         when you show up.
       </h1>
       <p>Thanks for being part of {room.title}.</p>
+      <PlayerResult room={room} />
       <Podium room={room} />
       {room.leaderboard.some((entry) => entry.score > 0) && (
         <Leaderboard room={room} />

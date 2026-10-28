@@ -15,6 +15,9 @@ export function ResultsReveal() {
         <BarChart3 size={15} />
         The results are in
       </span>
+      {hasSubmitted && (
+        <MyAnswer question={question} answer={answers[question.id]} />
+      )}
       <ResultsVisual question={question} reveal />
       {canCompete(question.type) &&
         question.correct !== null &&
@@ -25,9 +28,6 @@ export function ResultsReveal() {
             answered={hasSubmitted}
           />
         )}
-      {hasSubmitted && (
-        <MyAnswer question={question} answer={answers[question.id]} />
-      )}
       {canCompete(question.type) && (
         <div className="correct-answer">
           <Check size={20} />

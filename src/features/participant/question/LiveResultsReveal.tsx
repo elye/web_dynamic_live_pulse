@@ -12,10 +12,10 @@ export function LiveResultsReveal() {
         <BarChart3 size={15} />
         Live results
       </span>
-      <ResultsVisual question={question} />
       {hasSubmitted && (
         <MyAnswer question={question} answer={answers[question.id]} />
       )}
+      <ResultsVisual question={question} />
       <p className="waiting-note">
         {hasSubmitted ? "Your voice is in. " : ""}Results update as people
         answer.

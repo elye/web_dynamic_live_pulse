@@ -49,6 +49,7 @@ export function useParticipantController() {
   const detectedNameless = room?.nameless ?? nameless;
   const participantNameIsGenerated =
     participantNameGenerated || (room?.nameless === true && !nameChangeUsed);
+  const restoring = !room && !error && !!storedParticipant?.token;
   const question = room?.questions[room.active];
   const currentUpvoted =
     upvotedQuestion === question?.id ? upvoted : new Set<string>();
@@ -267,6 +268,7 @@ export function useParticipantController() {
     setReactionTap,
     live,
     room,
+    restoring,
     connected,
     error,
     setError,

@@ -1,3 +1,9 @@
+import {
+  holdsSeveralSubmissions,
+  simulateAnswer,
+  submissionLimit,
+  traitsOf,
+} from "../src/questions/index.ts";
 import { joinRoom, rooms, submitVote } from "./rooms.mjs";
 
 /**
@@ -46,40 +52,6 @@ const firstNames = [
   "Yara",
   "Leo",
 ];
-const cloudWords = [
-  "Teamwork",
-  "Growth",
-  "Coffee",
-  "Focus",
-  "Trust",
-  "Ideas",
-  "Energy",
-  "Clarity",
-  "Fun",
-  "Learning",
-  "Support",
-  "Balance",
-  "Momentum",
-  "Curious",
-  "Ownership",
-  "Creativity",
-  "Feedback",
-  "Listening",
-  "Goals",
-  "Pace",
-];
-const sentences = [
-  "More time to explore ideas together.",
-  "The energy we bring as a team is fantastic.",
-  "I would like to hear more customer stories.",
-  "A clearer view of what comes next would help.",
-  "Shorter meetings and more focused discussion.",
-  "Great session, thank you for organising it.",
-  "Could we share the slides afterwards?",
-  "What is the plan for the next quarter?",
-  "I appreciate how open everyone has been.",
-  "More hands-on practice would be useful.",
-];
 
 /** Validates the requested audience size, returning an integer. */
 export function parseSimulatedPlayers(value) {
@@ -87,8 +59,6 @@ export function parseSimulatedPlayers(value) {
     throw new Error(`Simulate between 1 and ${maxSimulatedPlayers} players.`);
   return value;
 }
-
-const pick = (random, items) => items[Math.floor(random() * items.length)];
 
 function shuffled(random, items) {
   const copy = [...items];
@@ -108,71 +78,9 @@ function playerNames(random, count) {
   return shuffled(random, combinations).slice(0, count);
 }
 
-/** Splits 100 points across `parts` options with a few favourites. */
-function splitHundred(random, parts) {
-  const weights = Array.from({ length: parts }, () => random() ** 2 + 0.05);
-  const total = weights.reduce((sum, weight) => sum + weight, 0);
-  const points = weights.map((weight) => Math.floor((weight / total) * 100));
-  points[points.indexOf(Math.max(...points))] +=
-    100 - points.reduce((a, b) => a + b, 0);
-  return points;
-}
-
 /** A plausible answer for `question`, or null when it takes no response. */
 export function simulatedAnswer(question, random = Math.random) {
-  const options = question.options?.length ?? 0;
-  switch (question.type) {
-    case "manyoptions": {
-      // "Others" is one more box after the listed options.
-      const boxes = options + (question.others ? 1 : 0);
-      const pickBox = () => Math.min(boxes - 1, Math.floor(random() ** 1.6 * boxes));
-      if (!question.multiple) return pickBox();
-      const count = 1 + Math.floor(random() * Math.min(boxes, 4));
-      return [...new Set(Array.from({ length: count }, pickBox))].sort(
-        (first, second) => first - second,
-      );
-    }
-    case "poll":
-    case "quiz":
-    case "truefalse":
-    case "twotruths": {
-      if (question.multiple) {
-        const count = 1 + Math.floor(random() * Math.min(options, 3));
-        return shuffled(random, [...Array(options).keys()])
-          .slice(0, count)
-          .sort((first, second) => first - second);
-      }
-      const known = question.correct;
-      // Answered questions lean towards the right answer so scores spread out.
-      if (Number.isInteger(known) && random() < 0.55) return known;
-      // Otherwise earlier options are slightly more popular.
-      return Math.min(options - 1, Math.floor(random() ** 1.4 * options));
-    }
-    case "ranking":
-      return shuffled(random, [...Array(options).keys()]);
-    case "points100":
-      return splitHundred(random, options);
-    case "slider": {
-      const { sliderMin: min, sliderMax: max, sliderStep: step } = question;
-      const steps = Math.max(0, Math.floor((max - min) / step));
-      const position = Math.round(((random() + random()) / 2) * steps);
-      return Number((min + position * step).toFixed(8));
-    }
-    case "grid2x2":
-      return {
-        x: Math.round(((random() + random()) / 2) * 200 - 100),
-        y: Math.round(((random() + random()) / 2) * 200 - 100),
-      };
-    case "cloud":
-      // Earlier words are picked more often, giving a realistic frequency curve.
-      return cloudWords[Math.floor(random() ** 2 * cloudWords.length)];
-    case "peerpraise":
-    case "qna":
-    case "text":
-      return pick(random, sentences);
-    default:
-      return null;
-  }
+  return simulateAnswer(question, random);
 }
 
 /**
@@ -224,7 +132,7 @@ export function startSimulation(
     const question = room.questions[room.active];
     if (
       !question ||
-      question.type === "slide" ||
+      !traitsOf(question.type).collectsAnswers ||
       !room.started ||
       !room.accepting
     )
@@ -232,16 +140,14 @@ export function startSimulation(
     const votes = room.votes.get(question.id);
     let plan = plans.get(question.id);
     if (!plan) plans.set(question.id, (plan = new Map()));
-    const allowed =
-      question.type === "cloud" ? (question.maxSubmissions ?? 1) : 1;
+    const allowed = submissionLimit(question);
     for (const token of bots) {
       if (plan.has(token)) continue;
-      const given =
-        question.type === "cloud"
-          ? (votes.get(token)?.length ?? 0)
-          : votes.has(token)
-            ? 1
-            : 0;
+      const given = holdsSeveralSubmissions(question)
+        ? (votes.get(token)?.length ?? 0)
+        : votes.has(token)
+          ? 1
+          : 0;
       plan.set(token, {
         at: time + 300 + random() * answerWindow,
         left: allowed - given,

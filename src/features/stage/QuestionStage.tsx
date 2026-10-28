@@ -1,14 +1,9 @@
 import { Eye, FileText, Users, Zap } from "lucide-react";
 import { JoinQr } from "../../components/JoinQr";
-import { frameKinds, icons, optionKinds } from "../../constants/kinds";
-import {
-  hasRevealMode,
-  labels,
-  manyOptionLabels,
-  type Question,
-} from "../../model";
-import { ManyOptionsResults } from "../results/ManyOptionsResults";
-import { PollResults } from "../results/PollResults";
+import { icons } from "../../constants/kinds";
+import { hasRevealMode, labels, type Question } from "../../model";
+import { traitsOf } from "../../questions";
+import { metaOf } from "../../questions/ui/metaRegistry";
 import { ResultsVisual } from "../results/ResultsVisual";
 
 export function QuestionStage({
@@ -39,6 +34,11 @@ export function QuestionStage({
   showQr?: boolean;
 }) {
   const Icon = icons[question.type];
+  const { eyebrow, subtitle } = metaOf(question.type);
+  const traits = traitsOf(question.type);
+  const hiddenNote = hidden
+    ? "The host has hidden the responses for now."
+    : "Results stay hidden until the host clicks Reveal results.";
   const responseSummary = `${question.responses || 0} of ${totalPlayers} ${totalPlayers === 1 ? "player" : "players"} responded`;
   return (
     <section
@@ -67,69 +67,29 @@ export function QuestionStage({
                 {question.author.toLocaleUpperCase()}
               </strong>
             </>
-          ) : question.type === "slide" ? (
-            "A MOMENT TOGETHER"
           ) : (
-            "A LITTLE CHECK-IN, A BIG CONNECTION"
+            (eyebrow ?? "A LITTLE CHECK-IN, A BIG CONNECTION")
           )}
         </span>
         <h2>{question.title}</h2>
-        {question.type === "cloud" && <p>One word. All the feels.</p>}
-        {question.type === "slide" && (
-          <p className="stage-slide-description">{question.description}</p>
-        )}
+        {subtitle?.(question)}
       </div>
       {!preview &&
       code &&
       hasRevealMode(question.type) &&
       (question.revealMode !== "live" || hidden) &&
       !reveal ? (
-        optionKinds.includes(question.type) ? (
-          <>
-            {question.type === "manyoptions" ? (
-              <ManyOptionsResults
-                results={manyOptionLabels(question).map((text) => ({
-                  text,
-                  count: 0,
-                }))}
-                fit
-                hideCounts
-              />
-            ) : (
-              <PollResults
-                question={question}
-                results={question.options.map((text) => ({ text, count: 0 }))}
-                total={0}
-                reveal={false}
-                fit
-                hideCounts
-              />
-            )}
-            <p className="response-hidden-note">
-              <strong>{responseSummary}</strong>.{" "}
-              {hidden
-                ? "The host has hidden the responses for now."
-                : "Results stay hidden until the host clicks Reveal results."}
-            </p>
-          </>
-        ) : frameKinds.includes(question.type) ? (
+        traits.optionsVisibleWhenHidden || traits.frameVisibleWhenHidden ? (
           <>
             <ResultsVisual question={question} fit concealed />
             <p className="response-hidden-note">
-              <strong>{responseSummary}</strong>.{" "}
-              {hidden
-                ? "The host has hidden the responses for now."
-                : "Results stay hidden until the host clicks Reveal results."}
+              <strong>{responseSummary}</strong>. {hiddenNote}
             </p>
           </>
         ) : (
           <div className="response-hidden">
             <strong className="response-summary">{responseSummary}</strong>
-            <p>
-              {hidden
-                ? "The host has hidden the responses for now."
-                : "Results stay hidden until the host clicks Reveal results."}
-            </p>
+            <p>{hiddenNote}</p>
           </div>
         )
       ) : (
@@ -144,7 +104,7 @@ export function QuestionStage({
         <span className="stage-brand">
           <Zap size={16} fill="currentColor" /> pulse.
         </span>
-        {question.type === "slide" ? (
+        {!traits.collectsAnswers ? (
           <span className="sample-label">
             <FileText size={12} /> No responses needed
           </span>

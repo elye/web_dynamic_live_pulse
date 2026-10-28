@@ -7,6 +7,7 @@ import {
   Users,
 } from "lucide-react";
 import { IconButton } from "../../../components/IconButton";
+import { metaOf } from "../../../questions/ui/metaRegistry";
 import { useHost } from "../HostContext";
 
 export function CanvasToolbar() {
@@ -21,7 +22,7 @@ export function CanvasToolbar() {
     room,
   } = useHost();
   const isLive = !!room && !room.ended;
-  const optionSimulationKinds = ["poll", "quiz", "truefalse", "twotruths"];
+  const simulator = metaOf(question.type).simulator;
   return (
     <div className="canvas-toolbar">
       <div className="view-tabs">
@@ -31,35 +32,13 @@ export function CanvasToolbar() {
         </span>
       </div>
       <div className="canvas-tools">
-        {!isLive &&
-          [
-            "cloud",
-            "peerpraise",
-            "text",
-            "qna",
-            "slider",
-            ...optionSimulationKinds,
-          ].includes(
-            question.type,
-          ) && (
-            <IconButton
-              icon={FlaskConical}
-              label={
-                question.type === "cloud"
-                  ? "Simulate word cloud"
-                  : optionSimulationKinds.includes(question.type)
-                    ? "Simulate multiple choice"
-                    : question.type === "peerpraise"
-                    ? "Simulate peer praise"
-                    : question.type === "qna"
-                      ? "Simulate Q&A"
-                      : question.type === "slider"
-                        ? "Simulate slider"
-                        : "Simulate open responses"
-              }
-              onClick={() => setModal("simulate")}
-            />
-          )}
+        {!isLive && simulator && (
+          <IconButton
+            icon={FlaskConical}
+            label={simulator.label}
+            onClick={() => setModal("simulate")}
+          />
+        )}
         {!isLive && (
           <button className="text-button" onClick={() => setEditing(question)}>
             <Pencil size={14} />
@@ -76,7 +55,9 @@ export function CanvasToolbar() {
                 ? "Participants receive generated names"
                 : "Participants will be asked for their names"
             }
-            onClick={() => updateSession({ nameless: session.nameless !== true })}
+            onClick={() =>
+              updateSession({ nameless: session.nameless !== true })
+            }
           >
             <Users size={14} />
             {session.nameless ? "Nameless session" : "Ask for names"}

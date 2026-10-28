@@ -15,6 +15,8 @@ export function PollResults({
   fit,
   hideCounts = false,
   display,
+  answerLabel = "Correct",
+  splitColumns = true,
 }: {
   question: Question;
   results: { text: string; count: number }[];
@@ -24,6 +26,10 @@ export function PollResults({
   /** Show the options only, without percentages, bars, or counts. */
   hideCounts?: boolean;
   display?: PollDisplay;
+  /** The badge on the right answer after reveal. */
+  answerLabel?: string;
+  /** Lay four or more options out in two columns. */
+  splitColumns?: boolean;
 }) {
   const displayMode = hideCounts ? "list" : (display ?? "list");
   const box = useRef<HTMLDivElement>(null);
@@ -95,13 +101,20 @@ export function PollResults({
                     key={item.index}
                     className={`poll-pie-label ${inside ? "inside" : `outside ${side}`}`}
                     style={{
-                      left: inside ? `${50 + Math.cos(radians) * distance}%` : `${side === "right" ? 100 : 0}%`,
+                      left: inside
+                        ? `${50 + Math.cos(radians) * distance}%`
+                        : `${side === "right" ? 100 : 0}%`,
                       top: inside
                         ? `${50 + Math.sin(radians) * distance}%`
                         : `${18 + labelRank(item) * 22}%`,
                     }}
                   >
-                    {!inside && <em className={`poll-pie-color color-${item.index % 4}`} aria-hidden="true" />}
+                    {!inside && (
+                      <em
+                        className={`poll-pie-color color-${item.index % 4}`}
+                        aria-hidden="true"
+                      />
+                    )}
                     <strong>{Math.round(item.share)}%</strong>
                     <small>{item.text}</small>
                   </span>
@@ -112,7 +125,10 @@ export function PollResults({
         )}
         {displayMode === "stacked" && (
           <>
-            <div className="poll-stacked" aria-label="Stacked horizontal poll responses">
+            <div
+              className="poll-stacked"
+              aria-label="Stacked horizontal poll responses"
+            >
               {sorted.map((item) => {
                 const share = chartPercentage(item.count);
                 const canFitLegend =
@@ -125,7 +141,13 @@ export function PollResults({
                     title={`${item.text}: ${Math.round(share)}%`}
                   >
                     {share >= 7 && (
-                      <span className={canFitLegend ? "poll-segment-label" : "poll-segment-percent-only"}>
+                      <span
+                        className={
+                          canFitLegend
+                            ? "poll-segment-label"
+                            : "poll-segment-percent-only"
+                        }
+                      >
                         <strong>{Math.round(share)}%</strong>
                         {canFitLegend && <small>{item.text}</small>}
                       </span>
@@ -135,13 +157,21 @@ export function PollResults({
               })}
             </div>
             <div className="poll-thin-labels">
-              {sorted.filter((item) => chartPercentage(item.count) < Math.max(16, Math.min(48, item.text.length * 2))).map((item) => (
-                <div key={item.index}>
-                  <i className={`poll-legend-color color-${item.index % 4}`} />
-                  <strong>{Math.round(chartPercentage(item.count))}%</strong>
-                  <span>{item.text}</span>
-                </div>
-              ))}
+              {sorted
+                .filter(
+                  (item) =>
+                    chartPercentage(item.count) <
+                    Math.max(16, Math.min(48, item.text.length * 2)),
+                )
+                .map((item) => (
+                  <div key={item.index}>
+                    <i
+                      className={`poll-legend-color color-${item.index % 4}`}
+                    />
+                    <strong>{Math.round(chartPercentage(item.count))}%</strong>
+                    <span>{item.text}</span>
+                  </div>
+                ))}
             </div>
           </>
         )}
@@ -169,7 +199,7 @@ export function PollResults({
   const content = (
     <div
       ref={list}
-      className={`poll-results ${hideCounts ? "counts-hidden" : ""} ${results.length >= 4 && question.type !== "twotruths" ? "two-col" : ""}`}
+      className={`poll-results ${hideCounts ? "counts-hidden" : ""} ${results.length >= 4 && splitColumns ? "two-col" : ""}`}
     >
       {results.map((item, index) => {
         const isAnswer =
@@ -193,7 +223,7 @@ export function PollResults({
                 {isAnswer && (
                   <em className="answer-badge">
                     <Check size={18} strokeWidth={3} />
-                    {question.type === "twotruths" ? "The lie" : "Correct"}
+                    {answerLabel}
                   </em>
                 )}
               </span>

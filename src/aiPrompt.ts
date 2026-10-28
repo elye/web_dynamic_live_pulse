@@ -5,16 +5,14 @@ import {
   newSession,
   serializeSession,
 } from "./model.ts";
-import type { Kind } from "./model.ts";
+import { definitionOf, kinds, type Kind } from "./questions/index.ts";
 
 /**
  * Describes one slide type to an AI model so it can generate importable session JSON.
  *
- * `slideSpecs` is a `Record<Kind, …>`: when a new slide type is added to `Kind` in
- * `model.ts`, TypeScript refuses to compile until an entry is added here, so the
- * "Generate AI prompt" system prompt can never miss a slide type.
- * The example JSON in the prompt is generated from `newQuestion(kind)`, so it stays in
- * sync with the real defaults automatically.
+ * Each question type writes its own `prompt` in its definition, so the "Generate AI
+ * prompt" system prompt can never miss a type. The example JSON is generated from
+ * `newQuestion(kind)`, so it stays in sync with the real defaults automatically.
  */
 export type SlideSpec = {
   /** What the slide does and when an author should use it. */
@@ -23,80 +21,12 @@ export type SlideSpec = {
   rules: string;
 };
 
-export const slideSpecs: Record<Kind, SlideSpec> = {
-  slide: {
-    purpose:
-      "Display-only title and description slide. Participants answer nothing. Use it for intros, section breaks and instructions.",
-    rules:
-      'options: []. correct: null. "description" is REQUIRED (1-280 characters). No revealMode.',
-  },
-  cloud: {
-    purpose:
-      "Word cloud. Each participant submits one or more short words or phrases; the most common words grow largest.",
-    rules: "options: []. correct: null. Title is an open prompt answerable in one or two words. Optional maxSubmissions: integer 1-5, default 1, controls how many times each participant may contribute.",
-  },
-  poll: {
-    purpose: "Multiple choice poll with no correct answer. Participants pick one option, or several when multiple is true.",
-    rules: "options: 2-6 strings (max 100 characters each). correct: null. Optional: multiple (boolean, default false; true lets participants select more than one option). Optional pollDisplay (\"list\", \"pie\", \"stacked\", or \"bar\", default \"list\") controls the results visualization.",
-  },
-  quiz: {
-    purpose: "Multiple choice quiz with one correct answer. Scored and ranked.",
-    rules:
-      'options: 2-6 strings (max 100 characters each). "correct": zero-based index of the right option (REQUIRED). Optional: competitive (boolean, default true = faster answers score more), showRanking (boolean, default true), revealMode ("live" or "onDone", default "onDone"). Optional multiple (boolean, default false): when true, more than one option is correct, "corrects" (array of zero-based indexes, REQUIRED) lists them all, "correct" must be the smallest of them, and players earn points in proportion to the correct options selected (any wrong option selected scores 0).',
-  },
-  truefalse: {
-    purpose: "True or false statement. Scored and ranked. The title is the statement to judge.",
-    rules:
-      'options: exactly ["True","False"]. "correct": 0 if the statement is true, 1 if it is false (REQUIRED). Optional competitive, showRanking, revealMode as for quiz.',
-  },
-  twotruths: {
-    purpose:
-      "Two truths and a lie. Participants pick the statement that is not true. Scored and ranked.",
-    rules:
-      'title must be exactly "Pick the one that is not true." options: exactly 3 statements (max 200 characters each). "correct": zero-based index of the false statement (REQUIRED). Optional competitive, showRanking, revealMode as for quiz.',
-  },
-  ranking: {
-    purpose: "Participants drag options into an order from most to least important.",
-    rules: "options: 2-6 strings (max 100 characters each). correct: null.",
-  },
-  slider: {
-    purpose: "Participants choose a number on a slider; results show the distribution and average.",
-    rules:
-      "options: []. correct: null. sliderMin, sliderMax, sliderStep are REQUIRED numbers: sliderMax > sliderMin, sliderStep > 0, and (sliderMax - sliderMin) / sliderStep <= 1000.",
-  },
-  qna: {
-    purpose: "Open Q&A. Participants submit questions and upvote others. Always live.",
-    rules: "options: []. correct: null. No revealMode.",
-  },
-  points100: {
-    purpose: "Participants distribute 100 points across the options to show priorities.",
-    rules: "options: 2-6 strings (max 100 characters each). correct: null.",
-  },
-  grid2x2: {
-    purpose: "Participants place a dot on a 2x2 grid (e.g. urgency vs impact).",
-    rules:
-      "options: exactly 4 axis labels in this order: x-axis low, x-axis high, y-axis low, y-axis high (max 40 characters each). correct: null.",
-  },
-  peerpraise: {
-    purpose:
-      "Peer praise. Each participant gets another participant's name and writes something kind about them.",
-    rules:
-      'options: []. correct: null. The title is the writing prompt (for example, "Write a good word about this person."). The server privately assigns one participant name to each player; assignments never point to the player themself when the room has more than one participant. For one participant, their own name is used. Best with 3 to 10 participants. Default revealMode: "onDone", so responses stay hidden until the host reveals them.',
-  },
-  manyoptions: {
-    purpose:
-      "Participants pick from a large set of short options (shown as a grid of boxes on the stage with a live vote count per box). Players get a search filter. Use it for choosing from many topics, names or items.",
-    rules:
-      'options: 2-30 strings (max 30 characters each). correct: null. Optional "multiple": boolean (true lets participants pick several options, default false). Optional "others": boolean (true adds an extra "Others" box after the options, default false). Optional "voteColors": array of up to 8 steps {"min": number of votes, "color": "#rrggbb"}; the first step must have min 0 and min must rise strictly (default: red at 0 votes, green from 1 vote). Optional revealMode as for poll.',
-  },
-  text: {
-    purpose: "Open response. Participants type a free-text answer that the host reads.",
-    rules: "options: []. correct: null.",
-  },
-};
+export const slideSpecs = Object.fromEntries(
+  kinds.map((kind) => [kind, definitionOf(kind).prompt]),
+) as Record<Kind, SlideSpec>;
 
-/** Every slide type currently supported by the app (derived from the typed `labels` map). */
-export const allKinds = Object.keys(labels) as Kind[];
+/** Every slide type currently supported by the app (derived from the registry). */
+export const allKinds: Kind[] = kinds;
 
 /** Starter requests shown in the UI so authors see that surveys, quizzes and mixes are all possible. */
 export const promptExamples = [

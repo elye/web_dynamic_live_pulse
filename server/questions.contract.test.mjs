@@ -1,0 +1,93 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
+import {
+  aggregateResults,
+  createQuestion,
+  definitionOf,
+  describeAnswer,
+  kinds,
+  parseAnswer,
+  parseQuestion,
+  serializeQuestion,
+  simulateAnswer,
+} from "../src/questions/index.ts";
+
+// These checks run over every registered question type, so a new type is held to the
+// same contract automatically the moment it is added to the registry.
+
+const newId = () => "id";
+const seeded = () => {
+  let state = 7;
+  return () => (state = (state * 16807) % 2147483647) / 2147483647;
+};
+const env = { upvotes: () => 0, targetName: () => "Someone" };
+
+test("the registry lists each type once, with its own definition", () => {
+  assert.equal(new Set(kinds).size, kinds.length);
+  for (const kind of kinds) assert.equal(definitionOf(kind).kind, kind);
+});
+
+for (const kind of kinds) {
+  test(`${kind}: created, serialised and parsed back to the same question`, () => {
+    const created = createQuestion(kind, newId);
+    const exported = serializeQuestion(created);
+    const parsed = parseQuestion(exported, { newId });
+    assert.deepEqual(serializeQuestion(parsed), exported);
+    assert.equal(parsed.type, kind);
+  });
+
+  test(`${kind}: simulated answers are accepted, described and totalled`, () => {
+    const definition = definitionOf(kind);
+    const question = createQuestion(kind, newId);
+    if (!definition.traits.collectsAnswers) return;
+    const random = seeded();
+    const answers = Array.from({ length: 8 }, () => {
+      const answer = simulateAnswer(question, random);
+      assert.deepEqual(parseAnswer(question, answer), answer);
+      assert.ok(describeAnswer(question, answer).length > 0);
+      return answer;
+    });
+    const rows = aggregateResults(
+      question,
+      answers.map((answer, index) => [`token-${index}`, answer]),
+      env,
+    );
+    assert.ok(Array.isArray(rows));
+  });
+
+  test(`${kind}: traits agree with the rest of the definition`, () => {
+    const { traits, options } = definitionOf(kind);
+    if (traits.scored)
+      assert.ok(options, "scored types need options to choose from");
+    if (!traits.collectsAnswers) assert.equal(traits.revealMode, false);
+    assert.ok(definitionOf(kind).prompt.purpose);
+    assert.ok(definitionOf(kind).label);
+  });
+}
+
+// Question-type knowledge belongs in src/questions. Everything else asks the registry.
+test("no code outside src/questions branches on a question type", () => {
+  const literal = kinds.join("|");
+  const pattern = new RegExp(
+    `(?:type|kind)\\s*(?:===|!==)\\s*"(?:${literal})"|case "(?:${literal})"|\\[\\s*"(?:${literal})"\\s*,\\s*"(?:${literal})"`,
+  );
+  const offenders = [];
+  const walk = (directory) => {
+    for (const name of readdirSync(directory)) {
+      const path = join(directory, name);
+      if (statSync(path).isDirectory()) {
+        if (path !== join("src", "questions")) walk(path);
+      } else if (
+        /\.(ts|tsx|mjs)$/.test(name) &&
+        !name.includes(".test.") &&
+        pattern.test(readFileSync(path, "utf8"))
+      )
+        offenders.push(path);
+    }
+  };
+  walk("src");
+  walk("server");
+  assert.deepEqual(offenders, []);
+});

@@ -2,7 +2,7 @@
 
 Goal: adding a question type means adding **one folder**. No existing function, switch, or list grows. Anything a new type forgets is a compile error or a failing contract test, not a runtime surprise.
 
-Status: **planned, not started.** The README section "Question Architecture" describes the target. Update both as phases land.
+Status: **implemented** (phases 0–4 and the acceptance test; see "Outcome" at the end). The README section "Question Architecture" describes the architecture as built. The sections below are the original plan and keep their original wording, so names such as `ui.tsx` and `registry.ui.tsx` were refined during the work: the UI is split into five seams (see Outcome).
 
 ## 1. Problem today
 
@@ -179,3 +179,15 @@ Add a throwaway 15th type (for example `rating`) using only the scaffold. It mus
 | Crowd authoring              | `AuthorQuestion` has its own per-type forms. Phase 5 decides between reusing editor sections and keeping a small `author` UI per type.                                                |
 | Per-type CSS                 | The README requires global CSS in `styles/`. Phase 5 may allow a CSS file per type folder, imported by its `ui.tsx`.                                                                  |
 | Wire compatibility           | Never rename stored fields. Defaults for missing fields must match today's.                                                                                                           |
+
+## 7. Outcome
+
+What was built, and where it differs from the plan above.
+
+- **Logic layer:** `src/questions/platform/` plus one `definition.ts` per kind. `server/rooms.mjs`, `server/simulation.mjs`, `server/index.mjs`, `src/model.ts` (about 800 lines down to about 190) and `src/aiPrompt.ts` read only from the registry.
+- **UI layer:** instead of one `ui.tsx`, the browser side has five seams, each typed `Record<Kind, …>` in `src/questions/ui/`: meta (`ui.tsx`), results, input, editor and crowd author. A type that skips a seam does not compile.
+- **Capabilities are traits** (`collectsAnswers`, `scored`, `revealMode`, `resultsAlwaysVisible`, `playerAuthorable`, `assignsTargets`, `upvotes`, `optionsVisibleWhenHidden`, `frameVisibleWhenHidden`) so generic screens ask "does this type do X" instead of naming types.
+- **Safety nets:** `server/questions.golden.test.mjs` (old behaviour recorded before the migration) and `server/questions.contract.test.mjs` (per-kind contract plus the boundary check, now with no exceptions).
+- **Acceptance test passed:** a throwaway 15th type (a copy of `text`) needed only its own folder plus two lines in each of six registries. Leaving out a UI seam gave exactly one compile error per missing seam. Its contract tests ran automatically. The type was then removed.
+- **Not done:** the `npm run new:question` scaffold and `_template/`; `Question` is still a wide record rather than a discriminated union; per-type CSS stays in `styles/`.
+- **Known e2e failure:** `e2e/backup.spec.ts` compares a trimmed copy of the restored questions with the full export, which also holds `pollDisplay` and `maxSubmissions`. The export format is unchanged from before the migration, so this is a spec problem, not a regression. The other 21 specs pass.

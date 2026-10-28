@@ -1,5 +1,6 @@
 import { BarChart3, Download } from "lucide-react";
 import { exportResults, labels, type Room } from "../../model";
+import { traitsOf } from "../../questions";
 import { ResultsVisual } from "../results/ResultsVisual";
 import { Leaderboard } from "../scoring/Leaderboard";
 import { Podium } from "../scoring/Podium";
@@ -55,7 +56,7 @@ export function ResultsPage({ room }: { room: Room | null }) {
           </div>
           <Podium room={room} />
           {room.questions
-            .filter((question) => question.type !== "slide")
+            .filter((question) => traitsOf(question.type).collectsAnswers)
             .map((question, index) => (
               <section className="result-section" key={question.id}>
                 <span className="eyebrow">

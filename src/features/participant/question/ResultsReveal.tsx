@@ -1,5 +1,6 @@
 import { BarChart3, Check } from "lucide-react";
 import { canCompete } from "../../../model";
+import { inputOf } from "../../../questions/ui/inputRegistry";
 import { ResultsVisual } from "../../results/ResultsVisual";
 import { MyAnswer } from "../MyAnswer";
 import { useParticipant } from "../ParticipantContext";
@@ -30,8 +31,8 @@ export function ResultsReveal() {
       {canCompete(question.type) && (
         <div className="correct-answer">
           <Check size={20} />
-          {question.type === "twotruths"
-            ? "The lie"
+          {inputOf(question.type).correctAnswerLabel
+            ? inputOf(question.type).correctAnswerLabel
             : question.corrects?.length
               ? "Correct answers"
               : "Correct answer"}

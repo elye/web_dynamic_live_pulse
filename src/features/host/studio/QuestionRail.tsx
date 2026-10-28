@@ -1,25 +1,8 @@
-import {
-  Copy,
-  Drama,
-  FileText,
-  Grid2x2,
-  GripVertical,
-  ListOrdered,
-  MessageCircle,
-  MessageCircleQuestion,
-  Percent,
-  Plus,
-  Settings2,
-  SlidersHorizontal,
-  ToggleLeft,
-  Trash2,
-  Trophy,
-  LayoutGrid,
-  Users,
-} from "lucide-react";
+import { Copy, GripVertical, Plus, Settings2, Trash2 } from "lucide-react";
 import { IconButton } from "../../../components/IconButton";
 import { icons } from "../../../constants/kinds";
 import { createId, labels } from "../../../model";
+import { metaOf } from "../../../questions/ui/metaRegistry";
 import { useHost } from "../HostContext";
 
 export function QuestionRail() {
@@ -59,6 +42,7 @@ export function QuestionRail() {
       <div className="question-list">
         {questionList.map((item, index) => {
           const Icon = icons[item.type];
+          const { Thumbnail } = metaOf(item.type);
           const draggable = !isLive && questionList.length > 1;
           return (
             <div className="question-item" key={item.id}>
@@ -105,52 +89,7 @@ export function QuestionRail() {
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <div className={`thumbnail-art art-${item.type}`}>
-                  {item.type === "cloud" ? (
-                    <div className="mini-cloud">
-                      <span>curious</span>
-                      <b>excited</b>
-                      <span>inspired</span>
-                    </div>
-                  ) : item.type === "poll" ? (
-                    <div className="mini-bars">
-                      <i />
-                      <i />
-                      <i />
-                      <i />
-                    </div>
-                  ) : item.type === "quiz" ? (
-                    <Trophy size={32} strokeWidth={1.5} />
-                  ) : item.type === "truefalse" ? (
-                    <ToggleLeft size={32} strokeWidth={1.5} />
-                  ) : item.type === "twotruths" ? (
-                    <Drama size={32} strokeWidth={1.5} />
-                  ) : item.type === "ranking" ? (
-                    <ListOrdered size={32} strokeWidth={1.5} />
-                  ) : item.type === "slider" ? (
-                    <SlidersHorizontal size={32} strokeWidth={1.5} />
-                  ) : item.type === "qna" ? (
-                    <MessageCircleQuestion size={32} strokeWidth={1.5} />
-                  ) : item.type === "points100" ? (
-                    <Percent size={32} strokeWidth={1.5} />
-                  ) : item.type === "grid2x2" ? (
-                    <Grid2x2 size={32} strokeWidth={1.5} />
-                  ) : item.type === "manyoptions" ? (
-                    <LayoutGrid size={32} strokeWidth={1.5} />
-                  ) : item.type === "peerpraise" ? (
-                    <Users size={32} strokeWidth={1.5} />
-                  ) : item.type === "slide" ? (
-                    <div className="mini-slide">
-                      <FileText size={26} />
-                      <i />
-                      <i />
-                    </div>
-                  ) : (
-                    <div className="mini-message">
-                      <MessageCircle size={30} />
-                      <i />
-                      <i />
-                    </div>
-                  )}
+                  <Thumbnail />
                 </div>
                 <span className="thumbnail-caption">
                   <Icon size={13} />

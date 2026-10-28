@@ -1,20 +1,16 @@
 import { Check } from "lucide-react";
+import { pickedOptions } from "../../../../questions/ui/choiceInput";
 import { useParticipant } from "../../ParticipantContext";
 
-export function ChoiceInput() {
-  const {
-    setAnswer,
-    setAnswerQuestion,
-    question,
-    currentAnswer,
-    isMultiple,
-    selectedOptions,
-    room,
-  } = useParticipant();
+export function ChoiceInput({ twoColumns = true }: { twoColumns?: boolean }) {
+  const { setAnswer, setAnswerQuestion, question, currentAnswer, room } =
+    useParticipant();
   if (!room || !question) return null;
+  const isMultiple = question.multiple === true;
+  const selectedOptions = pickedOptions(currentAnswer);
   return (
     <div
-      className={`answer-options ${question.options.length >= 4 && question.type !== "twotruths" ? "two-col" : ""}`}
+      className={`answer-options ${twoColumns && question.options.length >= 4 ? "two-col" : ""}`}
     >
       {isMultiple && (
         <small className="multi-hint">Select all that apply</small>

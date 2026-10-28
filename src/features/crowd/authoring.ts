@@ -1,33 +1,9 @@
-import { canCompete, type Kind } from "../../model";
+import { type Kind } from "../../model";
+import { authorOf } from "../../questions/ui/authorRegistry";
 
-export type Authored = {
-  title: string;
-  options: string[];
-  correct: number | null;
-  multiple?: boolean;
-  corrects?: number[];
-  sliderMin?: number;
-  sliderMax?: number;
-  sliderStep?: number;
-};
+export type { Authored } from "../../questions/ui/author";
 
 /** An empty draft of a player-written question of the given kind. */
-export function blankAuthored(kind: Kind): Authored {
-  return {
-    title: "",
-    options:
-      kind === "truefalse"
-        ? ["True", "False"]
-        : kind === "twotruths"
-          ? ["", "", ""]
-          : kind === "grid2x2"
-            ? ["", "", "", ""]
-            : ["poll", "quiz", "ranking", "points100"].includes(kind)
-              ? ["", ""]
-              : [],
-    correct: canCompete(kind) ? 0 : null,
-    ...(kind === "slider"
-      ? { sliderMin: 0, sliderMax: 10, sliderStep: 1 }
-      : {}),
-  };
+export function blankAuthored(kind: Kind) {
+  return authorOf(kind).blank();
 }

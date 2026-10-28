@@ -11,6 +11,7 @@
     "dev": "concurrently -k -n server,web \"node --watch server/index.mjs\" \"vite --host 0.0.0.0\"",
     "start": "node server/index.mjs",
     "test": "node --test server/*.test.mjs",
+    "new:question": "node scripts/new-question.mjs",
     "test:e2e": "playwright test",
     "format": "prettier --write src server e2e playwright.config.ts vite.config.ts README.md",
     "build": "tsc -b && vite build",

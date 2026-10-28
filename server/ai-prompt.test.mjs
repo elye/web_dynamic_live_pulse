@@ -12,7 +12,6 @@ import {
 
 test("AI system prompt documents every slide type", () => {
   const prompt = buildSystemPrompt();
-  assert.match(prompt, /pollDisplay.*list.*pie.*stacked.*bar/);
   for (const kind of Object.keys(labels)) {
     assert.ok(slideSpecs[kind], `aiPrompt.ts is missing a spec for "${kind}"`);
     assert.ok(prompt.includes(`- "${kind}"`), `prompt omits "${kind}"`);
@@ -22,7 +21,9 @@ test("AI system prompt documents every slide type", () => {
 
 test("the example JSON embedded in the AI prompt is importable", () => {
   const prompt = buildSystemPrompt();
-  const json = prompt.slice(prompt.lastIndexOf('{\n  "format": "pulse-session"'));
+  const json = prompt.slice(
+    prompt.lastIndexOf('{\n  "format": "pulse-session"'),
+  );
   const session = importSession(json);
   assert.equal(session.questions.length, allKinds.length);
   const peerpraise = session.questions.find(
@@ -44,13 +45,18 @@ test("AI prompt explains surveys vs quizzes and every type is classified", () =>
   const prompt = buildSystemPrompt();
   assert.ok(prompt.includes("SURVEY vs QUIZ"));
   const { survey, quiz } = kindCategories();
-  assert.deepEqual(
-    [...survey, ...quiz, "slide"].sort(),
-    [...allKinds].sort(),
-  );
-  assert.deepEqual(quiz.sort(), ["quiz", "truefalse", "twotruths"]);
-  assert.ok(prompt.includes("Best with 3 to 10 participants"));
-  assert.equal(promptExamples.length, 4);
+  assert.deepEqual([...survey, ...quiz, "slide"].sort(), [...allKinds].sort());
+  for (const kind of quiz) {
+    assert.ok(prompt.includes(`"${kind}"`));
+    assert.ok(
+      prompt.includes(
+        `For scored types (${quiz.map((k) => `"${k}"`).join(", ")})`,
+      ),
+    );
+  }
+  assert.ok(promptExamples.length > 0);
+  for (const example of promptExamples)
+    assert.ok(example.id && example.label && example.hint && example.text);
 });
 
 test("clipboard prompt appends the user's request", () => {

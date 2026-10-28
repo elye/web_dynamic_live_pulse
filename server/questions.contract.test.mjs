@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { buildSystemPrompt } from "../src/aiPrompt.ts";
+import { importSession, newSession, serializeSession } from "../src/model.ts";
 import {
   aggregateResults,
   createQuestion,
@@ -65,7 +67,93 @@ for (const kind of kinds) {
     assert.ok(definitionOf(kind).prompt.purpose);
     assert.ok(definitionOf(kind).label);
   });
+
+  test(`${kind}: has every file a question type needs`, () => {
+    for (const file of [
+      "definition.ts",
+      "ui.tsx",
+      "results.tsx",
+      "input.tsx",
+      "editor.tsx",
+      "author.tsx",
+    ])
+      assert.ok(
+        existsSync(join("src", "questions", "types", kind, file)),
+        `src/questions/types/${kind}/${file} is missing`,
+      );
+    const { label, hint, tagline } = definitionOf(kind);
+    for (const text of [label, hint, tagline]) assert.ok(text.trim());
+  });
+
+  test(`${kind}: the AI prompt describes it and every field it exports`, () => {
+    const prompt = buildSystemPrompt();
+    const { prompt: spec } = definitionOf(kind);
+    assert.ok(prompt.includes(`- "${kind}" (`), "missing from the type list");
+    assert.ok(prompt.includes(spec.purpose) && prompt.includes(spec.rules));
+    const own = Object.keys(serializeQuestion(createQuestion(kind, newId)));
+    const universal = ["type", "title", "options", "correct"];
+    // revealMode, competitive and showRanking are explained for every type that has them.
+    const shared = ["revealMode", "competitive", "showRanking"];
+    for (const field of own.filter((name) => !universal.includes(name)))
+      assert.ok(
+        shared.includes(field) || spec.rules.includes(field),
+        `the AI rules for "${kind}" do not mention its field "${field}"`,
+      );
+  });
 }
+
+for (const kind of kinds) {
+  test(`${kind}: JSON import rejects a malformed question`, () => {
+    const session = JSON.parse(
+      serializeSession({
+        ...newSession("blank"),
+        title: "t",
+        questions: [createQuestion(kind, newId)],
+      }),
+    );
+    const attempt = (change) => {
+      const copy = structuredClone(session);
+      change(copy.questions[0]);
+      return () => importSession(JSON.stringify(copy));
+    };
+    assert.doesNotThrow(attempt(() => {}));
+    assert.throws(attempt((question) => (question.type = "nope")));
+    const universal = ["type", "title", "options", "correct"];
+    for (const field of Object.keys(session.questions[0]))
+      if (!universal.includes(field))
+        assert.throws(
+          attempt((question) => (question[field] = { invalid: true })),
+          undefined,
+          `"${kind}" accepts a malformed "${field}"`,
+        );
+  });
+}
+
+test("the AI prompt's example holds one valid question of every type", () => {
+  const prompt = buildSystemPrompt();
+  const marker = "follow the structure):\n";
+  const example = prompt.slice(prompt.indexOf(marker) + marker.length);
+  const session = importSession(example);
+  assert.deepEqual(
+    session.questions.map((question) => question.type),
+    kinds,
+  );
+});
+
+// A scaffolded type (npm run new:question) is not finished until its TODOs are resolved.
+test("no scaffold TODO(new-question) markers remain", () => {
+  const left = [];
+  const walk = (directory) => {
+    for (const name of readdirSync(directory)) {
+      const path = join(directory, name);
+      if (statSync(path).isDirectory()) walk(path);
+      else if (readFileSync(path, "utf8").includes("TODO(new-question)"))
+        left.push(path);
+    }
+  };
+  walk(join("src", "questions"));
+  assert.deepEqual(left, []);
+});
 
 // Question-type knowledge belongs in src/questions. Everything else asks the registry.
 test("no code outside src/questions branches on a question type", () => {

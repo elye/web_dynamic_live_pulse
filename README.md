@@ -365,14 +365,18 @@ Type-specific settings (such as `pollDisplay` or `sliderMin`) are read and writt
 
 ### Add a question type
 
-1. Copy the closest existing folder in `src/questions/types/` (for example `text` for a simple one) to `src/questions/types/<kind>` and rename its exports.
-2. Edit `definition.ts`. `defineQuestion` and TypeScript flag every contract member you leave out.
-3. Edit the five UI files (`ui.tsx`, `results.tsx`, `input.tsx`, `editor.tsx`, `author.tsx`).
-4. Register it: one import and one entry in `src/questions/registry.ts`, and in each of `src/questions/ui/{meta,results,input,editor,author}Registry.ts`. Each of those is typed `Record<Kind, …>`, so a missing entry is a compile error.
-5. Run `npm test`. The contract test runs for the new type automatically: the sample question validates, export and import round-trip, simulated answers are accepted and aggregate, invalid answers are rejected.
-6. Add a Playwright spec only for behaviour unique to the type.
+New types are meant to be added by an AI agent following [AGENTS.md](AGENTS.md), which has the full checklist.
 
-No other file should change. If one has to, the platform is missing a hook or trait: add it to `platform/` rather than a branch for your type.
+```sh
+npm run new:question -- <kind> --label "Name" --template text    # free-text answers
+npm run new:question -- <kind> --label "Name" --template choice  # single choice from options
+```
+
+The scaffold creates `src/questions/types/<kind>/` (`definition.ts`, `ui.tsx`, `results.tsx`, `input.tsx`, `editor.tsx`, `author.tsx`) and registers the kind in `registry.ts` and the five UI registries. Every decision left to the author is marked `TODO(new-question)`.
+
+`npm test` fails until every marker is resolved, and the contract tests then check the new type automatically: the six files exist, the sample question validates, export and import round-trip, answers and results work, the AI prompt describes the type and each field it exports, and the AI example JSON still imports.
+
+Add a Playwright spec only for behaviour unique to the type. No file outside `src/questions/` should change, except `QuestionRecord` in `platform/types.ts` when the type adds fields. If anything else must change, the platform is missing a hook or trait: add it to `platform/` rather than a branch for your type.
 
 ## Checks
 
@@ -384,7 +388,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Server tests cover authorization, hidden answers, private peer praise assignments, input validation, duplicate votes, stale question IDs, scoring, case-insensitive word aggregation, real WebSocket traffic, room deletion, JSON backup validation, and the question contract (every registered type is checked for create, parse, export and import, answers, results and simulation, and no code outside `src/questions` may branch on a type name). Browser tests exercise editing, two independent participants, every question type, pause/reveal controls, refresh recovery, CSV and JSON downloads, file/paste restoration, draft/live/ended session deletion, invalid codes, and 390/768/1440px layouts. Browser screenshots and failure traces are written to the ignored `test-results` directory. The browser suite can start the development servers automatically.
+Server tests cover authorization, hidden answers, private peer praise assignments, input validation, duplicate votes, stale question IDs, scoring, case-insensitive word aggregation, real WebSocket traffic, room deletion, JSON backup validation, and the question contract (every registered type is checked for its files, create, parse, export and import, answers, results, simulation and AI prompt coverage, and no code outside `src/questions` may branch on a type name). Browser tests exercise editing, two independent participants, every question type, pause/reveal controls, refresh recovery, CSV and JSON downloads, file/paste restoration, draft/live/ended session deletion, invalid codes, and 390/768/1440px layouts. Browser screenshots and failure traces are written to the ignored `test-results` directory. The browser suite can start the development servers automatically.
 
 `npm run format` formats source and documentation.
 

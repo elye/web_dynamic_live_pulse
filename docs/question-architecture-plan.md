@@ -189,5 +189,6 @@ What was built, and where it differs from the plan above.
 - **Capabilities are traits** (`collectsAnswers`, `scored`, `revealMode`, `resultsAlwaysVisible`, `playerAuthorable`, `assignsTargets`, `upvotes`, `optionsVisibleWhenHidden`, `frameVisibleWhenHidden`) so generic screens ask "does this type do X" instead of naming types.
 - **Safety nets:** `server/questions.golden.test.mjs` (old behaviour recorded before the migration) and `server/questions.contract.test.mjs` (per-kind contract plus the boundary check, now with no exceptions).
 - **Acceptance test passed:** a throwaway 15th type (a copy of `text`) needed only its own folder plus two lines in each of six registries. Leaving out a UI seam gave exactly one compile error per missing seam. Its contract tests ran automatically. The type was then removed.
-- **Not done:** the `npm run new:question` scaffold and `_template/`; `Question` is still a wide record rather than a discriminated union; per-type CSS stays in `styles/`.
+- **Scaffold:** `npm run new:question -- <kind> --template text|choice` (`scripts/new-question.mjs`, templates in `scripts/question-templates/`). Open items are marked `TODO(new-question)` and `npm test` fails until they are resolved. The AI procedure is in `AGENTS.md`.
+- **Not done:** `Question` is still a wide record rather than a discriminated union; per-type CSS stays in `styles/`.
 - **E2E:** all 22 specs pass. `e2e/backup.spec.ts` was updated to also compare `pollDisplay` and `maxSubmissions`, which the export has always carried.

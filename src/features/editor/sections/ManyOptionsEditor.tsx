@@ -8,11 +8,10 @@ import {
   voteColorsMax,
   type VoteColor,
 } from "../../../model";
-import type { EditorSectionProps } from "../editorTypes";
+import type { EditorSectionProps } from "../../../questions/ui/editor";
 
 /** Many options: the option boxes, the "Others" box, selection mode and vote colours. */
 export function ManyOptionsEditor({ draft, setDraft }: EditorSectionProps) {
-  if (draft.type !== "manyoptions") return null;
   const colors = draft.voteColors ?? defaultVoteColors;
   const setColors = (next: VoteColor[]) =>
     setDraft({ ...draft, voteColors: next });

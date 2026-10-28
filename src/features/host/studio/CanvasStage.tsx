@@ -1,12 +1,8 @@
 import { CrowdWriting } from "../../crowd/CrowdWriting";
 import { WelcomeLobby } from "../../lobby/WelcomeLobby";
-import { CloudSimulator } from "../../results/CloudSimulator";
-import { PeerPraiseSimulator } from "../../results/PeerPraiseSimulator";
-import { PollSimulator } from "../../results/PollSimulator";
-import { ResponseSimulator } from "../../results/ResponseSimulator";
-import { SliderSimulator } from "../../results/SliderSimulator";
 import { ScoreStage } from "../../scoring/ScoreStage";
 import { QuestionStage } from "../../stage/QuestionStage";
+import { metaOf } from "../../../questions/ui/metaRegistry";
 import { useHost } from "../HostContext";
 
 export function CanvasStage() {
@@ -24,41 +20,16 @@ export function CanvasStage() {
   } = useHost();
   const isLive = !!room && !room.ended;
   const inLobby = isLive && !room.started;
-  const optionSimulationKinds = ["poll", "quiz", "truefalse", "twotruths"];
+  const simulator = metaOf(question.type).simulator;
   return (
     <>
-      {modal === "simulate" &&
-        (optionSimulationKinds.includes(question.type) ? (
-          <PollSimulator
-            question={question}
-            theme={session.theme}
-            onClose={() => setModal(null)}
-          />
-        ) : question.type === "peerpraise" ? (
-          <PeerPraiseSimulator
-            question={question}
-            theme={session.theme}
-            onClose={() => setModal(null)}
-          />
-        ) : question.type === "text" || question.type === "qna" ? (
-          <ResponseSimulator
-            question={question}
-            theme={session.theme}
-            onClose={() => setModal(null)}
-          />
-        ) : question.type === "slider" ? (
-          <SliderSimulator
-            question={question}
-            theme={session.theme}
-            onClose={() => setModal(null)}
-          />
-        ) : (
-          <CloudSimulator
-            question={question}
-            theme={session.theme}
-            onClose={() => setModal(null)}
-          />
-        ))}
+      {modal === "simulate" && simulator && (
+        <simulator.Simulator
+          question={question}
+          theme={session.theme}
+          onClose={() => setModal(null)}
+        />
+      )}
       {inLobby && room.crowd?.authoring ? (
         <CrowdWriting
           room={room}

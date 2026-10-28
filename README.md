@@ -18,7 +18,7 @@ Open http://localhost:5173. The command starts Vite and the live server together
 1. The app opens on **My sessions**. Open the editable four-question check-in to enter the studio, or create a session from the template library.
 2. Edit questions, answer choices, and correct quiz answers. Duplicate, reorder, or delete questions and select a slide mood. Reorder by dragging a question's card in the question rail to a new position (drag handle on the right), or use the up/down arrows in the question details panel. Reordering is disabled while a session is live.
 3. Select **Present live** to open the welcome screen. The QR code, room code, and selectable participant URL are always visible beside the live participant roster. Use the copy icon to copy the URL, or select the field to copy it manually.
-  Select **Start questions** when everyone is ready. Participants wait in the welcome lobby until then.
+   Select **Start questions** when everyone is ready. Participants wait in the welcome lobby until then.
    Before presenting, switch **Ask for names** to **Nameless session** in the studio toolbar if you want Pulse to assign each participant a unique name-like label. The welcome lobby then shows only the number of people who have joined.
 4. Participants visit `/join`, enter the room code, and submit one response per question. Named sessions ask for a display name; nameless sessions assign a unique generated name automatically. The participant console shows `✨` beside an assigned name, and the player can click it to replace the generated name once at any time while the session is active.
 5. Pause or reopen voting, reveal results, and advance questions. Each correct quiz or true-or-false answer earns up to 1,000 points: the faster the answer, the more points. Multi-answer quizzes award partial credit (see below).
@@ -264,7 +264,8 @@ Open http://localhost:3001. Express serves the production build, API, and Socket
 ```text
 src/
   main.tsx, App.tsx, Pulse.tsx   Entry points; Pulse picks Host or Participant by URL
-  model.ts, live.ts, aiPrompt.ts Shared domain types, socket client, AI prompt text
+  model.ts, live.ts, aiPrompt.ts Session types and import / export, socket client, AI prompt text
+  questions/                     Question platform plus one folder per question type (see below)
   components/                    Small UI pieces used by several features
   constants/                     Static data (question kinds, hints, reactions)
   hooks/                         Reusable hooks
@@ -289,6 +290,94 @@ Conventions:
 - Stylesheets are plain global CSS. Class names are unique across files, so a rule lives in the file of the feature that owns the component. `styles/index.css` imports them in a fixed order. Later files win ties with equal specificity, and `motion.css` must stay last.
 - E2E specs import `test` and `expect` from `e2e/helpers/test.ts`. That `test` installs the cloud canvas probe on every page. Host specs call `gotoStudio(page)` from `e2e/helpers/studio.ts`, because the app opens on **My sessions** rather than inside a session.
 
+## Question Architecture
+
+Rule: **a question type is one folder.** Adding a type never lengthens an existing function, switch, or list. Everything the type needs lives beside it, and anything it forgets fails the build or a test. The original plan and what was built are in [docs/question-architecture-plan.md](docs/question-architecture-plan.md).
+
+```text
+src/questions/
+  platform/          Shared by all types; never names a specific kind
+    types.ts           QuestionDefinition contract, QuestionRecord, traits
+    define.ts          defineQuestion(): checks a definition is complete
+    operations.ts      parseQuestion, serializeQuestion, createQuestion, results, scoring, simulation
+    choice.ts          Helpers shared by choice-style answers
+    samples.ts         Shared sample content
+  registry.ts        Lists every definition; Kind is derived from it
+  index.ts           Public API (what the rest of the app imports)
+  ui/                Browser-side contracts and one registry per seam
+  types/<kind>/
+    definition.ts      Logic shared by browser and server (no React, no DOM)
+    ui.tsx             Meta: icon, thumbnail, subtitle, optional simulator
+    results.tsx        How responses are shown on the stage and in results
+    input.tsx          How a participant answers
+    editor.tsx         Host editor sections and validation
+    author.tsx         Player-made (crowd) question form
+```
+
+```mermaid
+flowchart LR
+  subgraph Platform["Platform layer (shared by every type)"]
+    Rooms["Rooms, participants, scoring, leaderboard"]
+    Session["Session envelope, import / export, limits"]
+    Shell["Host and participant shells, stage, rail, submit button"]
+  end
+  Registry["registry.ts + ui/*Registry.ts"]
+  subgraph Types["types/&lt;kind&gt;/"]
+    Def["definition.ts (shared logic)"]
+    Seams["ui, results, input, editor, author (React)"]
+  end
+  Rooms --> Registry
+  Session --> Registry
+  Shell --> Registry
+  Registry --> Def
+  Registry --> Seams
+```
+
+### What the platform owns
+
+Room and session lifecycle, participants and tokens, one answer per question (or `answer.limit` for clouds), timing, leaderboard and podium, reactions, the export / import envelope, crowd sessions, and the host and participant screens that frame a question. The platform reaches a type only through the registry, and asks about **traits** (for example `collectsAnswers`, `scored`, `resultsAlwaysVisible`, `playerAuthorable`, `upvotes`, `optionsVisibleWhenHidden`) instead of comparing type names.
+
+### What a type owns
+
+| Piece                                                                                      | File                      |
+| ------------------------------------------------------------------------------------------ | ------------------------- |
+| Label, hint, tagline, group, traits                                                        | `definition.ts`           |
+| `create()` sample question                                                                 | `definition.ts`           |
+| `parse()` validate and normalise an import; `serialize()` export                           | `definition.ts`           |
+| `answer.parse()`, `describe()`, `simulate()`                                               | `definition.ts`           |
+| `results.aggregate()`, `preview()`, optional `score()`                                     | `definition.ts`           |
+| Optional `server` hooks (start-up work, extra actions such as upvotes)                     | `definition.ts`           |
+| `prompt` fields and example for AI generation                                              | `definition.ts`           |
+| Icon, `Thumbnail`, eyebrow, subtitle, optional response simulator                          | `ui.tsx` (`QuestionMeta`) |
+| `Results`, optional `Concealed` view, preview and blank rows                               | `results.tsx`             |
+| `Input` or full `Screen`, optional `resolve` / `isReady` / `remember` for the answer draft | `input.tsx`               |
+| Title field, settings and fields sections, `isValid`                                       | `editor.tsx`              |
+| Blank draft, title label, fields, `isValid` for player authoring                           | `author.tsx`              |
+
+Type-specific settings (such as `pollDisplay` or `sliderMin`) are read and written only by that type's own files. Shared helpers live beside the families that use them: `features/results/pollFamily.tsx`, `features/results/TextResults.tsx`, `features/crowd/authorFields.tsx`.
+
+### Shared code rules
+
+- `definition.ts` and `platform/` are plain erasable TypeScript with no React or DOM, so `server/*.mjs` imports them directly. This needs Node 22.18+ or 24 (`engines.node` in `package.json`).
+- The UI seam files may import `components/`, `constants/`, `hooks/` and `src/questions`. Fast-refresh linting is relaxed for the per-type folders, which export both components and config.
+- Outside `src/questions/`, never compare a question's `type` to a literal such as `"poll"` and never list kinds. Ask the registry or a trait. `server/questions.contract.test.mjs` enforces this.
+- Never rename stored fields. Saved sessions and `pulse-session` v1 exports must keep loading. `server/questions.golden.test.mjs` pins the behaviour recorded before the migration.
+
+### Add a question type
+
+New types are meant to be added by an AI agent following [AGENTS.md](AGENTS.md), which has the full checklist.
+
+```sh
+npm run new:question -- <kind> --label "Name" --template text    # free-text answers
+npm run new:question -- <kind> --label "Name" --template choice  # single choice from options
+```
+
+The scaffold creates `src/questions/types/<kind>/` (`definition.ts`, `ui.tsx`, `results.tsx`, `input.tsx`, `editor.tsx`, `author.tsx`) and registers the kind in `registry.ts` and the five UI registries. Every decision left to the author is marked `TODO(new-question)`.
+
+`npm test` fails until every marker is resolved, and the contract tests then check the new type automatically: the six files exist, the sample question validates, export and import round-trip, answers and results work, the AI prompt describes the type and each field it exports, and the AI example JSON still imports.
+
+Add a Playwright spec only for behaviour unique to the type. No file outside `src/questions/` should change, except `QuestionRecord` in `platform/types.ts` when the type adds fields. If anything else must change, the platform is missing a hook or trait: add it to `platform/` rather than a branch for your type.
+
 ## Checks
 
 ```sh
@@ -299,7 +388,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Server tests cover authorization, hidden answers, private peer praise assignments, input validation, duplicate votes, stale question IDs, scoring, case-insensitive word aggregation, real WebSocket traffic, room deletion, and JSON backup validation. Browser tests exercise editing, two independent participants, every question type, pause/reveal controls, refresh recovery, CSV and JSON downloads, file/paste restoration, draft/live/ended session deletion, invalid codes, and 390/768/1440px layouts. Browser screenshots and failure traces are written to the ignored `test-results` directory. The browser suite can start the development servers automatically.
+Server tests cover authorization, hidden answers, private peer praise assignments, input validation, duplicate votes, stale question IDs, scoring, case-insensitive word aggregation, real WebSocket traffic, room deletion, JSON backup validation, and the question contract (every registered type is checked for its files, create, parse, export and import, answers, results, simulation and AI prompt coverage, and no code outside `src/questions` may branch on a type name). Browser tests exercise editing, two independent participants, every question type, pause/reveal controls, refresh recovery, CSV and JSON downloads, file/paste restoration, draft/live/ended session deletion, invalid codes, and 390/768/1440px layouts. Browser screenshots and failure traces are written to the ignored `test-results` directory. The browser suite can start the development servers automatically.
 
 `npm run format` formats source and documentation.
 

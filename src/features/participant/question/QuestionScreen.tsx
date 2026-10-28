@@ -1,16 +1,15 @@
 import { Users } from "lucide-react";
 import { ReactionBar } from "../../../components/ReactionBar";
+import { inputOf } from "../../../questions/ui/inputRegistry";
 import { useParticipant } from "../ParticipantContext";
 import { AnswerForm } from "./AnswerForm";
 import { LiveResultsReveal } from "./LiveResultsReveal";
 import { PausedState } from "./PausedState";
 import { PodiumReveal } from "./PodiumReveal";
 import { SuspenseReveal } from "./SuspenseReveal";
-import { QnaSession } from "./QnaSession";
 import { QuestionHeader } from "./QuestionHeader";
 import { RankingReveal } from "./RankingReveal";
 import { ResultsReveal } from "./ResultsReveal";
-import { SlideView } from "./SlideView";
 import { SubmittedState } from "./SubmittedState";
 
 export function QuestionScreen() {
@@ -23,6 +22,7 @@ export function QuestionScreen() {
     reactionTap,
   } = useParticipant();
   if (!room || !question) return null;
+  const { Screen } = inputOf(question.type);
   return (
     <main className="participant-session">
       <QuestionHeader />
@@ -32,10 +32,8 @@ export function QuestionScreen() {
         <SuspenseReveal />
       ) : room.ranking ? (
         <RankingReveal />
-      ) : question.type === "slide" ? (
-        <SlideView />
-      ) : question.type === "qna" ? (
-        <QnaSession />
+      ) : Screen ? (
+        <Screen />
       ) : room.revealed ? (
         <ResultsReveal />
       ) : question.revealMode === "live" &&

@@ -1,6 +1,6 @@
-import type { EditorSectionProps } from "../editorTypes";
+import type { EditorSectionProps } from "../../../questions/ui/editor";
 
-const axes = [
+export const axes = [
   "X axis · left (low)",
   "X axis · right (high)",
   "Y axis · bottom (low)",
@@ -8,7 +8,6 @@ const axes = [
 ];
 
 export function GridAxisEditor({ draft, setDraft }: EditorSectionProps) {
-  if (draft.type !== "grid2x2") return null;
   function setAxisLabel(index: number, text: string) {
     setDraft({
       ...draft,

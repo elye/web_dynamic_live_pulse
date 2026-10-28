@@ -1,20 +1,17 @@
 import { Check, Search, X } from "lucide-react";
 import { useState } from "react";
-import { manyOptionLabels } from "../../../../model";
-import { useParticipant } from "../../ParticipantContext";
+import { useParticipant } from "../../../features/participant/ParticipantContext";
+import { manyOptionLabels } from "./helpers";
+import { choiceBehaviour, pickedOptions } from "../../ui/choiceInput";
+import { type QuestionInput } from "../../ui/input";
 
-export function ManyOptionsInput() {
-  const {
-    setAnswer,
-    setAnswerQuestion,
-    question,
-    currentAnswer,
-    isMultiple,
-    selectedOptions,
-    room,
-  } = useParticipant();
+function ManyOptionsInput() {
+  const { setAnswer, setAnswerQuestion, question, currentAnswer, room } =
+    useParticipant();
   const [filter, setFilter] = useState("");
   if (!room || !question) return null;
+  const isMultiple = question.multiple === true;
+  const selectedOptions = pickedOptions(currentAnswer);
   const labels = manyOptionLabels(question);
   const othersIndex = question.others ? labels.length - 1 : -1;
   const selected = isMultiple
@@ -101,3 +98,8 @@ export function ManyOptionsInput() {
     </div>
   );
 }
+
+export const input: QuestionInput = {
+  ...choiceBehaviour,
+  Input: ManyOptionsInput,
+};

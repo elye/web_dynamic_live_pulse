@@ -1,10 +1,33 @@
 import { Percent } from "lucide-react";
-import { useParticipant } from "../../ParticipantContext";
+import { useParticipant } from "../../../features/participant/ParticipantContext";
+import { type Question } from "../../registry";
+import { type AnswerValue, type QuestionInput } from "../../ui/input";
 
-export function PointsInput() {
-  const { question, pointsAllocation, pointsAllocated, setPointsFor, room } =
+const allocationOf = (question: Question, touched: AnswerValue) =>
+  Array.isArray(touched) && touched.length === question.options.length
+    ? touched
+    : question.options.map(() => 0);
+
+const total = (allocation: number[]) =>
+  allocation.reduce((sum, points) => sum + points, 0);
+
+function PointsInput() {
+  const { question, currentAnswer, setAnswer, setAnswerQuestion, room } =
     useParticipant();
   if (!room || !question) return null;
+  const pointsAllocation = allocationOf(question, currentAnswer);
+  const pointsAllocated = total(pointsAllocation);
+  const setPointsFor = (index: number, points: number) => {
+    // The other options keep their points, so this one can only use what is left of 100.
+    const remaining = 100 - (pointsAllocated - (pointsAllocation[index] ?? 0));
+    const capped = Math.max(0, Math.min(remaining, Math.round(points) || 0));
+    setAnswer(
+      pointsAllocation.map((value, position) =>
+        position === index ? capped : value,
+      ),
+    );
+    setAnswerQuestion(question.id);
+  };
   return (
     <div className="points100-input">
       <div
@@ -55,3 +78,9 @@ export function PointsInput() {
     </div>
   );
 }
+
+export const input: QuestionInput = {
+  resolve: allocationOf,
+  isReady: (_question, value) => Array.isArray(value) && total(value) === 100,
+  Input: PointsInput,
+};

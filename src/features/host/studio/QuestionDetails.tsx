@@ -2,6 +2,7 @@ import { ArrowDown, ArrowUp, Copy, Settings2, Trash2 } from "lucide-react";
 import { IconButton } from "../../../components/IconButton";
 import { icons } from "../../../constants/kinds";
 import { createId, labels } from "../../../model";
+import { definitionOf } from "../../../questions";
 import { useHost } from "../HostContext";
 
 export function QuestionDetails() {
@@ -28,35 +29,7 @@ export function QuestionDetails() {
         </span>
         <div>
           <h3>{labels[question.type]}</h3>
-          <p>
-            {question.type === "cloud"
-              ? "A single word from every voice."
-              : question.type === "manyoptions"
-                ? "Pick from a big grid of short options."
-                : question.type === "poll"
-                  ? "Different perspectives. One shared picture."
-                  : question.type === "quiz"
-                    ? "A little friendly competition."
-                    : question.type === "truefalse"
-                      ? "A quick binary call: true or false."
-                      : question.type === "twotruths"
-                        ? "Two truths and a lie. Who can spot it?"
-                        : question.type === "ranking"
-                          ? "Drag to sort what matters most."
-                          : question.type === "slider"
-                            ? "Slide to estimate a number."
-                            : question.type === "qna"
-                              ? "Submit and upvote live questions."
-                              : question.type === "points100"
-                                ? "Divide 100 points across what matters most."
-                                : question.type === "grid2x2"
-                                  ? "Place a point across two axes."
-                                  : question.type === "peerpraise"
-                                    ? "Give each player someone else to write about."
-                                    : question.type === "slide"
-                                      ? "Just a title and description. No input needed."
-                                      : "Space for the longer answer."}
-          </p>
+          <p>{definitionOf(question.type).tagline}</p>
         </div>
       </div>
       <div className="detail-actions">

@@ -1,21 +1,39 @@
 import { Plus, X } from "lucide-react";
 import { IconButton } from "../../../components/IconButton";
 import { canCompete } from "../../../model";
-import {
-  hasOptionList,
-  isMultiQuiz,
-  type EditorSectionProps,
-} from "../editorTypes";
+import { definitionOf } from "../../../questions";
+import type {
+  EditorSection,
+  EditorSectionProps,
+} from "../../../questions/ui/editor";
+
+/** What differs between the types that edit a list of answer options. */
+export type OptionsEditorConfig = {
+  legend: string;
+  /** Names the right answer in the hint, e.g. "the lie". */
+  correctName?: string;
+  /** Finishes "Option 1 is ..." on the radio for the right answer. */
+  correctLabel?: string;
+  /** Several options can be correct at once (when `multiple` is on). */
+  multipleCorrect?: boolean;
+  /** Placeholder for an option, given whether it is the correct one. */
+  placeholder?: (isCorrect: boolean) => string;
+};
 
 /** Editable answer options, with correct-answer pickers for competitive kinds. */
-export function OptionsEditor({ draft, setDraft }: EditorSectionProps) {
-  if (!hasOptionList(draft)) return null;
-  const isTrueFalse = draft.type === "truefalse";
-  const isTwoTruths = draft.type === "twotruths";
-  const isRanking = draft.type === "ranking";
-  const isPoints100 = draft.type === "points100";
+export function OptionsEditor({
+  draft,
+  setDraft,
+  legend,
+  correctName = "the correct answer",
+  correctLabel = "correct",
+  multipleCorrect = false,
+  placeholder,
+}: EditorSectionProps & OptionsEditorConfig) {
+  const rule = definitionOf(draft.type).options!;
+  const resizable = rule.min !== rule.max;
   const hasCorrectAnswer = canCompete(draft.type);
-  const multiQuiz = isMultiQuiz(draft);
+  const multiQuiz = multipleCorrect && draft.multiple === true;
   const draftCorrects = draft.corrects ?? [];
   const setDraftCorrects = (next: number[]) =>
     setDraft({
@@ -54,21 +72,10 @@ export function OptionsEditor({ draft, setDraft }: EditorSectionProps) {
   return (
     <fieldset>
       <legend>
-        {isRanking
-          ? "Items to rank"
-          : isPoints100
-            ? "Options to allocate points across"
-            : isTwoTruths
-              ? "Two truths and one lie"
-              : "Answer options"}{" "}
+        {legend}{" "}
         {hasCorrectAnswer && (
           <span>
-            · Select{" "}
-            {isTwoTruths
-              ? "the lie"
-              : multiQuiz
-                ? "all the correct answers"
-                : "the correct answer"}
+            · Select {multiQuiz ? "all the correct answers" : correctName}
           </span>
         )}
       </legend>
@@ -89,11 +96,7 @@ export function OptionsEditor({ draft, setDraft }: EditorSectionProps) {
             />
           ) : hasCorrectAnswer ? (
             <input
-              aria-label={
-                isTwoTruths
-                  ? `Option ${index + 1} is the lie`
-                  : `Option ${index + 1} is correct`
-              }
+              aria-label={`Option ${index + 1} is ${correctLabel}`}
               type="radio"
               name="correct"
               checked={draft.correct === index}
@@ -107,14 +110,8 @@ export function OptionsEditor({ draft, setDraft }: EditorSectionProps) {
           <input
             aria-label={`Option ${index + 1}`}
             required
-            maxLength={isTwoTruths ? 200 : 100}
-            placeholder={
-              isTwoTruths
-                ? draft.correct === index
-                  ? "The lie"
-                  : "A true statement"
-                : undefined
-            }
+            maxLength={rule.maxLength}
+            placeholder={placeholder?.(draft.correct === index)}
             value={option}
             onChange={(event) =>
               setDraft({
@@ -125,17 +122,17 @@ export function OptionsEditor({ draft, setDraft }: EditorSectionProps) {
               })
             }
           />
-          {!isTrueFalse && !isTwoTruths && (
+          {resizable && (
             <IconButton
               icon={X}
               label={`Remove option ${index + 1}`}
-              disabled={draft.options.length <= 2}
+              disabled={draft.options.length <= rule.min}
               onClick={() => removeOption(index)}
             />
           )}
         </div>
       ))}
-      {!isTrueFalse && !isTwoTruths && draft.options.length < 6 && (
+      {resizable && draft.options.length < rule.max && (
         <button
           type="button"
           className="text-button"
@@ -150,3 +147,8 @@ export function OptionsEditor({ draft, setDraft }: EditorSectionProps) {
     </fieldset>
   );
 }
+
+/** An editor section for the answer options of one type. */
+export const optionsSection =
+  (config: OptionsEditorConfig): EditorSection =>
+  (props) => <OptionsEditor {...props} {...config} />;

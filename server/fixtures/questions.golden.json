@@ -1,0 +1,3248 @@
+{
+  "slide": {
+    "exported": {
+      "type": "slide",
+      "title": "A quick word before we dive in",
+      "options": [],
+      "correct": null,
+      "description": "Take a breath, get comfortable, and get ready to share."
+    },
+    "roomQuestion": {
+      "type": "slide",
+      "title": "A quick word before we dive in",
+      "description": "Take a breath, get comfortable, and get ready to share.",
+      "options": [],
+      "correct": null
+    },
+    "accepted": [],
+    "responses": 0,
+    "results": [],
+    "leaderboard": [
+      {
+        "name": "Ann",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Bob",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Cy",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Di",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Ed",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Flo",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe0",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe1",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe2",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe3",
+        "generated": false,
+        "score": 0
+      }
+    ],
+    "verdicts": [
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected"
+    ]
+  },
+  "cloud": {
+    "exported": {
+      "type": "cloud",
+      "title": "How are you feeling in one word?",
+      "options": [],
+      "correct": null,
+      "maxSubmissions": 1,
+      "revealMode": "live"
+    },
+    "roomQuestion": {
+      "type": "cloud",
+      "title": "How are you feeling in one word?",
+      "maxSubmissions": 1,
+      "revealMode": "live",
+      "options": [],
+      "correct": null
+    },
+    "accepted": [
+      "Teamwork",
+      "Teamwork",
+      "Pace",
+      "Learning",
+      "Ideas",
+      "Focus"
+    ],
+    "responses": 6,
+    "results": [
+      {
+        "text": "focus",
+        "count": 1
+      },
+      {
+        "text": "ideas",
+        "count": 1
+      },
+      {
+        "text": "learning",
+        "count": 1
+      },
+      {
+        "text": "pace",
+        "count": 1
+      },
+      {
+        "text": "teamwork",
+        "count": 2
+      }
+    ],
+    "leaderboard": [
+      {
+        "name": "Ann",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Bob",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Cy",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Di",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Ed",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Flo",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe0",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe1",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe2",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe3",
+        "generated": false,
+        "score": 0
+      }
+    ],
+    "verdicts": [
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "accepted",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected"
+    ]
+  },
+  "poll": {
+    "exported": {
+      "type": "poll",
+      "title": "What should we focus on next?",
+      "options": [
+        "Fresh ideas",
+        "Team connection",
+        "Learning something new",
+        "Making things happen"
+      ],
+      "correct": null,
+      "multiple": false,
+      "pollDisplay": "list",
+      "revealMode": "live"
+    },
+    "roomQuestion": {
+      "type": "poll",
+      "title": "What should we focus on next?",
+      "multiple": false,
+      "pollDisplay": "list",
+      "revealMode": "live",
+      "options": [
+        "Fresh ideas",
+        "Team connection",
+        "Learning something new",
+        "Making things happen"
+      ],
+      "correct": null
+    },
+    "accepted": [
+      0,
+      0,
+      3,
+      2,
+      1,
+      1
+    ],
+    "responses": 6,
+    "results": [
+      {
+        "text": "Fresh ideas",
+        "count": 2
+      },
+      {
+        "text": "Learning something new",
+        "count": 1
+      },
+      {
+        "text": "Making things happen",
+        "count": 1
+      },
+      {
+        "text": "Team connection",
+        "count": 2
+      }
+    ],
+    "leaderboard": [
+      {
+        "name": "Ann",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Bob",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Cy",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Di",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Ed",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Flo",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe0",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe1",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe2",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe3",
+        "generated": false,
+        "score": 0
+      }
+    ],
+    "verdicts": [
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "accepted",
+      "accepted",
+      "accepted",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected"
+    ]
+  },
+  "quiz": {
+    "exported": {
+      "type": "quiz",
+      "title": "Which planet has the most moons?",
+      "options": [
+        "Jupiter",
+        "Saturn",
+        "Neptune",
+        "Mars"
+      ],
+      "correct": 1,
+      "multiple": false,
+      "competitive": true,
+      "showRanking": true,
+      "revealMode": "onDone"
+    },
+    "roomQuestion": {
+      "type": "quiz",
+      "title": "Which planet has the most moons?",
+      "multiple": false,
+      "revealMode": "onDone",
+      "competitive": true,
+      "showRanking": true,
+      "options": [
+        "Jupiter",
+        "Saturn",
+        "Neptune",
+        "Mars"
+      ],
+      "correct": 1
+    },
+    "accepted": [
+      1,
+      1,
+      2,
+      1,
+      1,
+      1
+    ],
+    "responses": 6,
+    "results": [
+      {
+        "text": "Jupiter",
+        "count": 0
+      },
+      {
+        "text": "Mars",
+        "count": 0
+      },
+      {
+        "text": "Neptune",
+        "count": 1
+      },
+      {
+        "text": "Saturn",
+        "count": 5
+      }
+    ],
+    "leaderboard": [
+      {
+        "name": "Ann",
+        "generated": false,
+        "score": 950
+      },
+      {
+        "name": "Bob",
+        "generated": false,
+        "score": 900
+      },
+      {
+        "name": "Probe9",
+        "generated": false,
+        "score": 900
+      },
+      {
+        "name": "Di",
+        "generated": false,
+        "score": 800
+      },
+      {
+        "name": "Ed",
+        "generated": false,
+        "score": 750
+      },
+      {
+        "name": "Flo",
+        "generated": false,
+        "score": 700
+      },
+      {
+        "name": "Cy",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe0",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe1",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe2",
+        "generated": false,
+        "score": 0
+      }
+    ],
+    "verdicts": [
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "accepted",
+      "accepted",
+      "accepted",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected"
+    ]
+  },
+  "truefalse": {
+    "exported": {
+      "type": "truefalse",
+      "title": "Octopuses have three hearts.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correct": 0,
+      "competitive": true,
+      "showRanking": true,
+      "revealMode": "onDone"
+    },
+    "roomQuestion": {
+      "type": "truefalse",
+      "title": "Octopuses have three hearts.",
+      "revealMode": "onDone",
+      "competitive": true,
+      "showRanking": true,
+      "options": [
+        "True",
+        "False"
+      ],
+      "correct": 0
+    },
+    "accepted": [
+      0,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    "responses": 6,
+    "results": [
+      {
+        "text": "False",
+        "count": 1
+      },
+      {
+        "text": "True",
+        "count": 5
+      }
+    ],
+    "leaderboard": [
+      {
+        "name": "Ann",
+        "generated": false,
+        "score": 950
+      },
+      {
+        "name": "Bob",
+        "generated": false,
+        "score": 900
+      },
+      {
+        "name": "Probe8",
+        "generated": false,
+        "score": 900
+      },
+      {
+        "name": "Di",
+        "generated": false,
+        "score": 800
+      },
+      {
+        "name": "Ed",
+        "generated": false,
+        "score": 750
+      },
+      {
+        "name": "Flo",
+        "generated": false,
+        "score": 700
+      },
+      {
+        "name": "Cy",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe0",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe1",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe2",
+        "generated": false,
+        "score": 0
+      }
+    ],
+    "verdicts": [
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "accepted",
+      "accepted",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected"
+    ]
+  },
+  "twotruths": {
+    "exported": {
+      "type": "twotruths",
+      "title": "Pick the one that is not true.",
+      "options": [
+        "I have climbed a mountain.",
+        "I speak three languages.",
+        "I have met a famous person."
+      ],
+      "correct": 2,
+      "competitive": true,
+      "showRanking": true,
+      "revealMode": "onDone"
+    },
+    "roomQuestion": {
+      "type": "twotruths",
+      "title": "Pick the one that is not true.",
+      "revealMode": "onDone",
+      "competitive": true,
+      "showRanking": true,
+      "options": [
+        "I have climbed a mountain.",
+        "I speak three languages.",
+        "I have met a famous person."
+      ],
+      "correct": 2
+    },
+    "accepted": [
+      2,
+      2,
+      1,
+      2,
+      2,
+      2
+    ],
+    "responses": 6,
+    "results": [
+      {
+        "text": "I have climbed a mountain.",
+        "count": 0
+      },
+      {
+        "text": "I have met a famous person.",
+        "count": 5
+      },
+      {
+        "text": "I speak three languages.",
+        "count": 1
+      }
+    ],
+    "leaderboard": [
+      {
+        "name": "Ann",
+        "generated": false,
+        "score": 950
+      },
+      {
+        "name": "Bob",
+        "generated": false,
+        "score": 900
+      },
+      {
+        "name": "Probe10",
+        "generated": false,
+        "score": 900
+      },
+      {
+        "name": "Di",
+        "generated": false,
+        "score": 800
+      },
+      {
+        "name": "Ed",
+        "generated": false,
+        "score": 750
+      },
+      {
+        "name": "Flo",
+        "generated": false,
+        "score": 700
+      },
+      {
+        "name": "Cy",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe0",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe1",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe2",
+        "generated": false,
+        "score": 0
+      }
+    ],
+    "verdicts": [
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "accepted",
+      "accepted",
+      "accepted",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected"
+    ]
+  },
+  "ranking": {
+    "exported": {
+      "type": "ranking",
+      "title": "Rank these from most to least important",
+      "options": [
+        "Speed",
+        "Quality",
+        "Cost",
+        "Communication"
+      ],
+      "correct": null,
+      "revealMode": "live"
+    },
+    "roomQuestion": {
+      "type": "ranking",
+      "title": "Rank these from most to least important",
+      "revealMode": "live",
+      "options": [
+        "Speed",
+        "Quality",
+        "Cost",
+        "Communication"
+      ],
+      "correct": null
+    },
+    "accepted": [
+      [
+        2,
+        1,
+        3,
+        0
+      ],
+      [
+        3,
+        0,
+        1,
+        2
+      ],
+      [
+        2,
+        3,
+        0,
+        1
+      ],
+      [
+        1,
+        3,
+        0,
+        2
+      ],
+      [
+        2,
+        0,
+        1,
+        3
+      ],
+      [
+        2,
+        3,
+        0,
+        1
+      ]
+    ],
+    "responses": 6,
+    "results": [
+      {
+        "text": "Communication",
+        "count": 16
+      },
+      {
+        "text": "Cost",
+        "count": 18
+      },
+      {
+        "text": "Quality",
+        "count": 13
+      },
+      {
+        "text": "Speed",
+        "count": 13
+      }
+    ],
+    "leaderboard": [
+      {
+        "name": "Ann",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Bob",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Cy",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Di",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Ed",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Flo",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe0",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe1",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe2",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe3",
+        "generated": false,
+        "score": 0
+      }
+    ],
+    "verdicts": [
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "accepted",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected"
+    ]
+  },
+  "slider": {
+    "exported": {
+      "type": "slider",
+      "title": "How many hours a day do you spend in meetings?",
+      "options": [],
+      "correct": null,
+      "sliderMin": 0,
+      "sliderMax": 10,
+      "sliderStep": 1,
+      "revealMode": "live"
+    },
+    "roomQuestion": {
+      "type": "slider",
+      "title": "How many hours a day do you spend in meetings?",
+      "sliderMin": 0,
+      "sliderMax": 10,
+      "sliderStep": 1,
+      "revealMode": "live",
+      "options": [],
+      "correct": null
+    },
+    "accepted": [
+      0,
+      8,
+      5,
+      4,
+      6,
+      2
+    ],
+    "responses": 6,
+    "results": [
+      {
+        "text": "0",
+        "count": 1
+      },
+      {
+        "text": "2",
+        "count": 1
+      },
+      {
+        "text": "4",
+        "count": 1
+      },
+      {
+        "text": "5",
+        "count": 1
+      },
+      {
+        "text": "6",
+        "count": 1
+      },
+      {
+        "text": "8",
+        "count": 1
+      },
+      {
+        "text": "Average: 4.17",
+        "count": 6
+      }
+    ],
+    "leaderboard": [
+      {
+        "name": "Ann",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Bob",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Cy",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Di",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Ed",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Flo",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe0",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe1",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe2",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe3",
+        "generated": false,
+        "score": 0
+      }
+    ],
+    "verdicts": [
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "accepted",
+      "accepted",
+      "accepted",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected"
+    ]
+  },
+  "qna": {
+    "exported": {
+      "type": "qna",
+      "title": "Ask us anything",
+      "options": [],
+      "correct": null
+    },
+    "roomQuestion": {
+      "type": "qna",
+      "title": "Ask us anything",
+      "options": [],
+      "correct": null
+    },
+    "accepted": [
+      "More time to explore ideas together.",
+      "More time to explore ideas together.",
+      "More hands-on practice would be useful.",
+      "Could we share the slides afterwards?",
+      "Great session, thank you for organising it.",
+      "Shorter meetings and more focused discussion."
+    ],
+    "responses": 6,
+    "results": [
+      {
+        "text": "Could we share the slides afterwards?",
+        "count": 0
+      },
+      {
+        "text": "Great session, thank you for organising it.",
+        "count": 0
+      },
+      {
+        "text": "More hands-on practice would be useful.",
+        "count": 0
+      },
+      {
+        "text": "More time to explore ideas together.",
+        "count": 0
+      },
+      {
+        "text": "More time to explore ideas together.",
+        "count": 0
+      },
+      {
+        "text": "Shorter meetings and more focused discussion.",
+        "count": 0
+      }
+    ],
+    "leaderboard": [
+      {
+        "name": "Ann",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Bob",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Cy",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Di",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Ed",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Flo",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe0",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe1",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe2",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe3",
+        "generated": false,
+        "score": 0
+      }
+    ],
+    "verdicts": [
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "accepted",
+      "accepted",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected"
+    ]
+  },
+  "points100": {
+    "exported": {
+      "type": "points100",
+      "title": "Allocate 100 points across what matters most to you",
+      "options": [
+        "Design",
+        "Performance",
+        "Reliability",
+        "Cost"
+      ],
+      "correct": null,
+      "revealMode": "live"
+    },
+    "roomQuestion": {
+      "type": "points100",
+      "title": "Allocate 100 points across what matters most to you",
+      "revealMode": "live",
+      "options": [
+        "Design",
+        "Performance",
+        "Reliability",
+        "Cost"
+      ],
+      "correct": null
+    },
+    "accepted": [
+      [
+        3,
+        3,
+        62,
+        32
+      ],
+      [
+        37,
+        23,
+        29,
+        11
+      ],
+      [
+        31,
+        53,
+        10,
+        6
+      ],
+      [
+        53,
+        25,
+        7,
+        15
+      ],
+      [
+        8,
+        20,
+        8,
+        64
+      ],
+      [
+        10,
+        77,
+        7,
+        6
+      ]
+    ],
+    "responses": 6,
+    "results": [
+      {
+        "text": "Cost",
+        "count": 134
+      },
+      {
+        "text": "Design",
+        "count": 142
+      },
+      {
+        "text": "Performance",
+        "count": 201
+      },
+      {
+        "text": "Reliability",
+        "count": 123
+      }
+    ],
+    "leaderboard": [
+      {
+        "name": "Ann",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Bob",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Cy",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Di",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Ed",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Flo",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe0",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe1",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe2",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe3",
+        "generated": false,
+        "score": 0
+      }
+    ],
+    "verdicts": [
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "accepted",
+      "accepted",
+      "accepted",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected"
+    ]
+  },
+  "grid2x2": {
+    "exported": {
+      "type": "grid2x2",
+      "title": "Place your priority on the grid",
+      "options": [
+        "Low urgency",
+        "High urgency",
+        "Low impact",
+        "High impact"
+      ],
+      "correct": null,
+      "revealMode": "live"
+    },
+    "roomQuestion": {
+      "type": "grid2x2",
+      "title": "Place your priority on the grid",
+      "revealMode": "live",
+      "options": [
+        "Low urgency",
+        "High urgency",
+        "Low impact",
+        "High impact"
+      ],
+      "correct": null
+    },
+    "accepted": [
+      {
+        "x": -93,
+        "y": 68
+      },
+      {
+        "x": -7,
+        "y": -29
+      },
+      {
+        "x": 28,
+        "y": -59
+      },
+      {
+        "x": 28,
+        "y": -43
+      },
+      {
+        "x": -17,
+        "y": 27
+      },
+      {
+        "x": 13,
+        "y": -67
+      }
+    ],
+    "responses": 6,
+    "results": [
+      {
+        "text": "-17,27",
+        "count": 1
+      },
+      {
+        "text": "-7,-29",
+        "count": 1
+      },
+      {
+        "text": "-93,68",
+        "count": 1
+      },
+      {
+        "text": "13,-67",
+        "count": 1
+      },
+      {
+        "text": "28,-43",
+        "count": 1
+      },
+      {
+        "text": "28,-59",
+        "count": 1
+      },
+      {
+        "text": "Average: -8,-17.2",
+        "count": 6
+      }
+    ],
+    "leaderboard": [
+      {
+        "name": "Ann",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Bob",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Cy",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Di",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Ed",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Flo",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe0",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe1",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe2",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe3",
+        "generated": false,
+        "score": 0
+      }
+    ],
+    "verdicts": [
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "accepted",
+      "rejected",
+      "rejected",
+      "rejected"
+    ]
+  },
+  "peerpraise": {
+    "exported": {
+      "type": "peerpraise",
+      "title": "Write a good word about this person.",
+      "options": [],
+      "correct": null,
+      "revealMode": "onDone"
+    },
+    "roomQuestion": {
+      "type": "peerpraise",
+      "title": "Write a good word about this person.",
+      "revealMode": "onDone",
+      "options": [],
+      "correct": null
+    },
+    "accepted": [
+      "More time to explore ideas together.",
+      "More time to explore ideas together.",
+      "More hands-on practice would be useful.",
+      "Could we share the slides afterwards?",
+      "Great session, thank you for organising it.",
+      "Shorter meetings and more focused discussion."
+    ],
+    "responses": 6,
+    "results": [
+      {
+        "text": "Could we share the slides afterwards?",
+        "count": 1
+      },
+      {
+        "text": "Great session, thank you for organising it.",
+        "count": 1
+      },
+      {
+        "text": "More hands-on practice would be useful.",
+        "count": 1
+      },
+      {
+        "text": "More time to explore ideas together.",
+        "count": 1
+      },
+      {
+        "text": "More time to explore ideas together.",
+        "count": 1
+      },
+      {
+        "text": "Shorter meetings and more focused discussion.",
+        "count": 1
+      }
+    ],
+    "leaderboard": [
+      {
+        "name": "Ann",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Bob",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Cy",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Di",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Ed",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Flo",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe0",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe1",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe2",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe3",
+        "generated": false,
+        "score": 0
+      }
+    ],
+    "verdicts": [
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "accepted",
+      "accepted",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected"
+    ]
+  },
+  "manyoptions": {
+    "exported": {
+      "type": "manyoptions",
+      "title": "Which topics would you like us to cover?",
+      "options": [
+        "Planning",
+        "Design",
+        "Testing",
+        "Security",
+        "Hiring",
+        "Culture",
+        "Budget",
+        "Roadmap",
+        "Support",
+        "Tooling",
+        "Metrics",
+        "Training"
+      ],
+      "correct": null,
+      "multiple": false,
+      "others": true,
+      "revealMode": "live"
+    },
+    "roomQuestion": {
+      "type": "manyoptions",
+      "title": "Which topics would you like us to cover?",
+      "multiple": false,
+      "others": true,
+      "revealMode": "live",
+      "options": [
+        "Planning",
+        "Design",
+        "Testing",
+        "Security",
+        "Hiring",
+        "Culture",
+        "Budget",
+        "Roadmap",
+        "Support",
+        "Tooling",
+        "Metrics",
+        "Training"
+      ],
+      "correct": null
+    },
+    "accepted": [
+      0,
+      0,
+      12,
+      7,
+      4,
+      3
+    ],
+    "responses": 6,
+    "results": [
+      {
+        "text": "Budget",
+        "count": 0
+      },
+      {
+        "text": "Culture",
+        "count": 0
+      },
+      {
+        "text": "Design",
+        "count": 0
+      },
+      {
+        "text": "Hiring",
+        "count": 1
+      },
+      {
+        "text": "Metrics",
+        "count": 0
+      },
+      {
+        "text": "Others",
+        "count": 1
+      },
+      {
+        "text": "Planning",
+        "count": 2
+      },
+      {
+        "text": "Roadmap",
+        "count": 1
+      },
+      {
+        "text": "Security",
+        "count": 1
+      },
+      {
+        "text": "Support",
+        "count": 0
+      },
+      {
+        "text": "Testing",
+        "count": 0
+      },
+      {
+        "text": "Tooling",
+        "count": 0
+      },
+      {
+        "text": "Training",
+        "count": 0
+      }
+    ],
+    "leaderboard": [
+      {
+        "name": "Ann",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Bob",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Cy",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Di",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Ed",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Flo",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe0",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe1",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe2",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe3",
+        "generated": false,
+        "score": 0
+      }
+    ],
+    "verdicts": [
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "accepted",
+      "accepted",
+      "accepted",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected"
+    ]
+  },
+  "text": {
+    "exported": {
+      "type": "text",
+      "title": "What is one thing we could do better?",
+      "options": [],
+      "correct": null,
+      "revealMode": "live"
+    },
+    "roomQuestion": {
+      "type": "text",
+      "title": "What is one thing we could do better?",
+      "revealMode": "live",
+      "options": [],
+      "correct": null
+    },
+    "accepted": [
+      "More time to explore ideas together.",
+      "More time to explore ideas together.",
+      "More hands-on practice would be useful.",
+      "Could we share the slides afterwards?",
+      "Great session, thank you for organising it.",
+      "Shorter meetings and more focused discussion."
+    ],
+    "responses": 6,
+    "results": [
+      {
+        "text": "Could we share the slides afterwards?",
+        "count": 1
+      },
+      {
+        "text": "Great session, thank you for organising it.",
+        "count": 1
+      },
+      {
+        "text": "More hands-on practice would be useful.",
+        "count": 1
+      },
+      {
+        "text": "More time to explore ideas together.",
+        "count": 2
+      },
+      {
+        "text": "Shorter meetings and more focused discussion.",
+        "count": 1
+      }
+    ],
+    "leaderboard": [
+      {
+        "name": "Ann",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Bob",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Cy",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Di",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Ed",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Flo",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe0",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe1",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe2",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe3",
+        "generated": false,
+        "score": 0
+      }
+    ],
+    "verdicts": [
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "accepted",
+      "accepted",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected"
+    ]
+  },
+  "poll-multiple": {
+    "exported": {
+      "type": "poll",
+      "title": "What should we focus on next?",
+      "options": [
+        "Fresh ideas",
+        "Team connection",
+        "Learning something new",
+        "Making things happen"
+      ],
+      "correct": null,
+      "multiple": true,
+      "pollDisplay": "pie",
+      "revealMode": "live"
+    },
+    "roomQuestion": {
+      "type": "poll",
+      "title": "What should we focus on next?",
+      "multiple": true,
+      "pollDisplay": "pie",
+      "revealMode": "live",
+      "options": [
+        "Fresh ideas",
+        "Team connection",
+        "Learning something new",
+        "Making things happen"
+      ],
+      "correct": null
+    },
+    "accepted": [
+      [
+        3
+      ],
+      [
+        0,
+        2
+      ],
+      [
+        1,
+        3
+      ],
+      [
+        0,
+        1,
+        3
+      ],
+      [
+        3
+      ],
+      [
+        1
+      ]
+    ],
+    "responses": 6,
+    "results": [
+      {
+        "text": "Fresh ideas",
+        "count": 2
+      },
+      {
+        "text": "Learning something new",
+        "count": 1
+      },
+      {
+        "text": "Making things happen",
+        "count": 4
+      },
+      {
+        "text": "Team connection",
+        "count": 3
+      }
+    ],
+    "leaderboard": [
+      {
+        "name": "Ann",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Bob",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Cy",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Di",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Ed",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Flo",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe0",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe1",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe2",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe3",
+        "generated": false,
+        "score": 0
+      }
+    ],
+    "verdicts": [
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "accepted",
+      "rejected",
+      "accepted",
+      "accepted",
+      "accepted",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected"
+    ]
+  },
+  "quiz-multiple": {
+    "exported": {
+      "type": "quiz",
+      "title": "Which planet has the most moons?",
+      "options": [
+        "Jupiter",
+        "Saturn",
+        "Neptune",
+        "Mars"
+      ],
+      "correct": 0,
+      "multiple": true,
+      "corrects": [
+        0,
+        2
+      ],
+      "competitive": true,
+      "showRanking": true,
+      "revealMode": "onDone"
+    },
+    "roomQuestion": {
+      "type": "quiz",
+      "title": "Which planet has the most moons?",
+      "multiple": true,
+      "corrects": [
+        0,
+        2
+      ],
+      "revealMode": "onDone",
+      "competitive": true,
+      "showRanking": true,
+      "options": [
+        "Jupiter",
+        "Saturn",
+        "Neptune",
+        "Mars"
+      ],
+      "correct": 0
+    },
+    "accepted": [
+      [
+        3
+      ],
+      [
+        0,
+        2
+      ],
+      [
+        1,
+        3
+      ],
+      [
+        0,
+        1,
+        3
+      ],
+      [
+        3
+      ],
+      [
+        1
+      ]
+    ],
+    "responses": 6,
+    "results": [
+      {
+        "text": "Jupiter",
+        "count": 2
+      },
+      {
+        "text": "Mars",
+        "count": 4
+      },
+      {
+        "text": "Neptune",
+        "count": 1
+      },
+      {
+        "text": "Saturn",
+        "count": 3
+      }
+    ],
+    "leaderboard": [
+      {
+        "name": "Bob",
+        "generated": false,
+        "score": 900
+      },
+      {
+        "name": "Probe14",
+        "generated": false,
+        "score": 450
+      },
+      {
+        "name": "Ann",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Cy",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Di",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Ed",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Flo",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe0",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe1",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe2",
+        "generated": false,
+        "score": 0
+      }
+    ],
+    "verdicts": [
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "accepted",
+      "rejected",
+      "accepted",
+      "accepted",
+      "accepted",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected"
+    ]
+  },
+  "quiz-casual": {
+    "exported": {
+      "type": "quiz",
+      "title": "Which planet has the most moons?",
+      "options": [
+        "Jupiter",
+        "Saturn",
+        "Neptune",
+        "Mars"
+      ],
+      "correct": 1,
+      "multiple": false,
+      "competitive": false,
+      "showRanking": false,
+      "revealMode": "onDone"
+    },
+    "roomQuestion": {
+      "type": "quiz",
+      "title": "Which planet has the most moons?",
+      "multiple": false,
+      "revealMode": "onDone",
+      "competitive": false,
+      "showRanking": false,
+      "options": [
+        "Jupiter",
+        "Saturn",
+        "Neptune",
+        "Mars"
+      ],
+      "correct": 1
+    },
+    "accepted": [
+      1,
+      1,
+      2,
+      1,
+      1,
+      1
+    ],
+    "responses": 6,
+    "results": [
+      {
+        "text": "Jupiter",
+        "count": 0
+      },
+      {
+        "text": "Mars",
+        "count": 0
+      },
+      {
+        "text": "Neptune",
+        "count": 1
+      },
+      {
+        "text": "Saturn",
+        "count": 5
+      }
+    ],
+    "leaderboard": [
+      {
+        "name": "Ann",
+        "generated": false,
+        "score": 1000
+      },
+      {
+        "name": "Bob",
+        "generated": false,
+        "score": 1000
+      },
+      {
+        "name": "Di",
+        "generated": false,
+        "score": 1000
+      },
+      {
+        "name": "Ed",
+        "generated": false,
+        "score": 1000
+      },
+      {
+        "name": "Flo",
+        "generated": false,
+        "score": 1000
+      },
+      {
+        "name": "Probe9",
+        "generated": false,
+        "score": 1000
+      },
+      {
+        "name": "Cy",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe0",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe1",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe2",
+        "generated": false,
+        "score": 0
+      }
+    ],
+    "verdicts": [
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "accepted",
+      "accepted",
+      "accepted",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected"
+    ]
+  },
+  "truefalse-onDone": {
+    "exported": {
+      "type": "truefalse",
+      "title": "Octopuses have three hearts.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "correct": 0,
+      "competitive": true,
+      "showRanking": true,
+      "revealMode": "live"
+    },
+    "roomQuestion": {
+      "type": "truefalse",
+      "title": "Octopuses have three hearts.",
+      "revealMode": "live",
+      "competitive": true,
+      "showRanking": true,
+      "options": [
+        "True",
+        "False"
+      ],
+      "correct": 0
+    },
+    "accepted": [
+      0,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    "responses": 6,
+    "results": [
+      {
+        "text": "False",
+        "count": 1
+      },
+      {
+        "text": "True",
+        "count": 5
+      }
+    ],
+    "leaderboard": [
+      {
+        "name": "Ann",
+        "generated": false,
+        "score": 950
+      },
+      {
+        "name": "Bob",
+        "generated": false,
+        "score": 900
+      },
+      {
+        "name": "Probe8",
+        "generated": false,
+        "score": 900
+      },
+      {
+        "name": "Di",
+        "generated": false,
+        "score": 800
+      },
+      {
+        "name": "Ed",
+        "generated": false,
+        "score": 750
+      },
+      {
+        "name": "Flo",
+        "generated": false,
+        "score": 700
+      },
+      {
+        "name": "Cy",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe0",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe1",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe2",
+        "generated": false,
+        "score": 0
+      }
+    ],
+    "verdicts": [
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "accepted",
+      "accepted",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected"
+    ]
+  },
+  "manyoptions-multiple": {
+    "exported": {
+      "type": "manyoptions",
+      "title": "Which topics would you like us to cover?",
+      "options": [
+        "Planning",
+        "Design",
+        "Testing",
+        "Security",
+        "Hiring",
+        "Culture",
+        "Budget",
+        "Roadmap",
+        "Support",
+        "Tooling",
+        "Metrics",
+        "Training"
+      ],
+      "correct": null,
+      "multiple": true,
+      "others": false,
+      "revealMode": "live"
+    },
+    "roomQuestion": {
+      "type": "manyoptions",
+      "title": "Which topics would you like us to cover?",
+      "multiple": true,
+      "others": false,
+      "revealMode": "live",
+      "options": [
+        "Planning",
+        "Design",
+        "Testing",
+        "Security",
+        "Hiring",
+        "Culture",
+        "Budget",
+        "Roadmap",
+        "Support",
+        "Tooling",
+        "Metrics",
+        "Training"
+      ],
+      "correct": null
+    },
+    "accepted": [
+      [
+        0
+      ],
+      [
+        2,
+        3,
+        4,
+        6
+      ],
+      [
+        4
+      ],
+      [
+        0,
+        1,
+        7
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        1,
+        11
+      ]
+    ],
+    "responses": 6,
+    "results": [
+      {
+        "text": "Budget",
+        "count": 1
+      },
+      {
+        "text": "Culture",
+        "count": 0
+      },
+      {
+        "text": "Design",
+        "count": 3
+      },
+      {
+        "text": "Hiring",
+        "count": 2
+      },
+      {
+        "text": "Metrics",
+        "count": 0
+      },
+      {
+        "text": "Planning",
+        "count": 3
+      },
+      {
+        "text": "Roadmap",
+        "count": 1
+      },
+      {
+        "text": "Security",
+        "count": 1
+      },
+      {
+        "text": "Support",
+        "count": 0
+      },
+      {
+        "text": "Testing",
+        "count": 2
+      },
+      {
+        "text": "Tooling",
+        "count": 0
+      },
+      {
+        "text": "Training",
+        "count": 1
+      }
+    ],
+    "leaderboard": [
+      {
+        "name": "Ann",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Bob",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Cy",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Di",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Ed",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Flo",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe0",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe1",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe2",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe3",
+        "generated": false,
+        "score": 0
+      }
+    ],
+    "verdicts": [
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "accepted",
+      "rejected",
+      "accepted",
+      "accepted",
+      "accepted",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected"
+    ]
+  },
+  "manyoptions-colours": {
+    "exported": {
+      "type": "manyoptions",
+      "title": "Which topics would you like us to cover?",
+      "options": [
+        "Planning",
+        "Design",
+        "Testing",
+        "Security",
+        "Hiring",
+        "Culture",
+        "Budget",
+        "Roadmap",
+        "Support",
+        "Tooling",
+        "Metrics",
+        "Training"
+      ],
+      "correct": null,
+      "multiple": false,
+      "others": true,
+      "voteColors": [
+        {
+          "min": 0,
+          "color": "#AA0000"
+        },
+        {
+          "min": 3,
+          "color": "#00BB00"
+        }
+      ],
+      "revealMode": "live"
+    },
+    "roomQuestion": {
+      "type": "manyoptions",
+      "title": "Which topics would you like us to cover?",
+      "multiple": false,
+      "others": true,
+      "voteColors": [
+        {
+          "min": 0,
+          "color": "#aa0000"
+        },
+        {
+          "min": 3,
+          "color": "#00bb00"
+        }
+      ],
+      "revealMode": "live",
+      "options": [
+        "Planning",
+        "Design",
+        "Testing",
+        "Security",
+        "Hiring",
+        "Culture",
+        "Budget",
+        "Roadmap",
+        "Support",
+        "Tooling",
+        "Metrics",
+        "Training"
+      ],
+      "correct": null
+    },
+    "accepted": [
+      0,
+      0,
+      12,
+      7,
+      4,
+      3
+    ],
+    "responses": 6,
+    "results": [
+      {
+        "text": "Budget",
+        "count": 0
+      },
+      {
+        "text": "Culture",
+        "count": 0
+      },
+      {
+        "text": "Design",
+        "count": 0
+      },
+      {
+        "text": "Hiring",
+        "count": 1
+      },
+      {
+        "text": "Metrics",
+        "count": 0
+      },
+      {
+        "text": "Others",
+        "count": 1
+      },
+      {
+        "text": "Planning",
+        "count": 2
+      },
+      {
+        "text": "Roadmap",
+        "count": 1
+      },
+      {
+        "text": "Security",
+        "count": 1
+      },
+      {
+        "text": "Support",
+        "count": 0
+      },
+      {
+        "text": "Testing",
+        "count": 0
+      },
+      {
+        "text": "Tooling",
+        "count": 0
+      },
+      {
+        "text": "Training",
+        "count": 0
+      }
+    ],
+    "leaderboard": [
+      {
+        "name": "Ann",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Bob",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Cy",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Di",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Ed",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Flo",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe0",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe1",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe2",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe3",
+        "generated": false,
+        "score": 0
+      }
+    ],
+    "verdicts": [
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "accepted",
+      "accepted",
+      "accepted",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected"
+    ]
+  },
+  "cloud-three": {
+    "exported": {
+      "type": "cloud",
+      "title": "How are you feeling in one word?",
+      "options": [],
+      "correct": null,
+      "maxSubmissions": 3,
+      "revealMode": "live"
+    },
+    "roomQuestion": {
+      "type": "cloud",
+      "title": "How are you feeling in one word?",
+      "maxSubmissions": 3,
+      "revealMode": "live",
+      "options": [],
+      "correct": null
+    },
+    "accepted": [
+      "Teamwork",
+      "Teamwork",
+      "Pace",
+      "Learning",
+      "Ideas",
+      "Focus"
+    ],
+    "responses": 10,
+    "results": [
+      {
+        "text": "extra 0",
+        "count": 2
+      },
+      {
+        "text": "extra 1",
+        "count": 2
+      },
+      {
+        "text": "focus",
+        "count": 1
+      },
+      {
+        "text": "ideas",
+        "count": 1
+      },
+      {
+        "text": "learning",
+        "count": 1
+      },
+      {
+        "text": "pace",
+        "count": 1
+      },
+      {
+        "text": "teamwork",
+        "count": 2
+      }
+    ],
+    "leaderboard": [
+      {
+        "name": "Ann",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Bob",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Cy",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Di",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Ed",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Flo",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe0",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe1",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe2",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe3",
+        "generated": false,
+        "score": 0
+      }
+    ],
+    "verdicts": [
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "accepted",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected"
+    ]
+  },
+  "text-onDone": {
+    "exported": {
+      "type": "text",
+      "title": "What is one thing we could do better?",
+      "options": [],
+      "correct": null,
+      "revealMode": "onDone"
+    },
+    "roomQuestion": {
+      "type": "text",
+      "title": "What is one thing we could do better?",
+      "revealMode": "onDone",
+      "options": [],
+      "correct": null
+    },
+    "accepted": [
+      "More time to explore ideas together.",
+      "More time to explore ideas together.",
+      "More hands-on practice would be useful.",
+      "Could we share the slides afterwards?",
+      "Great session, thank you for organising it.",
+      "Shorter meetings and more focused discussion."
+    ],
+    "responses": 6,
+    "results": [
+      {
+        "text": "Could we share the slides afterwards?",
+        "count": 1
+      },
+      {
+        "text": "Great session, thank you for organising it.",
+        "count": 1
+      },
+      {
+        "text": "More hands-on practice would be useful.",
+        "count": 1
+      },
+      {
+        "text": "More time to explore ideas together.",
+        "count": 2
+      },
+      {
+        "text": "Shorter meetings and more focused discussion.",
+        "count": 1
+      }
+    ],
+    "leaderboard": [
+      {
+        "name": "Ann",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Bob",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Cy",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Di",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Ed",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Flo",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe0",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe1",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe2",
+        "generated": false,
+        "score": 0
+      },
+      {
+        "name": "Probe3",
+        "generated": false,
+        "score": 0
+      }
+    ],
+    "verdicts": [
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "accepted",
+      "accepted",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected",
+      "rejected"
+    ]
+  }
+}

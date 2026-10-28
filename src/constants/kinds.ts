@@ -1,114 +1,39 @@
-import {
-  BarChart3,
-  Cloud,
-  Drama,
-  FileText,
-  Grid2x2,
-  LayoutGrid,
-  ListOrdered,
-  MessageCircle,
-  MessageCircleQuestion,
-  Percent,
-  SlidersHorizontal,
-  ToggleLeft,
-  Trophy,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
-import { type Kind } from "../model";
+import { type LucideIcon } from "lucide-react";
+import { definitionOf, kinds, type Kind } from "../questions";
+import { metaOf } from "../questions/ui/metaRegistry";
 
-export const icons: Record<Kind, LucideIcon> = {
-  slide: FileText,
-  cloud: Cloud,
-  poll: BarChart3,
-  quiz: Trophy,
-  truefalse: ToggleLeft,
-  twotruths: Drama,
-  ranking: ListOrdered,
-  slider: SlidersHorizontal,
-  qna: MessageCircleQuestion,
-  points100: Percent,
-  grid2x2: Grid2x2,
-  peerpraise: Users,
-  manyoptions: LayoutGrid,
-  text: MessageCircle,
-};
+export const icons = Object.fromEntries(
+  kinds.map((kind) => [kind, metaOf(kind).icon]),
+) as Record<Kind, LucideIcon>;
 
-/** Question types whose options are shown on the stage even while responses are hidden. */
-export const optionKinds: Kind[] = [
-  "poll",
-  "quiz",
-  "truefalse",
-  "twotruths",
-  "ranking",
-  "points100",
-  "manyoptions",
-];
+const definitions = kinds.map((kind) => definitionOf(kind));
 
-/** Kinds with a frame (axes / range) that can be shown while responses are hidden. */
-export const frameKinds: Kind[] = ["grid2x2", "slider"];
+export const kindHints = Object.fromEntries(
+  definitions.map((definition) => [definition.kind, definition.hint]),
+) as Record<Kind, string>;
 
 /** Questions without a right answer show responses live; questions with one are scored and ranked. */
 export const kindGroups: { title: string; hint: string; kinds: Kind[] }[] = [
   {
     title: "Without an answer",
     hint: "Gather opinions and ideas. Responses can show live or after reveal.",
-    kinds: [
-      "slide",
-      "cloud",
-      "poll",
-      "manyoptions",
-      "ranking",
-      "slider",
-      "qna",
-      "points100",
-      "grid2x2",
-      "peerpraise",
-      "text",
-    ],
+    kinds: definitions
+      .filter((definition) => !definition.traits.scored)
+      .map((definition) => definition.kind as Kind),
   },
   {
     title: "With an answer",
     hint: "Score players. Responses stay hidden and a top 10 ranking follows.",
-    kinds: ["quiz", "truefalse", "twotruths"],
+    kinds: definitions
+      .filter((definition) => definition.traits.scored)
+      .map((definition) => definition.kind as Kind),
   },
 ];
 
-/** Question types a player can write themselves (everything that collects a response). */
+/** Question types a player can write themselves. */
 export const crowdGroups = kindGroups.map((group) => ({
   ...group,
   kinds: group.kinds.filter(
-    (kind) => kind !== "slide" && kind !== "manyoptions",
+    (kind) => definitionOf(kind).traits.playerAuthorable,
   ),
 }));
-
-export const kindHints: Record<Kind, string> = {
-  slide: "Just a title and description, no input needed",
-  cloud: "One word, a whole room of perspectives",
-  poll: "Let everyone pick their favorite",
-  quiz: "A correct answer and a little competition",
-  truefalse: "A binary choice: true or false",
-  twotruths: "Two true statements and one lie. Spot the lie",
-  ranking: "Drag to sort items from most to least important",
-  slider: "Estimate a numeric value on a sliding scale",
-  qna: "Participants submit and upvote live questions",
-  points100: "Allocate 100 points across a set of options to show priorities",
-  grid2x2: "Rate items across a two-axis graph",
-  peerpraise: "Write something kind about another player",
-  manyoptions: "Pick from up to 30 short options shown as a grid of boxes",
-  text: "Give every thought a little room",
-};
-
-export const samples = [
-  { text: "excited", count: 12 },
-  { text: "curious", count: 9 },
-  { text: "inspired", count: 8 },
-  { text: "optimistic", count: 7 },
-  { text: "energized", count: 6 },
-  { text: "ready", count: 5 },
-  { text: "focused", count: 4 },
-  { text: "grateful", count: 3 },
-  { text: "creative", count: 3 },
-  { text: "hopeful", count: 2 },
-  { text: "connected", count: 2 },
-];

@@ -1,9 +1,24 @@
-import { GridAxisLabel } from "../../../results/GridAxisLabel";
-import { useParticipant } from "../../ParticipantContext";
+import { GridAxisLabel } from "../../../features/results/GridAxisLabel";
+import { useParticipant } from "../../../features/participant/ParticipantContext";
+import { type AnswerValue, type QuestionInput } from "../../ui/input";
 
-export function GridInput() {
-  const { question, gridPoint, setGridPoint, room } = useParticipant();
+const gridPoint = (touched: AnswerValue) =>
+  touched && typeof touched === "object" && !Array.isArray(touched)
+    ? touched
+    : null;
+
+const clamp = (value: number) =>
+  Math.max(-100, Math.min(100, Math.round(value)));
+
+function GridInput() {
+  const { question, currentAnswer, setAnswer, setAnswerQuestion, room } =
+    useParticipant();
   if (!room || !question) return null;
+  const point = gridPoint(currentAnswer);
+  const setGridPoint = (x: number, y: number) => {
+    setAnswer({ x: clamp(x), y: clamp(y) });
+    setAnswerQuestion(question.id);
+  };
   return (
     <div className="grid2x2-input">
       <button
@@ -23,21 +38,27 @@ export function GridInput() {
         <GridAxisLabel side="right" text={question.options[1]} max={18} />
         <span className="grid2x2-quadrant-h" />
         <span className="grid2x2-quadrant-v" />
-        {gridPoint && (
+        {point && (
           <span
             className="grid2x2-marker"
             style={{
-              left: `${((gridPoint.x + 100) / 200) * 100}%`,
-              top: `${((-gridPoint.y + 100) / 200) * 100}%`,
+              left: `${((point.x + 100) / 200) * 100}%`,
+              top: `${((-point.y + 100) / 200) * 100}%`,
             }}
           />
         )}
       </button>
       <small className="grid2x2-coords">
-        {gridPoint
-          ? `x: ${gridPoint.x} · y: ${gridPoint.y}`
+        {point
+          ? `x: ${point.x} · y: ${point.y}`
           : "Tap the grid to place your point."}
       </small>
     </div>
   );
 }
+
+export const input: QuestionInput = {
+  resolve: (_question, touched) => gridPoint(touched),
+  isReady: (_question, value) => !!value,
+  Input: GridInput,
+};

@@ -1,5 +1,6 @@
 import { kindGroups } from "../../../constants/kinds";
-import { labels, newQuestion, twoTruthsTitle, type Kind } from "../../../model";
+import { labels, newQuestion, type Kind } from "../../../model";
+import { definitionOf } from "../../../questions";
 import type { EditorSectionProps } from "../editorTypes";
 
 /** Switching type starts a fresh question of that kind but keeps id (and title). */
@@ -14,7 +15,7 @@ export function TypeSelect({ draft, setDraft }: EditorSectionProps) {
           setDraft({
             ...newQuestion(type),
             id: draft.id,
-            title: type === "twotruths" ? twoTruthsTitle : draft.title,
+            title: definitionOf(type).fixedTitle ?? draft.title,
           });
         }}
       >

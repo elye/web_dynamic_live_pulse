@@ -1,6 +1,9 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { request, useLive } from "../../live";
+import { request, useLive, type Answer } from "../../live";
 import { readStored, store } from "../../model";
+import { submissionLimit } from "../../questions";
+import { answerReady, type AnswerValue } from "../../questions/ui/input";
+import { inputOf } from "../../questions/ui/inputRegistry";
 import { type Authored } from "../crowd/authoring";
 
 type ParticipantCredentials = {
@@ -36,9 +39,7 @@ export function useParticipantController() {
     hintedNameless ? true : null,
   );
   const [busy, setBusy] = useState(false);
-  const [answer, setAnswer] = useState<
-    string | number | number[] | { x: number; y: number }
-  >("");
+  const [answer, setAnswer] = useState<AnswerValue>("");
   const [answerQuestion, setAnswerQuestion] = useState("");
   const [upvoted, setUpvoted] = useState<Set<string>>(new Set());
   const [upvotedQuestion, setUpvotedQuestion] = useState("");
@@ -52,52 +53,18 @@ export function useParticipantController() {
   const currentUpvoted =
     upvotedQuestion === question?.id ? upvoted : new Set<string>();
   const currentAnswer = answerQuestion === question?.id ? answer : "";
-  const rankingOrder =
-    question?.type === "ranking"
-      ? Array.isArray(currentAnswer)
-        ? currentAnswer
-        : question.options.map((_, index) => index)
-      : [];
-  const sliderValue =
-    question?.type === "slider"
-      ? typeof currentAnswer === "number"
-        ? currentAnswer
-        : Math.round(
-            ((question.sliderMin ?? 0) + (question.sliderMax ?? 10)) / 2,
-          )
-      : 0;
-  const pointsAllocation =
-    question?.type === "points100"
-      ? Array.isArray(currentAnswer) &&
-        currentAnswer.length === question.options.length
-        ? currentAnswer
-        : question.options.map(() => 0)
-      : [];
-  const pointsAllocated = pointsAllocation.reduce(
-    (sum, points) => sum + points,
-    0,
-  );
-  const gridPoint =
-    question?.type === "grid2x2"
-      ? currentAnswer &&
-        typeof currentAnswer === "object" &&
-        !Array.isArray(currentAnswer)
-        ? currentAnswer
-        : null
-      : null;
+  const input = question ? inputOf(question.type) : undefined;
+  const value =
+    question && input?.resolve
+      ? input.resolve(question, currentAnswer)
+      : currentAnswer;
+  const ready = !!question && !!input && answerReady(input, question, value);
   const submissionCount = question
     ? submitted.filter((id) => id === question.id).length
     : 0;
-  const maxSubmissions =
-    question?.type === "cloud" ? (question.maxSubmissions ?? 1) : 1;
+  const maxSubmissions = question ? submissionLimit(question) : 1;
   const hasSubmitted = submissionCount > 0;
   const isFullySubmitted = !!question && submissionCount >= maxSubmissions;
-  const isMultiple =
-    (question?.type === "poll" ||
-      question?.type === "quiz" ||
-      question?.type === "manyoptions") &&
-    question.multiple === true;
-  const selectedOptions = Array.isArray(currentAnswer) ? currentAnswer : [];
 
   function setParticipantCode(nextCode: string) {
     setCode(nextCode);
@@ -203,18 +170,6 @@ export function useParticipantController() {
     setBusy(true);
     setError("");
     try {
-      const value =
-        question.type === "ranking"
-          ? rankingOrder
-          : isMultiple
-            ? selectedOptions
-            : question.type === "slider"
-              ? sliderValue
-              : question.type === "points100"
-                ? pointsAllocation
-                : question.type === "grid2x2"
-                  ? gridPoint
-                  : currentAnswer;
       await request("room:vote", {
         ...live.credentials(),
         questionId: question.id,
@@ -222,20 +177,12 @@ export function useParticipantController() {
       });
       live.setAnswers((items) => ({
         ...items,
-        [question.id]:
-          question.type === "cloud"
-            ? [
-                ...(Array.isArray(items[question.id])
-                  ? (items[question.id] as string[])
-                  : items[question.id]
-                    ? [String(items[question.id])]
-                    : []),
-                String(value).trim(),
-              ]
-            : value,
+        [question.id]: input?.remember
+          ? input.remember(items[question.id], value)
+          : (value as Answer),
       }));
       live.setSubmitted((items) => [...items, question.id]);
-      if (question.type === "cloud") {
+      if (input?.clearsAfterSubmit) {
         setAnswer("");
         setAnswerQuestion(question.id);
       }
@@ -244,33 +191,6 @@ export function useParticipantController() {
     } finally {
       setBusy(false);
     }
-  }
-  function moveRankItem(from: number, to: number) {
-    if (!question) return;
-    const next = [...rankingOrder];
-    const [moved] = next.splice(from, 1);
-    next.splice(to, 0, moved);
-    setAnswer(next);
-    setAnswerQuestion(question.id);
-  }
-  function setPointsFor(index: number, points: number) {
-    if (!question) return;
-    // The other options keep their points, so this one can only use what is left of 100.
-    const remaining = 100 - (pointsAllocated - (pointsAllocation[index] ?? 0));
-    const capped = Math.max(0, Math.min(remaining, Math.round(points) || 0));
-    const next = pointsAllocation.map((value, position) =>
-      position === index ? capped : value,
-    );
-    setAnswer(next);
-    setAnswerQuestion(question.id);
-  }
-  function setGridPoint(x: number, y: number) {
-    if (!question) return;
-    setAnswer({
-      x: Math.max(-100, Math.min(100, Math.round(x))),
-      y: Math.max(-100, Math.min(100, Math.round(y))),
-    });
-    setAnswerQuestion(question.id);
   }
   async function sendAuthored(authored: Authored) {
     setBusy(true);
@@ -355,22 +275,14 @@ export function useParticipantController() {
     question,
     currentUpvoted,
     currentAnswer,
-    rankingOrder,
-    sliderValue,
-    pointsAllocation,
-    pointsAllocated,
-    gridPoint,
+    value,
+    ready,
     submissionCount,
     maxSubmissions,
     hasSubmitted,
     isFullySubmitted,
-    isMultiple,
-    selectedOptions,
     join,
     vote,
-    moveRankItem,
-    setPointsFor,
-    setGridPoint,
     sendAuthored,
     sendHeart,
     upvote,

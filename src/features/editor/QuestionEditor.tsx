@@ -2,13 +2,10 @@ import { Check } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { Modal } from "../../components/Modal";
 import type { Question } from "../../model";
+import { editorOf } from "../../questions/ui/editorRegistry";
 import { isDraftSavable } from "./editorTypes";
-import { GridAxisEditor } from "./sections/GridAxisEditor";
-import { ManyOptionsEditor } from "./sections/ManyOptionsEditor";
-import { OptionsEditor } from "./sections/OptionsEditor";
 import { RevealModeEditor } from "./sections/RevealModeEditor";
 import { ScoringOptions } from "./sections/ScoringOptions";
-import { SliderRangeEditor } from "./sections/SliderRangeEditor";
 import { TitleFields } from "./sections/TitleFields";
 import { TypeSelect } from "./sections/TypeSelect";
 
@@ -24,6 +21,11 @@ export function QuestionEditor({
 }) {
   const [draft, setDraft] = useState(question);
   const section = { draft, setDraft };
+  const {
+    Title = TitleFields,
+    settings = [],
+    fields = [],
+  } = editorOf(draft.type);
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -35,13 +37,15 @@ export function QuestionEditor({
     <Modal title="Edit question" onClose={onClose}>
       <form onSubmit={submit} className="editor-form">
         <TypeSelect {...section} />
-        <TitleFields {...section} />
-        <SliderRangeEditor {...section} />
+        <Title {...section} />
         <ScoringOptions {...section} />
+        {settings.map((Section, index) => (
+          <Section key={index} {...section} />
+        ))}
         <RevealModeEditor {...section} />
-        <GridAxisEditor {...section} />
-        <OptionsEditor {...section} />
-        <ManyOptionsEditor {...section} />
+        {fields.map((Section, index) => (
+          <Section key={index} {...section} />
+        ))}
         <div className="modal-actions">
           <button className="button secondary" type="button" onClick={onClose}>
             Cancel

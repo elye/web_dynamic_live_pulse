@@ -1,4 +1,5 @@
 import express from "express";
+import { holdsSeveralSubmissions } from "../src/questions/index.ts";
 import { createServer } from "node:http";
 import { networkInterfaces } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -127,7 +128,7 @@ export function createAppServer() {
             const votes = room.votes.get(question.id);
             if (!votes.has(memberToken)) return [];
             const answer = votes.get(memberToken);
-            return question.type === "cloud"
+            return holdsSeveralSubmissions(question)
               ? answer.map(() => question.id)
               : [question.id];
           }),

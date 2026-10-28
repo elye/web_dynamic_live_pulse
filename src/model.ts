@@ -1,135 +1,41 @@
-export type Kind =
-  | "slide"
-  | "cloud"
-  | "poll"
-  | "quiz"
-  | "truefalse"
-  | "twotruths"
-  | "ranking"
-  | "slider"
-  | "qna"
-  | "points100"
-  | "grid2x2"
-  | "peerpraise"
-  | "manyoptions"
-  | "text";
-export type RevealMode = "live" | "onDone";
+import {
+  createQuestion,
+  definitionOf,
+  kinds,
+  parseQuestion,
+  serializeQuestion,
+  type Kind,
+  type Question,
+  type RevealMode,
+} from "./questions/index.ts";
+
+export {
+  canCompete,
+  defaultRevealMode,
+  defaultVoteColors,
+  hasRevealMode,
+  isVoteColorsValid,
+  manyOptionLabels,
+  manyOptionLength,
+  manyOptionsGrid,
+  manyOptionsMax,
+  manyOptionsMaxColumns,
+  manyOptionsMaxRows,
+  othersLabel,
+  twoTruthsTitle,
+  voteColor,
+  voteColorsMax,
+} from "./questions/index.ts";
+export type {
+  Kind,
+  PollDisplay,
+  Question,
+  RevealMode,
+  VoteColor,
+} from "./questions/index.ts";
+
 export const revealModes: RevealMode[] = ["live", "onDone"];
-/** Slides collect nothing and Q&A is always live, so neither has a reveal mode. */
-export function hasRevealMode(type: Kind) {
-  return type !== "slide" && type !== "qna";
-}
-/** Only questions with a correct answer can be scored and ranked. */
-export function canCompete(type: Kind) {
-  return type === "quiz" || type === "truefalse" || type === "twotruths";
-}
-/** Two truths and a lie always asks the same question. */
-export const twoTruthsTitle = "Pick the one that is not true.";
-/** Scored questions and peer praises hide responses until the host reveals them. */
-export function defaultRevealMode(type: Kind): RevealMode {
-  return canCompete(type) || type === "peerpraise" ? "onDone" : "live";
-}
-export type PollDisplay = "list" | "pie" | "stacked" | "bar";
 
-/** Many options: at most this many options, each at most this many characters. */
-export const manyOptionsMax = 30;
-export const manyOptionLength = 30;
-export const manyOptionsMaxColumns = 6;
-export const manyOptionsMaxRows = 5;
-export const othersLabel = "Others";
-/** Many options: at most this many vote-count colour steps. */
-export const voteColorsMax = 8;
-export type VoteColor = { min: number; color: string };
-/** Red with no votes, green from the first vote. */
-export const defaultVoteColors: VoteColor[] = [
-  { min: 0, color: "#e5484d" },
-  { min: 1, color: "#30a46c" },
-];
-
-/** Every box of a many options question: the options, then "Others" when enabled. */
-export function manyOptionLabels(question: {
-  options: string[];
-  others?: boolean;
-}) {
-  return question.others
-    ? [...question.options, othersLabel]
-    : [...question.options];
-}
-
-/**
- * Box layout for `count` options: at most 6 columns by 5 rows, with columns
- * equal to rows or one more. A short last row is centred by the renderer.
- */
-export function manyOptionsGrid(count: number) {
-  const total = Math.max(1, count);
-  for (let rows = 1; rows <= manyOptionsMaxRows; rows++) {
-    if (rows * rows >= total) return { columns: rows, rows };
-    if (rows * (rows + 1) >= total) return { columns: rows + 1, rows };
-  }
-  return { columns: manyOptionsMaxColumns, rows: manyOptionsMaxRows };
-}
-
-/** The colour of the step with the highest `min` that the vote count reaches. */
-export function voteColor(colors: VoteColor[] | undefined, count: number) {
-  const steps = colors?.length ? colors : defaultVoteColors;
-  let match = steps[0];
-  for (const step of steps) if (count >= step.min && step.min >= match.min) match = step;
-  return match.color;
-}
-
-/** Steps must start at 0 votes, rise strictly, and use #rrggbb colours. */
-export function isVoteColorsValid(colors: unknown): colors is VoteColor[] {
-  return (
-    Array.isArray(colors) &&
-    colors.length >= 1 &&
-    colors.length <= voteColorsMax &&
-    colors.every(
-      (step, index) =>
-        !!step &&
-        typeof step === "object" &&
-        Number.isInteger(step.min) &&
-        step.min >= 0 &&
-        step.min <= 100000 &&
-        typeof step.color === "string" &&
-        /^#[0-9a-fA-F]{6}$/.test(step.color) &&
-        (index === 0 ? step.min === 0 : step.min > colors[index - 1].min),
-    )
-  );
-}
-
-export type Question = {
-  id: string;
-  type: Kind;
-  title: string;
-  description?: string;
-  options: string[];
-  correct: number | null;
-  sliderMin?: number;
-  sliderMax?: number;
-  sliderStep?: number;
-  revealMode?: RevealMode;
-  competitive?: boolean;
-  /** Multiple choice polls, quizzes and many options: participants may pick more than one option. */
-  multiple?: boolean;
-  /** Many options: add an "Others" box after the options. */
-  others?: boolean;
-  /** Many options: box colour by vote count (default red at 0, green from 1). */
-  voteColors?: VoteColor[];
-  /** How poll responses are displayed on the results slide. */
-  pollDisplay?: PollDisplay;
-  /** Multi-answer quizzes: every correct option (zero-based). Points need exactly these. */
-  corrects?: number[];
-  /** Show the top-10 ranking after this question's results (answered questions only). */
-  showRanking?: boolean;
-  /** Word clouds: maximum contributions one participant can submit. */
-  maxSubmissions?: number;
-  /** Name of the player who wrote this question (player-made sessions only). */
-  author?: string;
-  /** The participant-specific name assigned for a peer praise question. */
-  assignedTo?: string;
-  responses?: number;
-  results?: { text: string; count: number; id?: string; target?: string }[];
-};
 export type Session = {
   id: string;
   title: string;
@@ -186,22 +92,9 @@ export type Room = {
     generated: boolean;
   } | null;
 };
-export const labels: Record<Kind, string> = {
-  slide: "Title & description",
-  cloud: "Word cloud",
-  poll: "Multiple choice",
-  quiz: "Quiz",
-  truefalse: "True or false",
-  twotruths: "Two truths and a lie",
-  ranking: "Ranking",
-  slider: "Slider",
-  qna: "Q&A",
-  points100: "100 Points",
-  grid2x2: "2x2 Grid",
-  peerpraise: "Peer praise",
-  manyoptions: "Many options",
-  text: "Open response",
-};
+export const labels = Object.fromEntries(
+  kinds.map((kind) => [kind, definitionOf(kind).label]),
+) as Record<Kind, string>;
 
 export function createId() {
   return Array.from(crypto.getRandomValues(new Uint8Array(16)), (value) =>
@@ -210,96 +103,7 @@ export function createId() {
 }
 
 export function newQuestion(type: Kind): Question {
-  return {
-    id: createId(),
-    type,
-    title: {
-      cloud: "How are you feeling in one word?",
-      poll: "What should we focus on next?",
-      quiz: "Which planet has the most moons?",
-      truefalse: "Octopuses have three hearts.",
-      twotruths: twoTruthsTitle,
-      ranking: "Rank these from most to least important",
-      slider: "How many hours a day do you spend in meetings?",
-      qna: "Ask us anything",
-      points100: "Allocate 100 points across what matters most to you",
-      grid2x2: "Place your priority on the grid",
-      peerpraise: "Write a good word about this person.",
-      manyoptions: "Which topics would you like us to cover?",
-      text: "What is one thing we could do better?",
-      slide: "A quick word before we dive in",
-    }[type],
-    ...(type === "slide"
-      ? {
-          description:
-            "Take a breath, get comfortable, and get ready to share.",
-        }
-      : {}),
-    ...(type === "slider"
-      ? { sliderMin: 0, sliderMax: 10, sliderStep: 1 }
-      : {}),
-    ...(hasRevealMode(type) ? { revealMode: defaultRevealMode(type) } : {}),
-    ...(canCompete(type) ? { competitive: true, showRanking: true } : {}),
-    ...(type === "poll" || type === "quiz" || type === "manyoptions"
-      ? { multiple: false }
-      : {}),
-    ...(type === "manyoptions" ? { others: true } : {}),
-    ...(type === "poll" ? { pollDisplay: "list" as const } : {}),
-    ...(type === "cloud" ? { maxSubmissions: 1 } : {}),
-    options:
-      type === "quiz"
-        ? ["Jupiter", "Saturn", "Neptune", "Mars"]
-        : type === "poll"
-          ? [
-              "Fresh ideas",
-              "Team connection",
-              "Learning something new",
-              "Making things happen",
-            ]
-          : type === "truefalse"
-            ? ["True", "False"]
-            : type === "twotruths"
-              ? [
-                  "I have climbed a mountain.",
-                  "I speak three languages.",
-                  "I have met a famous person.",
-                ]
-              : type === "ranking"
-                ? ["Speed", "Quality", "Cost", "Communication"]
-                : type === "points100"
-                  ? ["Design", "Performance", "Reliability", "Cost"]
-                  : type === "grid2x2"
-                    ? [
-                        "Low urgency",
-                        "High urgency",
-                        "Low impact",
-                        "High impact",
-                      ]
-                    : type === "manyoptions"
-                      ? [
-                          "Planning",
-                          "Design",
-                          "Testing",
-                          "Security",
-                          "Hiring",
-                          "Culture",
-                          "Budget",
-                          "Roadmap",
-                          "Support",
-                          "Tooling",
-                          "Metrics",
-                          "Training",
-                        ]
-                      : [],
-    correct:
-      type === "quiz"
-        ? 1
-        : type === "truefalse"
-          ? 0
-          : type === "twotruths"
-            ? 2
-            : null,
-  };
+  return createQuestion(type, createId);
 }
 
 export function newSession(template = "checkin"): Session {
@@ -366,57 +170,7 @@ export function serializeSession(session: Session): string {
       theme: session.theme,
       showQr: session.showQr !== false,
       nameless: session.nameless === true,
-      questions: session.questions.map(
-        ({
-          type,
-          title,
-          options,
-          correct,
-          description,
-          sliderMin,
-          sliderMax,
-          sliderStep,
-          revealMode,
-          competitive,
-          showRanking,
-          multiple,
-          others,
-          voteColors,
-          pollDisplay,
-          corrects,
-          maxSubmissions,
-        }) => ({
-          type,
-          title,
-          options,
-          correct,
-          ...(type === "poll" || type === "quiz" || type === "manyoptions"
-            ? { multiple: multiple === true }
-            : {}),
-          ...(type === "manyoptions"
-            ? {
-                others: others === true,
-                ...(voteColors ? { voteColors } : {}),
-              }
-            : {}),
-          ...(type === "poll" ? { pollDisplay: pollDisplay ?? "list" } : {}),
-          ...(type === "quiz" && multiple === true
-            ? { corrects: corrects?.length ? corrects : [correct ?? 0] }
-            : {}),
-          ...(type === "cloud" ? { maxSubmissions: maxSubmissions ?? 1 } : {}),
-          ...(canCompete(type)
-            ? {
-                competitive: competitive !== false,
-                showRanking: showRanking !== false,
-              }
-            : {}),
-          ...(type === "slide" ? { description } : {}),
-          ...(type === "slider" ? { sliderMin, sliderMax, sliderStep } : {}),
-          ...(hasRevealMode(type)
-            ? { revealMode: revealMode ?? defaultRevealMode(type) }
-            : {}),
-        }),
-      ),
+      questions: session.questions.map(serializeQuestion),
     },
     null,
     2,
@@ -462,283 +216,14 @@ export function importSession(json: string): Session {
     throw new Error("A session must contain 1 to 30 questions.");
   const questions: Question[] = data.questions.map(
     (item: unknown, index: number) => {
-      const prefix = `Question ${index + 1}: `;
-      if (!item || typeof item !== "object" || Array.isArray(item))
-        throw new Error(prefix + "expected a question object.");
-      const question = item as Record<string, unknown>;
-      if (
-        typeof question.type !== "string" ||
-        !(
-          [
-            "slide",
-            "cloud",
-            "poll",
-            "quiz",
-            "truefalse",
-            "twotruths",
-            "ranking",
-            "slider",
-            "qna",
-            "points100",
-            "grid2x2",
-            "peerpraise",
-            "manyoptions",
-            "text",
-          ] as string[]
-        ).includes(question.type)
-      )
-        throw new Error(prefix + "unsupported question type.");
-      if (
-        typeof question.title !== "string" ||
-        !question.title.trim() ||
-        question.title.length > 200
-      )
-        throw new Error(prefix + "title must contain 1 to 200 characters.");
-      if (
-        question.type === "slide" &&
-        (typeof question.description !== "string" ||
-          !question.description.trim() ||
-          question.description.length > 280)
-      )
-        throw new Error(prefix + "add a description with 1 to 280 characters.");
-      const options = question.options;
-      if (
-        !Array.isArray(options) ||
-        options.some((option) => typeof option !== "string")
-      )
-        throw new Error(prefix + "options must be an array of strings.");
-      if (question.type === "truefalse") {
-        if (
-          options.length !== 2 ||
-          options.some(
-            (option: string) => !option.trim() || option.length > 100,
-          )
-        )
-          throw new Error(prefix + "add exactly 2 nonempty options.");
-      } else if (question.type === "twotruths") {
-        if (
-          options.length !== 3 ||
-          options.some(
-            (option: string) => !option.trim() || option.length > 200,
-          )
-        )
-          throw new Error(
-            prefix +
-              "add exactly 3 nonempty statements, up to 200 characters each.",
-          );
-      } else if (question.type === "grid2x2") {
-        if (
-          options.length !== 4 ||
-          options.some((option: string) => !option.trim() || option.length > 40)
-        )
-          throw new Error(
-            prefix +
-              "add exactly 4 axis labels (x-low, x-high, y-low, y-high), up to 40 characters each.",
-          );
-      } else if (question.type === "manyoptions") {
-        if (
-          options.length < 2 ||
-          options.length > manyOptionsMax ||
-          options.some(
-            (option: string) => !option.trim() || option.length > manyOptionLength,
-          )
-        )
-          throw new Error(
-            prefix +
-              `add 2 to ${manyOptionsMax} nonempty options, up to ${manyOptionLength} characters each.`,
-          );
-      } else if (
-        ["poll", "quiz", "ranking", "points100"].includes(question.type)
-      ) {
-        if (
-          options.length < 2 ||
-          options.length > 6 ||
-          options.some(
-            (option: string) => !option.trim() || option.length > 100,
-          )
-        )
-          throw new Error(
-            prefix + "add 2 to 6 nonempty options, up to 100 characters each.",
-          );
-      } else if (options.length)
-        throw new Error(prefix + "this question type must have empty options.");
-      const multiQuiz = question.type === "quiz" && question.multiple === true;
-      if (
-        multiQuiz &&
-        (!Array.isArray(question.corrects) ||
-          !question.corrects.length ||
-          question.corrects.some(
-            (index: unknown) =>
-              typeof index !== "number" ||
-              !Number.isInteger(index) ||
-              index < 0 ||
-              index >= options.length,
-          ))
-      )
+      try {
+        return parseQuestion(item, { newId: createId });
+      } catch (error) {
+        const message = (error as Error).message;
         throw new Error(
-          prefix +
-            "corrects must list one or more valid zero-based option indexes when multiple is true.",
+          `Question ${index + 1}: ${message.charAt(0).toLowerCase()}${message.slice(1)}`,
         );
-      if (
-        canCompete(question.type as Kind) &&
-        !multiQuiz &&
-        (typeof question.correct !== "number" ||
-          !Number.isInteger(question.correct) ||
-          question.correct < 0 ||
-          question.correct >= options.length)
-      )
-        throw new Error(
-          prefix + "correct must be a valid zero-based option index.",
-        );
-      if (question.type === "slider") {
-        const { sliderMin, sliderMax, sliderStep } = question;
-        if (
-          typeof sliderMin !== "number" ||
-          typeof sliderMax !== "number" ||
-          typeof sliderStep !== "number" ||
-          !Number.isFinite(sliderMin) ||
-          !Number.isFinite(sliderMax) ||
-          !Number.isFinite(sliderStep) ||
-          sliderStep <= 0 ||
-          sliderMax <= sliderMin ||
-          (sliderMax - sliderMin) / sliderStep > 1000
-        )
-          throw new Error(
-            prefix + "add a valid slider minimum, maximum, and step.",
-          );
       }
-      if (
-        hasRevealMode(question.type as Kind) &&
-        question.revealMode !== undefined &&
-        !(revealModes as unknown[]).includes(question.revealMode)
-      )
-        throw new Error(prefix + 'revealMode must be "live" or "onDone".');
-      if (
-        question.competitive !== undefined &&
-        (typeof question.competitive !== "boolean" ||
-          (question.competitive && !canCompete(question.type as Kind)))
-      )
-        throw new Error(
-          prefix +
-            "only quiz, truefalse and twotruths questions can set competitive to true.",
-        );
-      if (
-        question.showRanking !== undefined &&
-        typeof question.showRanking !== "boolean"
-      )
-        throw new Error(prefix + "showRanking must be true or false.");
-      if (
-        question.multiple !== undefined &&
-        (typeof question.multiple !== "boolean" ||
-          (question.multiple &&
-            question.type !== "poll" &&
-            question.type !== "quiz" &&
-            question.type !== "manyoptions"))
-      )
-        throw new Error(
-          prefix +
-            "only poll, quiz and manyoptions questions can set multiple to true.",
-        );
-      if (
-        question.others !== undefined &&
-        (question.type !== "manyoptions" || typeof question.others !== "boolean")
-      )
-        throw new Error(
-          prefix + "only manyoptions questions can set others to true or false.",
-        );
-      if (
-        question.voteColors !== undefined &&
-        (question.type !== "manyoptions" || !isVoteColorsValid(question.voteColors))
-      )
-        throw new Error(
-          prefix +
-            "voteColors must list up to 8 steps with rising minimum votes starting at 0 and #rrggbb colours.",
-        );
-      if (
-        question.pollDisplay !== undefined &&
-        (question.type !== "poll" ||
-          !(["list", "pie", "stacked", "bar"] as unknown[]).includes(
-            question.pollDisplay,
-          ))
-      )
-        throw new Error(
-          prefix + "pollDisplay must be list, pie, stacked, or bar.",
-        );
-      if (
-        question.maxSubmissions !== undefined &&
-        (question.type !== "cloud" ||
-          typeof question.maxSubmissions !== "number" ||
-          !Number.isInteger(question.maxSubmissions) ||
-          question.maxSubmissions < 1 ||
-          question.maxSubmissions > 5)
-      )
-        throw new Error(
-          prefix + "word clouds can allow 1 to 5 submissions per participant.",
-        );
-      const pollDisplay = question.pollDisplay as PollDisplay | undefined;
-      return {
-        id: createId(),
-        type: question.type as Kind,
-        ...(question.type === "poll" ||
-        question.type === "quiz" ||
-        question.type === "manyoptions"
-          ? { multiple: question.multiple === true }
-          : {}),
-        ...(question.type === "manyoptions"
-          ? {
-              others: question.others === true,
-              ...(question.voteColors
-                ? { voteColors: question.voteColors as VoteColor[] }
-                : {}),
-            }
-          : {}),
-        ...(question.type === "poll"
-          ? { pollDisplay: pollDisplay ?? "list" }
-          : {}),
-        ...(multiQuiz
-          ? {
-              corrects: [...new Set(question.corrects as number[])].sort(
-                (first, second) => first - second,
-              ),
-            }
-          : {}),
-        title:
-          question.type === "twotruths"
-            ? twoTruthsTitle
-            : question.title.trim(),
-        ...(canCompete(question.type as Kind)
-          ? {
-              competitive: question.competitive !== false,
-              showRanking: question.showRanking !== false,
-            }
-          : {}),
-        ...(question.type === "slide"
-          ? { description: (question.description as string).trim() }
-          : {}),
-        ...(question.type === "cloud"
-          ? { maxSubmissions: (question.maxSubmissions as number) ?? 1 }
-          : {}),
-        ...(question.type === "slider"
-          ? {
-              sliderMin: question.sliderMin as number,
-              sliderMax: question.sliderMax as number,
-              sliderStep: question.sliderStep as number,
-            }
-          : {}),
-        ...(hasRevealMode(question.type as Kind)
-          ? {
-              revealMode:
-                (question.revealMode as RevealMode) ??
-                defaultRevealMode(question.type as Kind),
-            }
-          : {}),
-        options: options.map((option: string) => option.trim()),
-        correct: multiQuiz
-          ? Math.min(...(question.corrects as number[]))
-          : canCompete(question.type as Kind)
-            ? (question.correct as number)
-            : null,
-      };
     },
   );
   return {

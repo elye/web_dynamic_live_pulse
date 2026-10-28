@@ -1,8 +1,14 @@
-import { MessageCircle, MessageCircleQuestion, Shuffle, Users } from "lucide-react";
+import {
+  MessageCircle,
+  MessageCircleQuestion,
+  Shuffle,
+  Users,
+} from "lucide-react";
 import { useState } from "react";
 import { IconButton } from "../../components/IconButton";
 import { Modal } from "../../components/Modal";
 import type { Question } from "../../model";
+import { traitsOf } from "../../questions";
 import { ResultsVisual } from "./ResultsVisual";
 
 const openResponses = [
@@ -46,7 +52,7 @@ export function ResponseSimulator({
 }) {
   const [count, setCount] = useState(10);
   const [generation, setGeneration] = useState(0);
-  const isQna = question.type === "qna";
+  const isQna = traitsOf(question.type).upvotes;
   const results = Array.from({ length: count }, (_, index) => ({
     id: String(index + 1),
     text: (isQna ? questions : openResponses)[(index + generation) % 12],
@@ -89,7 +95,11 @@ export function ResponseSimulator({
           <ResultsVisual question={simulatedQuestion} />
           <div className="simulation-summary">
             <span>
-              {isQna ? <MessageCircleQuestion size={15} /> : <MessageCircle size={15} />}
+              {isQna ? (
+                <MessageCircleQuestion size={15} />
+              ) : (
+                <MessageCircle size={15} />
+              )}
               {count} {isQna ? "questions" : "responses"}
             </span>
             <span>

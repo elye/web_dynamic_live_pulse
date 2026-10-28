@@ -1,5 +1,6 @@
 import { ArrowRight, Eye, EyeOff, Pause, Play, Trophy } from "lucide-react";
 import { canCompete, hasRevealMode } from "../../../model";
+import { traitsOf } from "../../../questions";
 import { useHost } from "../HostContext";
 
 export function LiveControls() {
@@ -14,9 +15,10 @@ export function LiveControls() {
     move,
   } = useHost();
   if (!room) return null;
+  const traits = traitsOf(question.type);
   return (
     <div className="live-controls">
-      {question.type !== "slide" && (
+      {traits.collectsAnswers && (
         <button
           className="button secondary"
           onClick={() => void control("toggle")}
@@ -26,8 +28,8 @@ export function LiveControls() {
           {room.accepting ? "Pause responses" : "Reopen responses"}
         </button>
       )}
-      {question.type !== "slide" &&
-        question.type !== "qna" &&
+      {traits.collectsAnswers &&
+        !traits.resultsAlwaysVisible &&
         (question.revealMode === "live" && !room.revealed ? (
           <button
             className="button secondary"

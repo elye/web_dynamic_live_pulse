@@ -1,9 +1,11 @@
 import { canCompete, labels } from "../../../model";
+import { inputOf } from "../../../questions/ui/inputRegistry";
 import { useParticipant } from "../ParticipantContext";
 
 export function QuestionHeader() {
   const { live, room, question } = useParticipant();
   if (!room || !question) return null;
+  const { Header } = inputOf(question.type);
   return (
     <>
       <div className="participant-room">
@@ -31,11 +33,7 @@ export function QuestionHeader() {
         </span>
       )}
       <h1>{question.title}</h1>
-      {question.type === "peerpraise" && question.assignedTo && (
-        <div className="peerpraise-target">
-          <strong>{question.assignedTo}</strong>
-        </div>
-      )}
+      {Header && <Header />}
       {question.author &&
         question.author === live.credentials()?.name &&
         canCompete(question.type) && (

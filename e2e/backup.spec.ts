@@ -92,6 +92,8 @@ test("session JSON backup restores a deleted draft from a file or pasted JSON", 
         multiple,
         competitive,
         showRanking,
+        pollDisplay,
+        maxSubmissions,
       }: {
         type: string;
         title: string;
@@ -101,6 +103,8 @@ test("session JSON backup restores a deleted draft from a file or pasted JSON", 
         multiple?: boolean;
         competitive?: boolean;
         showRanking?: boolean;
+        pollDisplay?: string;
+        maxSubmissions?: number;
       }) => ({
         type,
         title,
@@ -110,6 +114,8 @@ test("session JSON backup restores a deleted draft from a file or pasted JSON", 
         ...(multiple !== undefined ? { multiple } : {}),
         ...(competitive !== undefined ? { competitive } : {}),
         ...(showRanking !== undefined ? { showRanking } : {}),
+        ...(pollDisplay !== undefined ? { pollDisplay } : {}),
+        ...(maxSubmissions !== undefined ? { maxSubmissions } : {}),
       }),
     ),
   ).toEqual(backup.questions);

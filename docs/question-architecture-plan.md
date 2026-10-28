@@ -190,4 +190,4 @@ What was built, and where it differs from the plan above.
 - **Safety nets:** `server/questions.golden.test.mjs` (old behaviour recorded before the migration) and `server/questions.contract.test.mjs` (per-kind contract plus the boundary check, now with no exceptions).
 - **Acceptance test passed:** a throwaway 15th type (a copy of `text`) needed only its own folder plus two lines in each of six registries. Leaving out a UI seam gave exactly one compile error per missing seam. Its contract tests ran automatically. The type was then removed.
 - **Not done:** the `npm run new:question` scaffold and `_template/`; `Question` is still a wide record rather than a discriminated union; per-type CSS stays in `styles/`.
-- **Known e2e failure:** `e2e/backup.spec.ts` compares a trimmed copy of the restored questions with the full export, which also holds `pollDisplay` and `maxSubmissions`. The export format is unchanged from before the migration, so this is a spec problem, not a regression. The other 21 specs pass.
+- **E2E:** all 22 specs pass. `e2e/backup.spec.ts` was updated to also compare `pollDisplay` and `maxSubmissions`, which the export has always carried.

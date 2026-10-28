@@ -18,7 +18,7 @@ Open http://localhost:5173. The command starts Vite and the live server together
 1. The app opens on **My sessions**. Open the editable four-question check-in to enter the studio, or create a session from the template library.
 2. Edit questions, answer choices, and correct quiz answers. Duplicate, reorder, or delete questions and select a slide mood. Reorder by dragging a question's card in the question rail to a new position (drag handle on the right), or use the up/down arrows in the question details panel. Reordering is disabled while a session is live.
 3. Select **Present live** to open the welcome screen. The QR code, room code, and selectable participant URL are always visible beside the live participant roster. Use the copy icon to copy the URL, or select the field to copy it manually.
-  Select **Start questions** when everyone is ready. Participants wait in the welcome lobby until then.
+   Select **Start questions** when everyone is ready. Participants wait in the welcome lobby until then.
    Before presenting, switch **Ask for names** to **Nameless session** in the studio toolbar if you want Pulse to assign each participant a unique name-like label. The welcome lobby then shows only the number of people who have joined.
 4. Participants visit `/join`, enter the room code, and submit one response per question. Named sessions ask for a display name; nameless sessions assign a unique generated name automatically. The participant console shows `✨` beside an assigned name, and the player can click it to replace the generated name once at any time while the session is active.
 5. Pause or reopen voting, reveal results, and advance questions. Each correct quiz or true-or-false answer earns up to 1,000 points: the faster the answer, the more points. Multi-answer quizzes award partial credit (see below).
@@ -288,6 +288,79 @@ Conventions:
 - Files that export components export only components. Keep constants and helpers in separate `.ts` files so fast refresh keeps working.
 - Stylesheets are plain global CSS. Class names are unique across files, so a rule lives in the file of the feature that owns the component. `styles/index.css` imports them in a fixed order. Later files win ties with equal specificity, and `motion.css` must stay last.
 - E2E specs import `test` and `expect` from `e2e/helpers/test.ts`. That `test` installs the cloud canvas probe on every page. Host specs call `gotoStudio(page)` from `e2e/helpers/studio.ts`, because the app opens on **My sessions** rather than inside a session.
+
+## Question Architecture
+
+> **Status: planned.** This is the target design for question types. The migration steps are in [docs/question-architecture-plan.md](docs/question-architecture-plan.md). Until each phase lands, the code still uses the older `type === "..."` branches in `model.ts` and `server/rooms.mjs`.
+
+Rule: **a question type is one folder.** Adding a type never lengthens an existing function, switch, or list. Everything the type needs lives beside it, and a missing piece fails the build or a test.
+
+```text
+src/questions/
+  platform/        Shared by all types (never names a specific kind)
+  registry.ts      Lists every definition; Kind is derived from it
+  registry.ui.tsx  Lists every UI; typed so each Kind must have one
+  types/<kind>/
+    definition.ts  Logic shared by browser and server (no React, no DOM)
+    ui.tsx         Browser only: icon, thumbnail, input, results, editor sections
+  _template/       Copy this to start a new type
+```
+
+```mermaid
+flowchart LR
+  subgraph Platform["Platform layer (shared by every type)"]
+    Rooms["Room lifecycle, participants, scoring, leaderboard"]
+    Session["Session envelope, import / export, limits"]
+    Shell["Host and participant shells, submit button"]
+  end
+  Registry["registry.ts / registry.ui.tsx"]
+  subgraph Types["types/&lt;kind&gt;/"]
+    Def["definition.ts (shared logic)"]
+    UI["ui.tsx (React)"]
+  end
+  Rooms --> Registry
+  Session --> Registry
+  Shell --> Registry
+  Registry --> Def
+  Registry --> UI
+```
+
+### What the platform owns
+
+Room and session lifecycle, participants and tokens, one answer per question, timing, leaderboard and podium, reactions, the export / import envelope, crowd (player-made) sessions, and the host and participant screens that frame a question. The platform reaches a type only through the registry.
+
+### What a type owns
+
+| Piece                                                                                     | File            | Replaces                                                                  |
+| ----------------------------------------------------------------------------------------- | --------------- | ------------------------------------------------------------------------- |
+| Label, hint, group, traits (reveal mode, scoring, authorable, options shown while hidden) | `definition.ts` | Hand-kept lists in `model.ts` and `kinds.ts`                              |
+| `create()` sample question                                                                | `definition.ts` | `newQuestion` ternaries                                                   |
+| `parse()` validate and normalise; `serialize()` export                                    | `definition.ts` | Import checks (written twice, client and server)                          |
+| `answer.parse()`, `describe()`, `simulate()`                                              | `definition.ts` | `submitVote`, `describeAnswer`, `simulation.mjs` branches                 |
+| `results.aggregate()`, `preview()`, optional `score()`                                    | `definition.ts` | `results()`, `scoreAnswer`, stage preview data                            |
+| Optional `server` hooks (start-up work, extra actions such as upvotes)                    | `definition.ts` | Inline checks in `rooms.mjs`                                              |
+| `prompt` fields and example for AI generation                                             | `definition.ts` | `aiPrompt.ts` text                                                        |
+| Icon, `Thumbnail`, `Input`, `Results`, editor sections                                    | `ui.tsx`        | Chains in `AnswerForm`, `ResultsVisual`, `QuestionRail`, `QuestionEditor` |
+
+Type-specific settings (such as `pollDisplay` or `sliderMin`) belong to that type's own interface, so other types do not carry them.
+
+### Shared code rules
+
+- `definition.ts` and `platform/` are plain erasable TypeScript with no React or DOM, so `server/*.mjs` imports them directly. This needs Node 22.18+ or 24.
+- `ui.tsx` follows the existing folder rules: it may import `components/`, `constants/`, `hooks/` and the registry.
+- Outside `src/questions/`, never compare a question's `type` to a literal such as `"poll"`. Ask the registry instead. A test enforces this.
+- Never rename stored fields. Saved sessions and `pulse-session` v1 exports must keep loading.
+
+### Add a question type
+
+1. Copy `src/questions/_template` to `src/questions/types/<kind>`.
+2. Fill in `definition.ts`. TypeScript flags every contract member you leave out.
+3. Fill in `ui.tsx`. The UI map requires an entry for every kind.
+4. Add one line each to `registry.ts` and `registry.ui.tsx`.
+5. Run `npm test`. The contract test runs automatically for the new type: sample question validates, export and import round-trip, simulated answers are accepted and aggregate, invalid answers are rejected.
+6. Add a Playwright spec only for behaviour unique to the type.
+
+No other file should change. If one has to, the platform is missing a hook; add the hook to `platform/` rather than a branch for your type.
 
 ## Checks
 

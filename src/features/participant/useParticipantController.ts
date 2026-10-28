@@ -18,9 +18,10 @@ export function useParticipantController() {
   const initialCode = searchParams.get("code") || "";
   const hintedNameless = searchParams.get("nameless") === "1";
   const [code, setCode] = useState(initialCode);
+  const [joinedCode, setJoinedCode] = useState(initialCode);
   const [name, setName] = useState("");
   const storedParticipant = readStored<ParticipantCredentials | null>(
-    `pulse:participant:${initialCode}`,
+    `pulse:participant:${joinedCode}`,
     null,
   );
   const [participantName, setParticipantName] = useState(
@@ -44,7 +45,7 @@ export function useParticipantController() {
   const [upvoted, setUpvoted] = useState<Set<string>>(new Set());
   const [upvotedQuestion, setUpvotedQuestion] = useState("");
   const [reactionTap, setReactionTap] = useState({ kind: "", count: 0 });
-  const live = useLive("audience", initialCode);
+  const live = useLive("audience", joinedCode);
   const { room, connected, error, setError, submitted, answers } = live;
   const detectedNameless = room?.nameless ?? nameless;
   const participantNameIsGenerated =
@@ -124,9 +125,16 @@ export function useParticipantController() {
       setParticipantName(assignedName);
       setParticipantNameGenerated(generated);
       setNameChangeUsed(nameChangeUsed);
-      window.location.assign(
+      live.setRoom(reply.state!);
+      live.setSubmitted(reply.submitted || []);
+      live.setAnswers(reply.answers || {});
+      setJoinedCode(code);
+      window.history.replaceState(
+        null,
+        "",
         `/join?code=${code}${reply.state?.nameless ? "&nameless=1" : ""}`,
       );
+      setBusy(false);
     } catch (failure) {
       setError((failure as Error).message);
       setBusy(false);

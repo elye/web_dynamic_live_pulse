@@ -1,5 +1,7 @@
 import {
   Expand,
+  Maximize,
+  Minimize,
   FlaskConical,
   Monitor,
   Moon,
@@ -18,6 +20,8 @@ export function CanvasToolbar() {
     setEditing,
     presenting,
     setPresenting,
+    fullscreen,
+    presentFullscreen,
     session,
     question,
     updateSession,
@@ -90,6 +94,16 @@ export function CanvasToolbar() {
           label={presenting ? "Exit presentation view" : "Expand preview"}
           onClick={() => setPresenting(!presenting)}
         />
+        {fullscreen.supported && (
+          <IconButton
+            className="fullscreen-toggle"
+            icon={fullscreen.fullscreen ? Minimize : Maximize}
+            label={
+              fullscreen.fullscreen ? "Exit full screen" : "Present full screen"
+            }
+            onClick={presentFullscreen}
+          />
+        )}
       </div>
     </div>
   );

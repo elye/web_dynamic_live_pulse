@@ -9,6 +9,7 @@ import {
   type Room,
   type Session,
 } from "../../model";
+import { useFullscreen } from "../../hooks/useFullscreen";
 
 export function useHostController() {
   const [sessions, setSessions] = useState<Session[]>(() => {
@@ -50,6 +51,11 @@ export function useHostController() {
   const [emptySession] = useState(() => newSession("blank"));
   const [editing, setEditing] = useState<Question | null>(null);
   const [presenting, setPresenting] = useState(false);
+  const fullscreen = useFullscreen();
+  const { exit: exitFullscreen } = fullscreen;
+  useEffect(() => {
+    if (!presenting) void exitFullscreen();
+  }, [presenting, exitFullscreen]);
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState("");
   const [notice, setNotice] = useState("");
@@ -322,6 +328,15 @@ export function useHostController() {
   function setWash(value: number) {
     setWashes((current) => ({ ...current, [session.id]: value }));
   }
+  /** Enter the presentation view and the browser's fullscreen, or leave both. */
+  function presentFullscreen() {
+    if (fullscreen.fullscreen) {
+      void fullscreen.exit();
+      return;
+    }
+    setPresenting(true);
+    void fullscreen.enter();
+  }
   return {
     backgrounds,
     setBackground,
@@ -346,6 +361,8 @@ export function useHostController() {
     setEditing,
     presenting,
     setPresenting,
+    fullscreen,
+    presentFullscreen,
     busy,
     setBusy,
     search,

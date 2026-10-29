@@ -233,7 +233,8 @@
 
 /* A host-chosen image replaces the flat theme color; the wash keeps text legible. */
 [data-stage-bg] .question-stage,
-[data-stage-bg] .welcome-lobby {
+[data-stage-bg] .welcome-lobby,
+[data-stage-bg] .host-lobby.welcome-lobby {
   background-image:
     linear-gradient(
       color-mix(
@@ -439,6 +440,9 @@
   }
   .view-tabs svg {
     width: 13px;
+  }
+  .canvas-tools > .fullscreen-toggle {
+    display: none;
   }
   .canvas-tools > .icon-button {
     width: 22px;

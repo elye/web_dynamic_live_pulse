@@ -11,14 +11,17 @@ import { useHostController } from "./useHostController";
 
 export function Host() {
   const controller = useHostController();
-  const { presenting, page, sessions, room } = controller;
+  const { presenting, fullscreen, page, sessions, room } = controller;
+  const slideOnly = presenting && fullscreen.fullscreen;
   return (
     <HostContext.Provider value={controller}>
-      <div className={`app-shell ${presenting ? "presentation-shell" : ""}`}>
+      <div
+        className={`app-shell ${presenting ? "presentation-shell" : ""} ${slideOnly ? "slide-only-shell" : ""}`}
+      >
         {!presenting && <Sidebar />}
         <div className="app-main">
-          <TopBar />
-          <StatusBanners />
+          {!slideOnly && <TopBar />}
+          {!slideOnly && <StatusBanners />}
           {(page === "studio" && sessions.length > 0) || presenting ? (
             <StudioPage />
           ) : page === "results" ? (
@@ -26,7 +29,7 @@ export function Host() {
           ) : (
             <LibraryPage />
           )}
-          <AppFooter />
+          {!slideOnly && <AppFooter />}
         </div>
         <HostModals />
       </div>

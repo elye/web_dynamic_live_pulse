@@ -24,6 +24,22 @@ Open http://localhost:5173. The command starts Vite and the live server together
 5. Pause or reopen voting, reveal results, and advance questions. Each correct quiz or true-or-false answer earns up to 1,000 points: the faster the answer, the more points. Multi-answer quizzes award partial credit (see below).
 6. End the session to view the summary and leaderboard. Export aggregated responses to CSV before stopping the server or starting another room.
 
+### Slide look: dark mode and background image
+
+Use the studio toolbar above the slide preview and the footer under it to style the slides. The look applies to the live presentation, the welcome lobby, and full screen.
+
+- **Dark mode:** select the moon icon (**Switch slides to dark mode**) in the toolbar; the sun icon switches back. The choice is saved with the session and included in JSON exports (`"dark": true`), so imports restore it.
+- **Slide mood:** pick one of the colored swatches in the footer.
+- **Background image:** select **Image** in the footer and choose a picture. The image replaces the mood color on the question slides and on the welcome lobby, so people see it while they join. Select **Change image** to swap it, or the **x** button to remove it. The image is kept only until you reload the page and is not included in JSON exports, so the wash level is not saved either.
+- **Wash:** once an image is set, the **Wash** slider (0 to 100) controls how strongly a light or dark veil covers it. Raise it if text is hard to read; lower it to show more of the picture.
+
+### Full screen
+
+Select **Present full screen** in the studio toolbar (or **Full screen** in the top bar while live) to show only the slide, using as much of the screen as possible. The question, QR code, and results all sit inside the slide, and long titles shrink to fit within two lines.
+
+- **Controls:** move the mouse to show the control bar at the bottom; it fades away when the mouse is still, so it never covers the content. Press `Esc` or select the exit icon in the bar to leave.
+- **Keyboard:** `→` or `Page Down` follows the same steps as the main button (show results, then ranking, then podium, then the next question or finish). `←` or `Page Up` returns to the previous question. The `‹` `›` buttons in the bar move between questions without those steps.
+
 ### Two truths and a lie
 
 Add a **Two truths and a lie** question from the **With an answer** group. The question is fixed ("Pick the one that is not true."); you write three statements and select which one is the lie. Statements can be up to 200 characters and are always shown in a single column. Players pick the statement they think is the lie, and it scores like a quiz (speed scoring applies unless you turn it off). On reveal, the lie is highlighted. In player-made sessions, each player writes their own two truths and a lie.
@@ -128,7 +144,7 @@ Select a word-cloud question in the studio and click the flask icon (**Simulate 
 
 ## Back Up, Restore, and Delete Sessions
 
-- **Export:** Select the download icon on a session in **My sessions**, or **Export session JSON** in the studio. This downloads a `.pulse.json` file containing the session title, theme, questions, choices, and correct quiz answers. Keep this file private if quiz answers are sensitive.
+- **Export:** Select the download icon on a session in **My sessions**, or **Export session JSON** in the studio. This downloads a `.pulse.json` file containing the session title, theme, dark mode, QR visibility, questions, choices, and correct quiz answers. Keep this file private if quiz answers are sensitive.
 - **Import:** In **My sessions**, select **Import JSON**, choose an exported file or paste its contents, then select **Import session**. Each import creates a new editable draft with new IDs, without replacing existing sessions. Import is disabled while hosting a live session. To have an AI write the JSON for you, see [Generate a Session with AI](#generate-a-session-with-ai).
 - **Delete:** Select the trash icon on a session card or **Delete session** in the studio. The confirmation includes an **Export JSON** button for making a backup first. Confirming deletes all questions and linked hosted rooms, including live or ended rooms and their responses. Participants in deleted rooms are notified and can no longer submit or rejoin. Deleting the last session leaves an empty library, including after refresh.
 - Deleting a hosted session requires a connection to the server; if deletion fails, the local session is kept. Already expired or missing rooms do not prevent deletion. Draft-only sessions can be deleted without a server connection.
@@ -143,6 +159,8 @@ The versioned format is:
   "version": 1,
   "title": "Team check-in",
   "theme": "mint",
+  "showQr": true,
+  "dark": false,
   "nameless": false,
   "questions": [
     {
@@ -212,7 +230,7 @@ The versioned format is:
 }
 ```
 
-Supported types are `slide`, `cloud`, `poll`, `quiz`, `truefalse`, `twotruths`, `ranking`, `slider`, `qna`, `points100`, `grid2x2`, `peerpraise`, and `text`; supported themes are `mint`, `peach`, `lilac`, and `sky`. `correct` is a zero-based option index for quizzes, true-or-false questions, and two-truths-and-a-lie questions (where it points at the lie), and `null` otherwise (including for ranking, slider, Q&A, Peer praise, 100 Points, and 2x2 Grid, which have no single correct answer). Word clouds, open responses, Q&A, Peer praise questions, and slides use an empty `options` array; true-or-false questions require exactly 2 options; two-truths-and-a-lie questions require exactly 3 statements (up to 200 characters each) and always use the title "Pick the one that is not true.", whatever title is supplied; polls, quizzes, ranking, and 100 Points require 2 to 6; 2x2 Grid questions require exactly 4 options, used as axis labels in a fixed order (x-axis low, x-axis high, y-axis low, y-axis high) up to 40 characters each rather than selectable choices; slider questions also use an empty `options` array and instead require `sliderMin`, `sliderMax`, and `sliderStep` (`sliderMax` must exceed `sliderMin`, `sliderStep` must be positive, and the range must divide into at most 1000 steps). Slide questions require a non-empty `description` (up to 280 characters); other types omit it. `poll` questions also accept an optional `pollDisplay` value (`"list"`, `"pie"`, `"stacked"`, or `"bar"`; default `"list"`) to choose the results visualization. `poll` and `quiz` questions also accept an optional boolean `multiple` (default `false`); when `true`, participants may select more than one option. A `quiz` with `multiple: true` must also have `corrects`, a non-empty array of unique zero-based option indexes, and `correct` is set to the smallest of them. Every type except `slide` and `qna` carries `revealMode`: `"onDone"` hides results (showing only the response count) until the host clicks Reveal results, and `"live"` shows responses as they arrive. It is optional on import and defaults to `"onDone"` for quiz, true-or-false, two-truths-and-a-lie, and Peer praise questions, and `"live"` otherwise; any other value is rejected. Existing question and option limits apply to imports.
+Supported types are `slide`, `cloud`, `poll`, `quiz`, `truefalse`, `twotruths`, `ranking`, `slider`, `qna`, `points100`, `grid2x2`, `peerpraise`, and `text`; supported themes are `mint`, `peach`, `lilac`, and `sky`. `showQr` (show the join QR code on slides) and `dark` (dark slides) are optional booleans that default to `true` and `false`; any other value is rejected. `correct` is a zero-based option index for quizzes, true-or-false questions, and two-truths-and-a-lie questions (where it points at the lie), and `null` otherwise (including for ranking, slider, Q&A, Peer praise, 100 Points, and 2x2 Grid, which have no single correct answer). Word clouds, open responses, Q&A, Peer praise questions, and slides use an empty `options` array; true-or-false questions require exactly 2 options; two-truths-and-a-lie questions require exactly 3 statements (up to 200 characters each) and always use the title "Pick the one that is not true.", whatever title is supplied; polls, quizzes, ranking, and 100 Points require 2 to 6; 2x2 Grid questions require exactly 4 options, used as axis labels in a fixed order (x-axis low, x-axis high, y-axis low, y-axis high) up to 40 characters each rather than selectable choices; slider questions also use an empty `options` array and instead require `sliderMin`, `sliderMax`, and `sliderStep` (`sliderMax` must exceed `sliderMin`, `sliderStep` must be positive, and the range must divide into at most 1000 steps). Slide questions require a non-empty `description` (up to 280 characters); other types omit it. `poll` questions also accept an optional `pollDisplay` value (`"list"`, `"pie"`, `"stacked"`, or `"bar"`; default `"list"`) to choose the results visualization. `poll` and `quiz` questions also accept an optional boolean `multiple` (default `false`); when `true`, participants may select more than one option. A `quiz` with `multiple: true` must also have `corrects`, a non-empty array of unique zero-based option indexes, and `correct` is set to the smallest of them. Every type except `slide` and `qna` carries `revealMode`: `"onDone"` hides results (showing only the response count) until the host clicks Reveal results, and `"live"` shows responses as they arrive. It is optional on import and defaults to `"onDone"` for quiz, true-or-false, two-truths-and-a-lie, and Peer praise questions, and `"live"` otherwise; any other value is rejected. Existing question and option limits apply to imports.
 
 Word cloud questions also accept optional `maxSubmissions`, an integer from 1 to 5. It defaults to 1 when missing and controls how many separate words or short phrases each participant may contribute.
 

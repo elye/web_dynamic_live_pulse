@@ -1,19 +1,11 @@
 import { ArrowRight, Eye, EyeOff, Pause, Play, Trophy } from "lucide-react";
-import { canCompete, hasRevealMode } from "../../../model";
 import { traitsOf } from "../../../questions";
 import { useHost } from "../HostContext";
+import { useAdvance } from "./useAdvance";
 
 export function LiveControls() {
-  const {
-    setModal,
-    busy,
-    room,
-    currentIndex,
-    question,
-    questionList,
-    control,
-    move,
-  } = useHost();
+  const { busy, room, question, control } = useHost();
+  const { step, blocked, advance } = useAdvance();
   if (!room) return null;
   const traits = traitsOf(question.type);
   return (
@@ -49,71 +41,38 @@ export function LiveControls() {
             {room.revealed ? "Results revealed" : "Reveal results"}
           </button>
         ))}
-      {(() => {
-        const last = currentIndex === questionList.length - 1;
-        // Each click advances one step: show results, then the top 10
-        // ranking (answered questions, not the last one), then the next
-        // question. After the last question a session with answered
-        // questions ends on the podium before it is finished.
-        // Questions already showing results on the fly skip the first step,
-        // except answered ones, whose correct answer still needs a reveal.
-        const showFirst =
-          hasRevealMode(question.type) &&
-          (question.revealMode !== "live" || canCompete(question.type)) &&
-          !room.revealed;
-        const showRanking =
-          !showFirst &&
-          !last &&
-          canCompete(question.type) &&
-          question.showRanking !== false &&
-          !room.ranking;
-        const showPodium =
-          !showFirst && last && room.scored && !room.podium && !room.suspense;
-        return (
-          <button
-            className="button primary"
-            onClick={() =>
-              showFirst
-                ? void control("reveal")
-                : showRanking
-                  ? void control("ranking")
-                  : showPodium
-                    ? void control("suspense")
-                    : last
-                      ? setModal("end")
-                      : move(1)
-            }
-            disabled={busy || (room.suspense && !room.podium)}
-            title={
-              room.suspense && !room.podium
-                ? "Use the big button on the slide to reveal the podium"
-                : undefined
-            }
-          >
-            {showFirst ? (
-              <>
-                <Eye size={17} />
-                Show results
-              </>
-            ) : showRanking ? (
-              <>
-                <Trophy size={17} />
-                Show ranking
-              </>
-            ) : showPodium ? (
-              <>
-                <Trophy size={17} />
-                Show podium
-              </>
-            ) : (
-              <>
-                {last ? "Finish session" : "Next question"}
-                <ArrowRight size={17} />
-              </>
-            )}
-          </button>
-        );
-      })()}
+      <button
+        className="button primary"
+        onClick={advance}
+        disabled={blocked}
+        title={
+          room.suspense && !room.podium
+            ? "Use the big button on the slide to reveal the podium"
+            : undefined
+        }
+      >
+        {step === "results" ? (
+          <>
+            <Eye size={17} />
+            Show results
+          </>
+        ) : step === "ranking" ? (
+          <>
+            <Trophy size={17} />
+            Show ranking
+          </>
+        ) : step === "podium" ? (
+          <>
+            <Trophy size={17} />
+            Show podium
+          </>
+        ) : (
+          <>
+            {step === "finish" ? "Finish session" : "Next question"}
+            <ArrowRight size={17} />
+          </>
+        )}
+      </button>
     </div>
   );
 }

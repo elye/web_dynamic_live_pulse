@@ -176,3 +176,83 @@ for (const [width, height] of [
     }
   });
 }
+
+test("full screen shows a larger join QR than the normal presentation", async ({
+  page,
+}) => {
+  await gotoStudio(page);
+  await page.getByRole("button", { name: "Present live", exact: true }).click();
+  await page.getByRole("button", { name: "Start questions" }).click();
+  const qr = page.locator(".join-qr svg");
+  const normal = (await qr.boundingBox())!.width;
+  await page.getByRole("button", { name: "Full screen", exact: true }).click();
+  await expect(page.locator(".slide-only")).toBeVisible();
+  const scaled = (await qr.boundingBox())!.width;
+  expect(scaled / normal).toBeGreaterThan(1.2);
+});
+
+test("a long full screen title shrinks to fit two lines", async ({ page }) => {
+  await gotoStudio(page);
+  await page
+    .getByRole("button", { name: "Edit question", exact: true })
+    .click();
+  await page
+    .getByRole("textbox", { name: "Your question", exact: true })
+    .fill(
+      "What is the single most important thing our team could change next quarter to work better together?",
+    );
+  await page
+    .getByRole("button", { name: "Save question", exact: true })
+    .click();
+  const title = page.locator(".question-stage h2");
+  const lines = () =>
+    title.evaluate(
+      (el) => el.offsetHeight / parseFloat(getComputedStyle(el).lineHeight),
+    );
+
+  await page
+    .getByRole("button", { name: "Present full screen", exact: true })
+    .click();
+  await expect(page.locator(".slide-only")).toBeVisible();
+  expect(Math.round(await lines())).toBeLessThanOrEqual(2);
+  const long = parseFloat(
+    await title.evaluate((el) => getComputedStyle(el).fontSize),
+  );
+
+  await page.keyboard.press("ArrowRight");
+  await expect(page.locator(".stage-bottom")).toContainText("02 / 04");
+  const short = parseFloat(
+    await title.evaluate((el) => getComputedStyle(el).fontSize),
+  );
+  expect(Math.round(await lines())).toBeLessThanOrEqual(2);
+  expect(short).toBeGreaterThan(long);
+});
+
+test("the arrow keys follow the same steps as the host's main button", async ({
+  page,
+}) => {
+  await gotoStudio(page);
+  await page.getByRole("button", { name: "Present live", exact: true }).click();
+  await page.getByRole("button", { name: "Start questions" }).click();
+  await page.getByRole("button", { name: "Full screen", exact: true }).click();
+  await expect(page.locator(".slide-only")).toBeVisible();
+  const bottom = page.locator(".stage-bottom");
+  const main = page.locator(".fullscreen-bar .button.primary");
+
+  await page.keyboard.press("ArrowRight");
+  await expect(bottom).toContainText("02 / 04");
+  await page.keyboard.press("ArrowRight");
+  await expect(bottom).toContainText("03 / 04");
+  await expect(main).toContainText("Show results");
+
+  await page.keyboard.press("ArrowRight");
+  await expect(main).toContainText("Show ranking");
+  await expect(bottom).toContainText("03 / 04");
+
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByText("Top 10 players")).toBeVisible();
+  await expect(main).toContainText("Next question");
+
+  await page.keyboard.press("ArrowRight");
+  await expect(bottom).toContainText("04 / 04");
+});

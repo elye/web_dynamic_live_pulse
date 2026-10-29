@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { IconButton } from "../../../components/IconButton";
 import { useHost } from "../HostContext";
 import { LiveControls } from "./LiveControls";
+import { useAdvance } from "./useAdvance";
 
 const IDLE_MS = 2500;
 
@@ -10,6 +11,7 @@ const IDLE_MS = 2500;
 export function FullscreenBar() {
   const { busy, room, currentIndex, questionList, move, fullscreen, modal } =
     useHost();
+  const { advance } = useAdvance();
   const [visible, setVisible] = useState(false);
   const bar = useRef<HTMLDivElement>(null);
   const isLive = !!room && !room.ended;
@@ -52,7 +54,7 @@ export function FullscreenBar() {
       )
         return;
       if (event.key === "ArrowRight" || event.key === "PageDown") {
-        if (currentIndex < questionList.length - 1 && !busy) move(1);
+        advance();
       } else if (event.key === "ArrowLeft" || event.key === "PageUp") {
         if (currentIndex > 0 && !busy) move(-1);
       }

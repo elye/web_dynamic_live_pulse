@@ -1,6 +1,8 @@
 import { Eye, FileText, Users, Zap } from "lucide-react";
+import { useRef } from "react";
 import { JoinQr } from "../../components/JoinQr";
 import { icons } from "../../constants/kinds";
+import { useFitLines } from "../../hooks/useFitLines";
 import { hasRevealMode, labels, type Question } from "../../model";
 import { traitsOf } from "../../questions";
 import { metaOf } from "../../questions/ui/metaRegistry";
@@ -37,6 +39,9 @@ export function QuestionStage({
   accepting?: boolean;
 }) {
   const Icon = icons[question.type];
+  const title = useRef<HTMLHeadingElement>(null);
+  // Full screen titles start big but never wrap past two lines.
+  useFitLines(title, ".slide-only", 2, 28, 56, question.title);
   const { eyebrow, subtitle } = metaOf(question.type);
   const traits = traitsOf(question.type);
   const hiddenNote = hidden
@@ -74,7 +79,7 @@ export function QuestionStage({
             (eyebrow ?? "A LITTLE CHECK-IN, A BIG CONNECTION")
           )}
         </span>
-        <h2>{question.title}</h2>
+        <h2 ref={title}>{question.title}</h2>
         {subtitle?.(question)}
       </div>
       {!preview &&

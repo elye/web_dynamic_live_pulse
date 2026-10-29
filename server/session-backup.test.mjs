@@ -6,6 +6,7 @@ test("session JSON round-trips all question types without credentials, results, 
   const original = newSession();
   original.theme = "peach";
   original.nameless = true;
+  original.dark = true;
   original.hostedRooms = [{ code: "123456", token: "private-host-token" }];
   original.questions[0].results = [{ text: "private response", count: 1 }];
   original.questions[1].pollDisplay = "pie";
@@ -26,6 +27,8 @@ test("session JSON round-trips all question types without credentials, results, 
   assert.equal(restored.questions[2].correct, 1);
   assert.equal(restored.questions[1].pollDisplay, "pie");
   assert.equal(restored.nameless, true);
+  assert.equal(restored.dark, true);
+  assert.equal(importSession(serializeSession(newSession())).dark, false);
 });
 
 test("malformed and invalid backups are rejected without partial imports", () => {
@@ -38,6 +41,7 @@ test("malformed and invalid backups are rejected without partial imports", () =>
     [{ ...valid, title: " " }, /title/],
     [{ ...valid, theme: "unknown" }, /theme/],
     [{ ...valid, nameless: "yes" }, /nameless/],
+    [{ ...valid, dark: "yes" }, /dark/],
     [{ ...valid, questions: [] }, /1 to 30/],
     [{ ...valid, questions: Array(31).fill(valid.questions[0]) }, /1 to 30/],
     [
@@ -57,7 +61,10 @@ test("malformed and invalid backups are rejected without partial imports", () =>
       /empty options/,
     ],
     [
-      { ...valid, questions: [{ ...valid.questions[1], pollDisplay: "donut" }] },
+      {
+        ...valid,
+        questions: [{ ...valid.questions[1], pollDisplay: "donut" }],
+      },
       /pollDisplay/,
     ],
   ];

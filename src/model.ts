@@ -42,6 +42,8 @@ export type Session = {
   theme: string;
   /** Show the join QR code in the corner of every live slide (default on). */
   showQr?: boolean;
+  /** Present slides with a dark palette. */
+  dark?: boolean;
   /** Generate name-like participant labels instead of asking for names. */
   nameless?: boolean;
   questions: Question[];
@@ -169,6 +171,7 @@ export function serializeSession(session: Session): string {
       title: session.title,
       theme: session.theme,
       showQr: session.showQr !== false,
+      dark: session.dark === true,
       nameless: session.nameless === true,
       questions: session.questions.map(serializeQuestion),
     },
@@ -206,6 +209,8 @@ export function importSession(json: string): Session {
     throw new Error("Choose a supported theme: mint, peach, lilac, or sky.");
   if (data.showQr !== undefined && typeof data.showQr !== "boolean")
     throw new Error("showQr must be true or false.");
+  if (data.dark !== undefined && typeof data.dark !== "boolean")
+    throw new Error("dark must be true or false.");
   if (data.nameless !== undefined && typeof data.nameless !== "boolean")
     throw new Error("nameless must be true or false.");
   if (
@@ -231,6 +236,7 @@ export function importSession(json: string): Session {
     title: data.title.trim(),
     theme: data.theme,
     showQr: data.showQr !== false,
+    dark: data.dark === true,
     nameless: data.nameless === true,
     questions,
     updated: Date.now(),

@@ -2,8 +2,10 @@ import {
   Expand,
   FlaskConical,
   Monitor,
+  Moon,
   Pencil,
   QrCode,
+  Sun,
   Users,
 } from "lucide-react";
 import { IconButton } from "../../../components/IconButton";
@@ -72,6 +74,16 @@ export function CanvasToolbar() {
               : "Show join QR code on slides"
           }
           onClick={() => updateSession({ showQr: session.showQr === false })}
+        />
+        <IconButton
+          icon={session.dark ? Sun : Moon}
+          className={session.dark ? "toggle-on" : ""}
+          label={
+            session.dark
+              ? "Switch slides to light mode"
+              : "Switch slides to dark mode"
+          }
+          onClick={() => updateSession({ dark: !session.dark })}
         />
         <IconButton
           icon={Expand}

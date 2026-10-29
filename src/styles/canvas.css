@@ -227,6 +227,60 @@
   gap: 10px;
 }
 
+.stage-bg {
+  display: contents;
+}
+
+/* A host-chosen image replaces the flat theme color; the wash keeps text legible. */
+[data-stage-bg] .question-stage,
+[data-stage-bg] .welcome-lobby {
+  background-image:
+    linear-gradient(
+      color-mix(
+        in srgb,
+        var(--stage-wash-color, #fff) var(--stage-wash, 76%),
+        transparent
+      ),
+      color-mix(
+        in srgb,
+        var(--stage-wash-color, #fff) var(--stage-wash, 76%),
+        transparent
+      )
+    ),
+    var(--stage-image);
+  background-size: cover;
+  background-position: center;
+}
+
+.bg-image-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 4px;
+  padding: 3px 8px;
+  font-size: 10px;
+  color: #5d6f58;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.bg-wash {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  font-weight: 400;
+  gap: 6px;
+  margin-left: 6px;
+  font-size: 9px;
+  color: #8d998a;
+}
+
+.bg-wash input {
+  width: 70px;
+  accent-color: #66815e;
+}
+
 .theme-picker {
   display: flex;
   align-items: center;
@@ -374,7 +428,7 @@
     height: 9px;
   }
   .canvas-tools {
-    gap: 9px;
+    gap: 5px;
   }
   .canvas-tools .text-button {
     font-size: 8px;
@@ -387,8 +441,8 @@
     width: 13px;
   }
   .canvas-tools > .icon-button {
-    width: 25px;
-    padding-left: 7px;
+    width: 22px;
+    padding-left: 5px;
   }
   .canvas-tools > .icon-button svg {
     width: 14px;

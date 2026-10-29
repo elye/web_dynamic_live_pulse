@@ -1,0 +1,149 @@
+/* Dark slides: a session setting that restyles the presented stage only. */
+
+[data-stage-dark] {
+  --stage-wash-color: #0f1613;
+  --muted: #9fb2a7;
+  --line: #ffffff24;
+  --ink: #e8f3ec;
+}
+
+[data-stage-dark] .theme-mint {
+  background-color: #1a2a23;
+  color: #dcefe2;
+  border-color: #2b4237;
+}
+
+[data-stage-dark] .theme-peach {
+  background-color: #2e211c;
+  color: #f4e0d6;
+  border-color: #46332b;
+}
+
+[data-stage-dark] .theme-lilac {
+  background-color: #251f31;
+  color: #e9e0f4;
+  border-color: #3a3049;
+}
+
+[data-stage-dark] .theme-sky {
+  background-color: #1a2832;
+  color: #dcebf4;
+  border-color: #2b4151;
+}
+
+/* Translucent-white surfaces become subtle light veils on dark. */
+[data-stage-dark] .stage-kind,
+[data-stage-dark] .sample-label,
+[data-stage-dark] .poll-stacked,
+[data-stage-dark] .poll-vertical-track,
+[data-stage-dark] .bar-track,
+[data-stage-dark] .result-section .bar-track,
+[data-stage-dark] .text-response,
+[data-stage-dark] .qna-entry,
+[data-stage-dark] .poll-results.counts-hidden .poll-row,
+[data-stage-dark] .lobby-people li,
+[data-stage-dark] .host-lobby .lobby-people li {
+  background: #ffffff14;
+  border-color: #ffffff1f;
+  color: inherit;
+}
+
+[data-stage-dark] .poll-pie {
+  box-shadow: 0 0 0 10px #ffffff14;
+}
+
+/* Correct-answer highlight. */
+[data-stage-dark] .poll-row.is-answer {
+  background: #1f3d27;
+  border-color: #6dbb52;
+  box-shadow: 0 2px 10px #6dbb5233;
+}
+
+[data-stage-dark] .poll-row.is-answer .poll-label {
+  color: #b9e8a8;
+}
+
+[data-stage-dark] .poll-row.is-answer .bar-track {
+  background: #ffffff1f;
+}
+
+/* Solid light chips and panels. */
+[data-stage-dark] .qna-upvote,
+[data-stage-dark] .qna-submitted-note,
+[data-stage-dark] .ranking-position,
+[data-stage-dark] .grid2x2-plot,
+[data-stage-dark] .many-box-plain {
+  background: #ffffff14;
+  border-color: #ffffff29;
+  color: #dcefe2;
+}
+
+[data-stage-dark] .qna-upvote:hover {
+  background: #ffffff24;
+}
+
+[data-stage-dark] .qna-upvote.chosen {
+  background: #3f7f8c;
+  color: #fff;
+}
+
+[data-stage-dark] .poll-segment {
+  color: #1f1d1a;
+}
+
+[data-stage-dark] .grid2x2-summary {
+  color: #d9c9f2;
+}
+
+[data-stage-dark] .grid2x2-summary span,
+[data-stage-dark] .slider-average,
+[data-stage-dark] .lobby-anonymous,
+[data-stage-dark] .lobby-empty,
+[data-stage-dark] .author-note,
+[data-stage-dark] .eyebrow,
+[data-stage-dark] .host-lobby .lobby-count span {
+  color: var(--muted);
+}
+
+/* Scoreboard. */
+[data-stage-dark] .leader-row {
+  border-bottom-color: #ffffff1f;
+}
+
+[data-stage-dark] .leader-row > b {
+  color: #9fb2a7;
+}
+
+[data-stage-dark] .leader-row > strong,
+[data-stage-dark] .podium-score {
+  color: #9fd186;
+}
+
+/* Lobby and crowd writing screens. */
+[data-stage-dark] .welcome-lobby,
+[data-stage-dark] .host-lobby.welcome-lobby {
+  background-color: #141d19;
+  border-color: #ffffff1f;
+  color: #dcefe2;
+}
+
+[data-stage-dark] .host-lobby .lobby-intro,
+[data-stage-dark] .host-lobby .lobby-footer,
+[data-stage-dark] .host-lobby .lobby-join,
+[data-stage-dark] .fixed-question,
+[data-stage-dark] .crowd-progress {
+  background: #1a2620;
+  border-color: #ffffff1f;
+  color: inherit;
+}
+
+[data-stage-dark] .share-link {
+  background: #ffffff14;
+  color: var(--muted);
+}
+
+[data-stage-dark] .lobby-waiting,
+[data-stage-dark] .lobby-open-link,
+[data-stage-dark] .share-content .copy-feedback {
+  color: #a8dcbc;
+}

@@ -53,6 +53,10 @@ export function useHostController() {
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState("");
   const [notice, setNotice] = useState("");
+  // Background images live in memory only (object URLs), keyed by session id.
+  const [backgrounds, setBackgrounds] = useState<Record<string, string>>({});
+  // White wash opacity (0-100) over each session's background image.
+  const [washes, setWashes] = useState<Record<string, number>>({});
   // Position the next added question is inserted at; null appends to the end.
   const [insertIndex, setInsertIndex] = useState<number | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -303,7 +307,26 @@ export function useHostController() {
     updateSession({ questions });
     setSelected(to);
   }
+  function setBackground(file: File | null) {
+    const id = session.id;
+    if (file && !file.type.startsWith("image/")) {
+      setNotice("Choose an image file.");
+      return;
+    }
+    setBackgrounds((current) => {
+      if (current[id]) URL.revokeObjectURL(current[id]);
+      const { [id]: _removed, ...rest } = current;
+      return file ? { ...rest, [id]: URL.createObjectURL(file) } : rest;
+    });
+  }
+  function setWash(value: number) {
+    setWashes((current) => ({ ...current, [session.id]: value }));
+  }
   return {
+    backgrounds,
+    setBackground,
+    washes,
+    setWash,
     sessions,
     setSessions,
     sessionId,

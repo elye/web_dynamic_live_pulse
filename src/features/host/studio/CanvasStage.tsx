@@ -1,9 +1,11 @@
+import type { CSSProperties } from "react";
 import { CrowdWriting } from "../../crowd/CrowdWriting";
 import { WelcomeLobby } from "../../lobby/WelcomeLobby";
 import { ScoreStage } from "../../scoring/ScoreStage";
 import { QuestionStage } from "../../stage/QuestionStage";
 import { metaOf } from "../../../questions/ui/metaRegistry";
 import { useHost } from "../HostContext";
+import { DEFAULT_WASH } from "./background";
 
 export function CanvasStage() {
   const {
@@ -17,12 +19,28 @@ export function CanvasStage() {
     question,
     questionList,
     control,
+    backgrounds,
+    washes,
   } = useHost();
+  const background = backgrounds[session.id];
+  const wash = washes[session.id] ?? DEFAULT_WASH;
   const isLive = !!room && !room.ended;
   const inLobby = isLive && !room.started;
   const simulator = metaOf(question.type).simulator;
   return (
-    <>
+    <div
+      className="stage-bg"
+      data-stage-bg={background ? "" : undefined}
+      data-stage-dark={session.dark ? "" : undefined}
+      style={
+        background
+          ? ({
+              "--stage-image": `url("${background}")`,
+              "--stage-wash": `${wash}%`,
+            } as CSSProperties)
+          : undefined
+      }
+    >
       {modal === "simulate" && simulator && (
         <simulator.Simulator
           question={question}
@@ -73,6 +91,6 @@ export function CanvasStage() {
           showQr={session.showQr !== false}
         />
       )}
-    </>
+    </div>
   );
 }

@@ -1,6 +1,15 @@
-import { Check, ChevronLeft, ChevronRight, Users } from "lucide-react";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  ImagePlus,
+  Users,
+  X,
+} from "lucide-react";
+import { useRef } from "react";
 import { IconButton } from "../../../components/IconButton";
 import { useHost } from "../HostContext";
+import { DEFAULT_WASH } from "./background";
 
 export function CanvasFooter() {
   const {
@@ -11,7 +20,13 @@ export function CanvasFooter() {
     questionList,
     updateSession,
     move,
+    backgrounds,
+    setBackground,
+    washes,
+    setWash,
   } = useHost();
+  const fileInput = useRef<HTMLInputElement>(null);
+  const hasBackground = !!backgrounds[session.id];
   const isLive = !!room && !room.ended;
   const inLobby = isLive && !room.started;
   return (
@@ -44,6 +59,52 @@ export function CanvasFooter() {
               {session.theme === theme && <Check size={13} />}
             </button>
           ))}
+          <button
+            type="button"
+            className="bg-image-button"
+            title="Choose a background image (kept until you reload)"
+            onClick={() => fileInput.current?.click()}
+          >
+            <ImagePlus size={13} />
+            {hasBackground ? "Change image" : "Image"}
+          </button>
+          {hasBackground && (
+            <button
+              type="button"
+              className="bg-image-button"
+              aria-label="Remove background image"
+              title="Remove background image"
+              onClick={() => setBackground(null)}
+            >
+              <X size={13} />
+            </button>
+          )}
+          {hasBackground && (
+            <label className="bg-wash">
+              Wash
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={washes[session.id] ?? DEFAULT_WASH}
+                aria-label="Background wash opacity"
+                onChange={(event) => setWash(Number(event.target.value))}
+              />
+            </label>
+          )}
+          <input
+            ref={fileInput}
+            type="file"
+            accept="image/*"
+            hidden
+            aria-label="Background image"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) setBackground(file);
+              event.target.value = "";
+            }}
+          />
         </div>
       )}
       {!inLobby && (

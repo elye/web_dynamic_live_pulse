@@ -256,3 +256,77 @@
     font-size: 7px;
   }
 }
+
+/* Full screen mode: only the slide, scaled to fill the screen. */
+.slide-only-shell {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.slide-only {
+  padding: 0;
+  max-width: none;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+.slide-fit {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.slide-fit-inner {
+  display: flex;
+  flex-direction: column;
+  transform-origin: top left;
+}
+
+.slide-fit-inner > .stage-bg > * {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  max-width: none;
+  aspect-ratio: auto;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.slide-only .heart-layer {
+  position: fixed;
+}
+
+.fullscreen-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: #ffffffee;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px #0000002e;
+  opacity: 0;
+  transform: translate(-50%, 12px);
+  pointer-events: none;
+  transition:
+    opacity 0.25s,
+    transform 0.25s;
+}
+
+.fullscreen-bar.visible,
+.fullscreen-bar:has(:focus-visible) {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  pointer-events: auto;
+}
+
+.fullscreen-bar .live-controls {
+  padding: 0;
+  border: 0;
+}

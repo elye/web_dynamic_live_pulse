@@ -1,10 +1,25 @@
-import { ArrowLeft, ArrowUp, ChevronRight } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowUp,
+  ChevronRight,
+  Maximize,
+  Minimize,
+} from "lucide-react";
 import { Logo } from "../../../components/Logo";
+import { IconButton } from "../../../components/IconButton";
 import { useHost } from "../HostContext";
 
 export function TopBar() {
-  const { page, presenting, setPresenting, room, connected, session } =
-    useHost();
+  const {
+    page,
+    presenting,
+    setPresenting,
+    fullscreen,
+    presentFullscreen,
+    room,
+    connected,
+    session,
+  } = useHost();
   return (
     <header className="topbar">
       {presenting ? (
@@ -34,6 +49,13 @@ export function TopBar() {
           <span />
           {connected ? "All systems ready" : "Reconnecting..."}
         </span>
+        {presenting && fullscreen.supported && (
+          <IconButton
+            icon={fullscreen.fullscreen ? Minimize : Maximize}
+            label={fullscreen.fullscreen ? "Exit full screen" : "Full screen"}
+            onClick={presentFullscreen}
+          />
+        )}
         {presenting ? (
           <button
             className="button secondary small-button"

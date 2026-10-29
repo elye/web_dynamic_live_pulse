@@ -440,6 +440,9 @@
   .view-tabs svg {
     width: 13px;
   }
+  .canvas-tools > .fullscreen-toggle {
+    display: none;
+  }
   .canvas-tools > .icon-button {
     width: 22px;
     padding-left: 5px;

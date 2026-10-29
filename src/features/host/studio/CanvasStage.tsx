@@ -89,6 +89,7 @@ export function CanvasStage() {
           hidden={isLive && room?.hidden}
           totalPlayers={isLive ? room.participants : 0}
           showQr={session.showQr !== false}
+          accepting={isLive ? room.accepting : true}
         />
       )}
     </div>

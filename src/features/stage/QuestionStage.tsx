@@ -18,6 +18,7 @@ export function QuestionStage({
   hidden = false,
   totalPlayers = 0,
   showQr = false,
+  accepting = true,
 }: {
   question: Question;
   preview?: boolean;
@@ -32,6 +33,8 @@ export function QuestionStage({
   /** Number of players who have joined the room, including those who have not responded. */
   totalPlayers?: number;
   showQr?: boolean;
+  /** Whether the room is taking responses; a pause is shown on the slide. */
+  accepting?: boolean;
 }) {
   const Icon = icons[question.type];
   const { eyebrow, subtitle } = metaOf(question.type);
@@ -115,6 +118,16 @@ export function QuestionStage({
         ) : (
           <span>
             <Users size={14} /> {question.responses || 0} responses
+            {code && (
+              <>
+                <span className="faded">·</span> {totalPlayers} joined
+                {!accepting && (
+                  <>
+                    <span className="faded">·</span> Responses paused
+                  </>
+                )}
+              </>
+            )}
           </span>
         )}
         <span>

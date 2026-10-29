@@ -256,3 +256,29 @@ test("the arrow keys follow the same steps as the host's main button", async ({
   await page.keyboard.press("ArrowRight");
   await expect(bottom).toContainText("04 / 04");
 });
+
+test("the lobby shows the host's background image while people join", async ({
+  page,
+}) => {
+  await gotoStudio(page);
+  await page.locator('input[aria-label="Background image"]').setInputFiles({
+    name: "bg.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+      "base64",
+    ),
+  });
+  await page.getByRole("button", { name: "Present live", exact: true }).click();
+  const lobby = page.locator(".host-lobby");
+  await expect(lobby).toBeVisible();
+  await expect(lobby).toHaveCSS("background-image", /url\("blob:/);
+  await expect(page.locator(".lobby-join")).toHaveCSS(
+    "background-color",
+    "rgba(0, 0, 0, 0)",
+  );
+
+  await page.getByRole("button", { name: "Full screen", exact: true }).click();
+  await expect(page.locator(".slide-only")).toBeVisible();
+  await expect(lobby).toHaveCSS("background-image", /url\("blob:/);
+});

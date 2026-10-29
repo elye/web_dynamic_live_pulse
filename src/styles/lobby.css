@@ -450,3 +450,18 @@
     padding: 10px 16px;
   }
 }
+
+/* With a host-chosen image the lobby panels go clear so the image shows while people join. */
+
+[data-stage-bg] .host-lobby.welcome-lobby .lobby-intro,
+[data-stage-bg] .host-lobby.welcome-lobby .lobby-join,
+[data-stage-bg] .host-lobby.welcome-lobby .lobby-footer {
+  background: transparent;
+}
+
+[data-stage-bg] .host-lobby.welcome-lobby .lobby-intro,
+[data-stage-bg] .host-lobby.welcome-lobby .lobby-join,
+[data-stage-bg] .host-lobby.welcome-lobby .lobby-footer,
+[data-stage-bg] .host-lobby.welcome-lobby .lobby-count {
+  border-color: #ffffff80;
+}

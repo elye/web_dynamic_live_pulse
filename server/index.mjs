@@ -193,6 +193,10 @@ export function createAppServer() {
     listen("room:control", ({ code, token, action, index }) => {
       const room = getRoom(code);
       controlRoom(room, token, action, index);
+      if (action === "reset")
+        io.to(`audience:${room.code}`).emit("room:reset", {
+          questionId: room.questions[room.active].id,
+        });
       broadcast(room);
       return { state: snapshot(room, true) };
     });

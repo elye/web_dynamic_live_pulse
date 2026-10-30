@@ -41,12 +41,19 @@ export function useParticipantController() {
   );
   const [busy, setBusy] = useState(false);
   const [answer, setAnswer] = useState<AnswerValue>("");
-  const [answerQuestion, setAnswerQuestion] = useState("");
+  const [answerOwner, setAnswerOwner] = useState({ id: "", round: 0 });
   const [upvoted, setUpvoted] = useState<Set<string>>(new Set());
-  const [upvotedQuestion, setUpvotedQuestion] = useState("");
+  const [upvoteOwner, setUpvoteOwner] = useState({ id: "", round: 0 });
   const [reactionTap, setReactionTap] = useState({ kind: "", count: 0 });
   const live = useLive("audience", joinedCode);
-  const { room, connected, error, setError, submitted, answers } = live;
+  const { room, connected, error, setError, submitted, answers, reset } = live;
+  // A host reset starts a new round, which discards the drafts and upvotes of the old one.
+  const round = reset.count;
+  const answerQuestion = answerOwner.round === round ? answerOwner.id : "";
+  const upvotedQuestion = upvoteOwner.round === round ? upvoteOwner.id : "";
+  const setAnswerQuestion = (id: string) => setAnswerOwner({ id, round });
+  const setUpvotedQuestion = (id: string) => setUpvoteOwner({ id, round });
+
   const detectedNameless = room?.nameless ?? nameless;
   const participantNameIsGenerated =
     participantNameGenerated || (room?.nameless === true && !nameChangeUsed);

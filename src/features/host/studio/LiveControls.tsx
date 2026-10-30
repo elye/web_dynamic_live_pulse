@@ -1,10 +1,18 @@
-import { ArrowRight, Eye, EyeOff, Pause, Play, Trophy } from "lucide-react";
+import {
+  ArrowRight,
+  Eye,
+  EyeOff,
+  Pause,
+  Play,
+  RotateCcw,
+  Trophy,
+} from "lucide-react";
 import { traitsOf } from "../../../questions";
 import { useHost } from "../HostContext";
 import { useAdvance } from "./useAdvance";
 
 export function LiveControls() {
-  const { busy, room, question, control } = useHost();
+  const { busy, room, question, control, setModal } = useHost();
   const { step, blocked, advance } = useAdvance();
   if (!room) return null;
   const traits = traitsOf(question.type);
@@ -18,6 +26,16 @@ export function LiveControls() {
         >
           {room.accepting ? <Pause size={16} /> : <Play size={16} />}
           {room.accepting ? "Pause responses" : "Reopen responses"}
+        </button>
+      )}
+      {traits.collectsAnswers && (
+        <button
+          className="button secondary"
+          onClick={() => setModal("reset")}
+          disabled={busy}
+        >
+          <RotateCcw size={16} />
+          Reset question
         </button>
       )}
       {traits.collectsAnswers &&

@@ -18,9 +18,9 @@ export function HelpModal() {
         </p>
         <h3>You set the pace</h3>
         <p>
-          Pause responses, reveal results, and advance questions. Correct
-          answers earn up to 1,000 points, and faster answers earn more. Export
-          responses from Results.
+          Pause responses, reset a question, reveal results, and advance
+          questions. Correct answers earn up to 1,000 points, and faster answers
+          earn more. Export responses from Results.
         </p>
         <h3>A note on storage</h3>
         <p>

@@ -21,7 +21,7 @@ Open http://localhost:5173. The command starts Vite and the live server together
    Select **Start questions** when everyone is ready. Participants wait in the welcome lobby until then.
    Before presenting, switch **Ask for names** to **Nameless session** in the studio toolbar if you want Pulse to assign each participant a unique name-like label. The welcome lobby then shows only the number of people who have joined.
 4. Participants visit `/join`, enter the room code, and submit one response per question. Named sessions ask for a display name; nameless sessions assign a unique generated name automatically. The participant console shows `✨` beside an assigned name, and the player can click it to replace the generated name once at any time while the session is active.
-5. Pause or reopen voting, reveal results, and advance questions. Each correct quiz or true-or-false answer earns up to 1,000 points: the faster the answer, the more points. Multi-answer quizzes award partial credit (see below).
+5. Pause or reopen voting, **Reset question** to clear its responses and let players answer again (other questions and scores from them are untouched), reveal results, and advance questions. After **End session**, the Results page has **Restart session**, which hosts the same questions again in a new room with a new code. Each correct quiz or true-or-false answer earns up to 1,000 points: the faster the answer, the more points. Multi-answer quizzes award partial credit (see below).
 6. End the session to view the summary and leaderboard. Export aggregated responses to CSV before stopping the server or starting another room.
 
 ### Slide look: dark mode and background image

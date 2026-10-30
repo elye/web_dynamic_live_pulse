@@ -234,6 +234,8 @@ export function createRoom(title, questions, crowdKind, nameless = false) {
     upvotes: new Map(),
     openedAt: new Map(),
     answeredAt: new Map(),
+    /** Question id -> how many times the host has cleared its responses. */
+    resets: new Map(),
     createdAt: Date.now(),
   };
   room.questions.forEach((question) => {
@@ -546,6 +548,22 @@ export function controlRoom(room, token, action, index, now = Date.now()) {
       room.suspense = false;
       room.podium = false;
     }
+    markOpened(room, now);
+  } else if (action === "reset") {
+    const current = room.questions[room.active];
+    if (!traitsOf(current.type).collectsAnswers)
+      throw new Error("This slide has no responses to reset.");
+    room.votes.get(current.id).clear();
+    room.upvotes.get(current.id).clear();
+    room.answeredAt.get(current.id).clear();
+    room.openedAt.delete(current.id);
+    room.resets.set(current.id, (room.resets.get(current.id) ?? 0) + 1);
+    room.accepting = true;
+    room.revealed = false;
+    room.hidden = false;
+    room.ranking = false;
+    room.suspense = false;
+    room.podium = false;
     markOpened(room, now);
   } else if (action === "hide" || action === "show") {
     const current = room.questions[room.active];

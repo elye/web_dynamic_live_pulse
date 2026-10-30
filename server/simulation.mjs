@@ -138,8 +138,10 @@ export function startSimulation(
     )
       return false;
     const votes = room.votes.get(question.id);
-    let plan = plans.get(question.id);
-    if (!plan) plans.set(question.id, (plan = new Map()));
+    // A reset starts a new round, so simulated players answer again.
+    const planKey = `${question.id}:${room.resets?.get(question.id) ?? 0}`;
+    let plan = plans.get(planKey);
+    if (!plan) plans.set(planKey, (plan = new Map()));
     const allowed = submissionLimit(question);
     for (const token of bots) {
       if (plan.has(token)) continue;

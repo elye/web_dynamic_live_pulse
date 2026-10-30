@@ -1,11 +1,13 @@
-import { BarChart3, Download } from "lucide-react";
+import { BarChart3, Download, RotateCcw } from "lucide-react";
 import { exportResults, labels, type Room } from "../../model";
 import { traitsOf } from "../../questions";
+import { useHost } from "../host/HostContext";
 import { ResultsVisual } from "../results/ResultsVisual";
 import { Leaderboard } from "../scoring/Leaderboard";
 import { Podium } from "../scoring/Podium";
 
 export function ResultsPage({ room }: { room: Room | null }) {
+  const { busy, connected, restartSession } = useHost();
   return (
     <div className="results-page">
       <div className="page-heading">
@@ -14,13 +16,25 @@ export function ResultsPage({ room }: { room: Room | null }) {
           <h1>Every response counts.</h1>
         </div>
         {room && (
-          <button
-            className="button secondary"
-            onClick={() => exportResults(room)}
-          >
-            <Download size={17} />
-            Export CSV
-          </button>
+          <div className="heading-actions">
+            <button
+              className="button secondary"
+              onClick={() => exportResults(room)}
+            >
+              <Download size={17} />
+              Export CSV
+            </button>
+            {room.ended && (
+              <button
+                className="button primary"
+                onClick={() => void restartSession()}
+                disabled={!connected || busy}
+              >
+                <RotateCcw size={17} />
+                {busy ? "Restarting..." : "Restart session"}
+              </button>
+            )}
+          </div>
         )}
       </div>
       {!room ? (

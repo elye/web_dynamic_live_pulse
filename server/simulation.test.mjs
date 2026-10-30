@@ -196,3 +196,21 @@ test("simulation is requested over the socket and stays off by default", async (
     await new Promise((resolve) => http.close(resolve));
   }
 });
+
+test("simulated players answer again after the host resets a question", async () => {
+  const room = createRoom("Reset", questions);
+  const simulation = startSimulation(room, 10, fast);
+  try {
+    controlRoom(room, room.hostToken, "start");
+    await wait(600);
+    const votes = room.votes.get(room.questions[0].id);
+    assert.equal(votes.size, 10);
+    controlRoom(room, room.hostToken, "reset");
+    assert.equal(votes.size, 0);
+    await wait(600);
+    assert.equal(votes.size, 10);
+  } finally {
+    simulation.stop();
+    rooms.delete(room.code);
+  }
+});

@@ -38,6 +38,7 @@ export function useHostController() {
     | "new"
     | "help"
     | "end"
+    | "reset"
     | "delete"
     | "import"
     | "aiprompt"
@@ -202,25 +203,38 @@ export function useHostController() {
       setBusy(false);
     }
   }
-  async function startSession(simulatedPlayers?: number) {
+  async function startSession(
+    simulatedPlayers?: number,
+    target: Session = session,
+  ) {
     setBusy(true);
     setError("");
     try {
       const reply = await request("room:create", {
-        title: session.title,
-        questions: session.questions,
-        nameless: session.nameless === true,
+        title: target.title,
+        questions: target.questions,
+        nameless: target.nameless === true,
         ...(simulatedPlayers
           ? { simulation: { players: simulatedPlayers } }
           : {}),
       });
       const credentials = { code: reply.state!.code, token: reply.token! };
-      live.saveCredentials({ ...credentials, sessionId: session.id });
-      updateSession({
-        hostedRooms: [...(session.hostedRooms || []), credentials],
-      });
+      live.saveCredentials({ ...credentials, sessionId: target.id });
+      setSessions((items) =>
+        items.map((item) =>
+          item.id === target.id
+            ? {
+                ...item,
+                hostedRooms: [...(item.hostedRooms || []), credentials],
+                updated: Date.now(),
+              }
+            : item,
+        ),
+      );
+      setSessionId(target.id);
       live.setRoom(reply.state!);
       setSelected(0);
+      setPage("studio");
       setPresenting(true);
       setModal(null);
     } catch (failure) {
@@ -260,6 +274,22 @@ export function useHostController() {
       setBusy(false);
     }
   }
+  /** Hosts the session of the finished room again, with a fresh room code and no responses. */
+  async function restartSession() {
+    if (!room?.ended) return;
+    if (room.crowd) {
+      await startCrowdSession(room.crowd.kind);
+      return;
+    }
+    const original = sessions.find((item) =>
+      item.hostedRooms?.some((entry) => entry.code === room.code),
+    );
+    if (!original) {
+      setError("This session is no longer saved on this device.");
+      return;
+    }
+    await startSession(undefined, original);
+  }
   async function control(action: string, index?: number) {
     setBusy(true);
     setError("");
@@ -274,7 +304,7 @@ export function useHostController() {
         setPresenting(false);
         setPage("results");
         setModal(null);
-      }
+      } else if (action === "reset") setModal(null);
     } catch (failure) {
       setError((failure as Error).message);
     } finally {
@@ -393,6 +423,7 @@ export function useHostController() {
     deleteSession,
     startSession,
     startCrowdSession,
+    restartSession,
     control,
     move,
     reorder,

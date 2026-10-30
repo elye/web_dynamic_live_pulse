@@ -28,12 +28,7 @@ type Reply = {
 
 /** What a player sent for one question; the shape depends on the question type. */
 export type Answer =
-  | string
-  | number
-  | number[]
-  | string[]
-  | { x: number; y: number }
-  | null;
+  string | number | number[] | string[] | { x: number; y: number } | null;
 
 /** A player-written question as the player's form holds it. */
 export type AuthoredQuestion = {
@@ -79,6 +74,7 @@ export function useLive(
   const [submitted, setSubmitted] = useState<string[]>([]);
   const [answers, setAnswers] = useState<Record<string, Answer>>({});
   const [authored, setAuthored] = useState<AuthoredQuestion | undefined>();
+  const [reset, setReset] = useState({ questionId: "", count: 0 });
   const key = role === "host" ? "pulse:host" : `pulse:participant:${code}`;
   const notifyRestored = useEffectEvent((restoredRoom: Room) =>
     onRestored?.(restoredRoom),
@@ -127,12 +123,21 @@ export function useLive(
       if (role === "audience")
         setError("The host deleted this session. Join another room.");
     };
+    const questionReset = ({ questionId }: { questionId: string }) => {
+      setSubmitted((items) => items.filter((id) => id !== questionId));
+      setAnswers((items) => {
+        const { [questionId]: _cleared, ...rest } = items;
+        return rest;
+      });
+      setReset((current) => ({ questionId, count: current.count + 1 }));
+    };
     socket.on("connect", restore);
     socket.on("disconnect", disconnected);
     socket.on("connect_error", disconnected);
     socket.on("room:state", setRoom);
     socket.on("room:expired", expired);
     socket.on("room:deleted", deleted);
+    socket.on("room:reset", questionReset);
     if (socket.connected) void restore();
     else socket.connect();
     return () => {
@@ -142,6 +147,7 @@ export function useLive(
       socket.off("room:state", setRoom);
       socket.off("room:expired", expired);
       socket.off("room:deleted", deleted);
+      socket.off("room:reset", questionReset);
     };
   }, [key, role]);
   return {
@@ -155,6 +161,7 @@ export function useLive(
     answers,
     setAnswers,
     authored,
+    reset,
     credentials: () => readStored<Credentials | null>(key, null),
     saveCredentials: (credentials: Credentials | null) =>
       store(key, credentials),

@@ -1145,3 +1145,31 @@ test("players see their own rank beyond the top 10, and the podium waits on a su
   assert.equal(state.podium, true);
   rooms.delete(room.code);
 });
+
+test("resetting a question clears only its responses and reopens it", () => {
+  const room = createRoom("Reset", [
+    { type: "poll", title: "Hidden?", options: ["A", "B"], revealMode: "onDone" },
+    { type: "poll", title: "Other", options: ["A", "B"] },
+    { type: "slide", title: "Hi", description: "Welcome", options: [] },
+  ]);
+  const token = joinRoom(room, "Alex");
+  assert.throws(() => controlRoom(room, room.hostToken, "reset"), /Start the questions/);
+  controlRoom(room, room.hostToken, "start");
+  submitVote(room, token, room.questions[0].id, 0);
+  controlRoom(room, room.hostToken, "select", 1);
+  submitVote(room, token, room.questions[1].id, 1);
+  controlRoom(room, room.hostToken, "select", 0);
+  controlRoom(room, room.hostToken, "reveal");
+  assert.equal(room.revealed, true);
+  assert.throws(() => controlRoom(room, "wrong", "reset"), /Only the host/);
+  controlRoom(room, room.hostToken, "reset");
+  assert.equal(room.accepting, true);
+  assert.equal(room.revealed, false);
+  assert.equal(room.votes.get(room.questions[0].id).size, 0);
+  assert.equal(room.votes.get(room.questions[1].id).size, 1);
+  assert.equal(snapshot(room, true).questions[0].responses, 0);
+  submitVote(room, token, room.questions[0].id, 1);
+  controlRoom(room, room.hostToken, "select", 2);
+  assert.throws(() => controlRoom(room, room.hostToken, "reset"), /no responses/);
+  rooms.delete(room.code);
+});

@@ -454,7 +454,6 @@
   padding: 13px 15px;
   border-radius: 6px;
   font-size: 14px;
-  cursor: grab;
 }
 
 .rank-item > svg:first-child {
@@ -481,9 +480,141 @@
   overflow-wrap: anywhere;
 }
 
-.rank-move-buttons {
-  display: flex;
-  gap: 2px;
+/* Each draggable item keeps its own colour wherever it is dropped. */
+.swap-tone-0 {
+  --tone-bg: #fbe9e2;
+  --tone-line: #e6ac97;
+  --tone-ink: #814d39;
+}
+
+.swap-tone-1 {
+  --tone-bg: #e8edf7;
+  --tone-line: #aab8d8;
+  --tone-ink: #4e608c;
+}
+
+.swap-tone-2 {
+  --tone-bg: #eef3e3;
+  --tone-line: #bdd0a3;
+  --tone-ink: #57723d;
+}
+
+.swap-tone-3 {
+  --tone-bg: #f8f0dc;
+  --tone-line: #dcc28c;
+  --tone-ink: #867044;
+}
+
+.swap-tone-4 {
+  --tone-bg: #f6e6ef;
+  --tone-line: #d9a5c0;
+  --tone-ink: #86506b;
+}
+
+.swap-tone-5 {
+  --tone-bg: #e1f1ef;
+  --tone-line: #9fcfc8;
+  --tone-ink: #3f7a72;
+}
+
+.swap-tone-6 {
+  --tone-bg: #eee9f7;
+  --tone-line: #c3b1e1;
+  --tone-ink: #6a5590;
+}
+
+.swap-tone-7 {
+  --tone-bg: #f3e9e0;
+  --tone-line: #c9ad94;
+  --tone-ink: #7a5a40;
+}
+
+.rank-item[class*="swap-tone-"],
+.match-input-answer[class*="swap-tone-"] {
+  background: var(--tone-bg);
+  border: 1px solid var(--tone-line);
+  color: var(--tone-ink);
+}
+
+.rank-item[class*="swap-tone-"] > svg:first-child,
+.match-input-answer[class*="swap-tone-"] > svg {
+  color: var(--tone-line);
+}
+
+.rank-item[class*="swap-tone-"] .rank-position {
+  background: var(--tone-line);
+  color: #fff;
+}
+
+/* Items that trade places when one is dragged onto another (ranking and match). */
+.rank-item,
+.match-input-answer {
+  position: relative;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition:
+    box-shadow 0.15s,
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.rank-item.is-dragging,
+.match-input-answer.is-dragging {
+  cursor: grabbing;
+  opacity: 0.92;
+  transition: none;
+  box-shadow: 0 10px 24px #2a3a2455;
+}
+
+.rank-item.is-swap-target,
+.match-input-answer.is-swap-target,
+.rank-item.is-selected,
+.match-input-answer.is-selected {
+  border-color: #578461;
+  box-shadow: 0 0 0 2px #578461;
+  border-style: solid;
+}
+
+/* Tiles that just traded places start fully highlighted and fade back over a second. */
+.rank-item.is-swapped,
+.match-input-answer.is-swapped {
+  animation: swapped-fade 1s ease-out;
+}
+
+.rank-item.swapped-1,
+.match-input-answer.swapped-1 {
+  animation-name: swapped-fade-alt;
+}
+
+@keyframes swapped-fade {
+  from {
+    border-color: #578461;
+    box-shadow: 0 0 0 2px #578461;
+  }
+}
+
+@keyframes swapped-fade-alt {
+  from {
+    border-color: #578461;
+    box-shadow: 0 0 0 2px #578461;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rank-item.is-swapped,
+  .match-input-answer.is-swapped {
+    animation: none;
+    border-color: #578461;
+    box-shadow: 0 0 0 2px #578461;
+  }
+}
+
+.rank-item:focus-visible,
+.match-input-answer:focus-visible {
+  outline: 2px solid #578461;
+  outline-offset: 2px;
 }
 
 .slider-input {

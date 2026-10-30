@@ -71,6 +71,8 @@ Add a **Title & description** question when you just need to show participants a
 
 Add a **True or false** question for a quick binary call. It behaves like a quiz with exactly two fixed options ("True"/"False", editable), a correct answer, and up to 1,000 points for a correct response (faster answers score more).
 
+Add a **Match** question for a scored matching quiz, such as people with birth years, animals with types, or countries with capitals. Enter 2 to 6 pairs in the editor, each already matched (item A beside its item B, with every B different). When the question runs, the app jumbles list B so that no item starts beside its own match, and participants drag (or use the up/down buttons on) the B items until each sits beside its A item. Each correct pair earns an equal share of the question's points, including the speed bonus when enabled. Results list the A items in order with the percentage of participants who matched each one correctly. JSON stores list A in `options` and list B in `matchOptions`, where `matchOptions[i]` is the correct partner of `options[i]`; `correct` is `null` because there is no single correct option. The jumbled order is chosen by the server and is kept from participants until the results are revealed.
+
 Add a **Ranking** question to have participants drag (or use the up/down controls) to sort 2 to 6 items from most to least important. Each participant submits a full ordering; results are aggregated with Borda-count scoring (an item earns more points the higher it's ranked) and shown sorted from highest to lowest. Ranking has no single correct answer, so it does not award leaderboard points.
 
 Add a **Slider** question to have participants estimate a numeric value on a sliding scale. Set the minimum, maximum, and step in the question editor; participants drag a slider between those bounds and submit one value. Results show the average of all responses plus a histogram of how many participants chose each value. Slider has no single correct answer, so it does not award leaderboard points.
@@ -87,7 +89,7 @@ Every participant has a heart button next to the room status. Each tap sends a h
 
 ### Competition mode
 
-Quiz and True or False questions have a **Faster answers score more** checkbox in the question editor (other types have no correct answer, so they can't compete). It is **on by default** and is stored per question as `"competitive": true` or `false` in exported JSON; a missing value counts as on.
+Quiz, True or False, and Match questions have a **Faster answers score more** checkbox in the question editor. It is **on by default** and is stored per question as `"competitive": true` or `false` in exported JSON; a missing value counts as on.
 
 - A competitive question scores **500 points for the right answer plus up to 500 for speed**. The speed bonus falls linearly to zero over 20 seconds, measured from when the question first opened to answers (pausing and resuming does not restart the clock). Wrong or missing answers score 0.
 - If the box is unticked, the question awards a flat 1,000 points for a correct answer regardless of speed.
@@ -100,7 +102,7 @@ Quiz and True or False questions have a **Faster answers score more** checkbox i
 The question picker and the editor's type menu split question types in two groups:
 
 1. **Without an answer** (title & description, word cloud, multiple choice, many options, ranking, slider, Q&A, 100 Points, 2x2 Grid, Peer praise, open response): responses are not scored. Most default to **Show on the fly**; Peer praise questions default to **Hide until done**.
-2. **With an answer** (Quiz, True or False, Two truths and a lie): responses default to **Hide until done**, players are scored, and after **Show results** the host can click **Show ranking** to show the top 10 players to everyone before the next question. Untick **Show the top 10 ranking** in the editor to skip that step for a question (stored as `showRanking` in exported JSON; the ranking is never shown after the final question, which goes to the podium instead).
+2. **With an answer** (Quiz, True or False, Two truths and a lie, Match): responses default to **Hide until done**, players are scored, and after **Show results** the host can click **Show ranking** to show the top 10 players to everyone before the next question. Untick **Show the top 10 ranking** in the editor to skip that step for a question (stored as `showRanking` in exported JSON; the ranking is never shown after the final question, which goes to the podium instead).
 
 The host's main button therefore steps through: **Show results** → **Show ranking** → **Next question**, and at the end **Show podium** → **Finish session**. Steps that don't apply to a question are skipped.
 
@@ -108,10 +110,10 @@ The host's main button therefore steps through: **Show results** → **Show rank
 
 Every question that collects responses (everything except title-and-description slides and Q&A, which is always live) has a **When should responses show?** setting in the question editor:
 
-- **Hide until done** (default for questions with an answer: Quiz, True or False, and Two truths and a lie, plus Peer praise): the host dashboard and participants see only how many people have responded. On the host slide, the answer options stay visible (for choice-based questions) but without percentages, bars, or counts. Click **Reveal results** to show the answers.
+- **Hide until done** (default for questions with an answer: Quiz, True or False, Two truths and a lie, and Match, plus Peer praise): the host dashboard and participants see only how many people have responded. On the host slide, the answer options stay visible (for choice-based questions) but without percentages, bars, or counts. Click **Reveal results** to show the answers.
 - **Show on the fly** (default for every other type): responses appear live as people answer, for both the host and the audience. Correct answers and leaderboard scores for quizzes still wait for **Reveal results**.
 
-While a question's results are still hidden, the host's main button reads **Show results**: the first click reveals them, and only then does it become **Next question** (or **Finish session** on the last question). This prevents skipping past a question before the audience has seen the answers. Slides, Q&A, and questions set to **Show on the fly** have nothing left to reveal, so they go straight to the next question. The exception is Quiz, True or False, and Two truths and a lie, whose correct answer and scores still wait for **Show results** even in live mode. The small arrow in the slide controls still jumps directly.
+While a question's results are still hidden, the host's main button reads **Show results**: the first click reveals them, and only then does it become **Next question** (or **Finish session** on the last question). This prevents skipping past a question before the audience has seen the answers. Slides, Q&A, and questions set to **Show on the fly** have nothing left to reveal, so they go straight to the next question. The exception is Quiz, True or False, Two truths and a lie, and Match, whose correct answer and scores still wait for **Show results** even in live mode. The small arrow in the slide controls still jumps directly.
 
 The choice is stored per question as `revealMode` (`"live"` or `"onDone"`) in exported JSON.
 
@@ -119,7 +121,7 @@ The choice is stored per question as `revealMode` (`"live"` or `"onDone"`) in ex
 
 Once a player submits, their own answer stays on their screen in a **Your answer** card (**Your answers** when several options were chosen). It appears on the waiting screen, the live results, and the final results, for every question type: the chosen option, their ranking order, their 100 Points split, their slider value or grid position, or the text they sent. It survives a refresh or rejoin.
 
-For Quiz, True or False, and Two truths and a lie, the reveal also shows a result banner above the answer card:
+For Quiz, True or False, Two truths and a lie, and Match, the reveal also shows a result banner above the answer card:
 
 - **Green, "You got it right!"**: the correct answer, or for a multi-answer quiz every correct option and nothing else.
 - **Yellow, "Partly right!"**: a multi-answer quiz where the player picked only correct options but not all of them (for example 2 of 3).
@@ -180,6 +182,20 @@ The versioned format is:
       "revealMode": "onDone"
     },
     {
+      "type": "match",
+      "title": "Match each person with their birth year",
+      "options": [
+        "Ada Lovelace",
+        "Albert Einstein",
+        "Katherine Johnson",
+        "Alan Turing"
+      ],
+      "correct": null,
+      "matchOptions": ["1815", "1879", "1918", "1912"],
+      "competitive": true,
+      "revealMode": "onDone"
+    },
+    {
       "type": "truefalse",
       "title": "The sky is blue.",
       "options": ["True", "False"],
@@ -230,7 +246,7 @@ The versioned format is:
 }
 ```
 
-Supported types are `slide`, `cloud`, `poll`, `quiz`, `truefalse`, `twotruths`, `ranking`, `slider`, `qna`, `points100`, `grid2x2`, `peerpraise`, and `text`; supported themes are `mint`, `peach`, `lilac`, and `sky`. `showQr` (show the join QR code on slides) and `dark` (dark slides) are optional booleans that default to `true` and `false`; any other value is rejected. `correct` is a zero-based option index for quizzes, true-or-false questions, and two-truths-and-a-lie questions (where it points at the lie), and `null` otherwise (including for ranking, slider, Q&A, Peer praise, 100 Points, and 2x2 Grid, which have no single correct answer). Word clouds, open responses, Q&A, Peer praise questions, and slides use an empty `options` array; true-or-false questions require exactly 2 options; two-truths-and-a-lie questions require exactly 3 statements (up to 200 characters each) and always use the title "Pick the one that is not true.", whatever title is supplied; polls, quizzes, ranking, and 100 Points require 2 to 6; 2x2 Grid questions require exactly 4 options, used as axis labels in a fixed order (x-axis low, x-axis high, y-axis low, y-axis high) up to 40 characters each rather than selectable choices; slider questions also use an empty `options` array and instead require `sliderMin`, `sliderMax`, and `sliderStep` (`sliderMax` must exceed `sliderMin`, `sliderStep` must be positive, and the range must divide into at most 1000 steps). Slide questions require a non-empty `description` (up to 280 characters); other types omit it. `poll` questions also accept an optional `pollDisplay` value (`"list"`, `"pie"`, `"stacked"`, or `"bar"`; default `"list"`) to choose the results visualization. `poll` and `quiz` questions also accept an optional boolean `multiple` (default `false`); when `true`, participants may select more than one option. A `quiz` with `multiple: true` must also have `corrects`, a non-empty array of unique zero-based option indexes, and `correct` is set to the smallest of them. Every type except `slide` and `qna` carries `revealMode`: `"onDone"` hides results (showing only the response count) until the host clicks Reveal results, and `"live"` shows responses as they arrive. It is optional on import and defaults to `"onDone"` for quiz, true-or-false, two-truths-and-a-lie, and Peer praise questions, and `"live"` otherwise; any other value is rejected. Existing question and option limits apply to imports.
+Supported types are `slide`, `cloud`, `poll`, `quiz`, `match`, `truefalse`, `twotruths`, `ranking`, `slider`, `qna`, `points100`, `grid2x2`, `peerpraise`, and `text`; supported themes are `mint`, `peach`, `lilac`, and `sky`. `showQr` (show the join QR code on slides) and `dark` (dark slides) are optional booleans that default to `true` and `false`; any other value is rejected. `correct` is a zero-based option index for quizzes, true-or-false questions, and two-truths-and-a-lie questions (where it points at the lie), and `null` otherwise (including for Match, ranking, slider, Q&A, Peer praise, 100 Points, and 2x2 Grid, which have no single correct answer). Match questions use `options` for list A and `matchOptions` for list B, where `matchOptions[i]` is the correct match for `options[i]`; both lists contain 2 to 6 items, and every item in list B is different. Word clouds, open responses, Q&A, Peer praise questions, and slides use an empty `options` array; true-or-false questions require exactly 2 options; two-truths-and-a-lie questions require exactly 3 statements (up to 200 characters each) and always use the title "Pick the one that is not true.", whatever title is supplied; polls, quizzes, ranking, and 100 Points require 2 to 6; 2x2 Grid questions require exactly 4 options, used as axis labels in a fixed order (x-axis low, x-axis high, y-axis low, y-axis high) up to 40 characters each rather than selectable choices; slider questions also use an empty `options` array and instead require `sliderMin`, `sliderMax`, and `sliderStep` (`sliderMax` must exceed `sliderMin`, `sliderStep` must be positive, and the range must divide into at most 1000 steps). Slide questions require a non-empty `description` (up to 280 characters); other types omit it. `poll` questions also accept an optional `pollDisplay` value (`"list"`, `"pie"`, `"stacked"`, or `"bar"`; default `"list"`) to choose the results visualization. `poll` and `quiz` questions also accept an optional boolean `multiple` (default `false`); when `true`, participants may select more than one option. A `quiz` with `multiple: true` must also have `corrects`, a non-empty array of unique zero-based option indexes, and `correct` is set to the smallest of them. Every type except `slide` and `qna` carries `revealMode`: `"onDone"` hides results (showing only the response count) until the host clicks Reveal results, and `"live"` shows responses as they arrive. It is optional on import and defaults to `"onDone"` for quiz, true-or-false, two-truths-and-a-lie, and Peer praise questions, and `"live"` otherwise; any other value is rejected. Existing question and option limits apply to imports.
 
 Word cloud questions also accept optional `maxSubmissions`, an integer from 1 to 5. It defaults to 1 when missing and controls how many separate words or short phrases each participant may contribute.
 
@@ -243,8 +259,10 @@ Instead of building every question by hand, let any AI assistant write the sessi
 1. In **My sessions**, select **Generate with AI** (next to **Import JSON**). It is disabled while hosting a live session.
 2. Describe the session, or click an example to start from: **Survey**, **Quiz**, **Survey + quiz**, or **Peer praise**.
    - A **survey** has no right answers and collects opinions, feelings, or ideas (word cloud, multiple choice, slider, ranking, Q&A, 100 Points, 2x2 Grid, Peer praise, open response).
-   - A **quiz** has correct answers, is scored, and feeds the leaderboard (Quiz, True or False, Two truths and a lie).
-   - You can combine both in one session, for example an onboarding survey followed by a short knowledge-check quiz. Title-and-description slides work in either.
+
+- A **quiz** has correct answers, is scored, and feeds the leaderboard (Quiz, True or False, Two truths and a lie, Match).
+- You can combine both in one session, for example an onboarding survey followed by a short knowledge-check quiz. Title-and-description slides work in either.
+
 3. Select **Copy AI prompt**. The clipboard now holds a system prompt followed by your request. If the browser blocks clipboard access (for example on a plain-HTTP LAN address), the prompt appears in a read-only box to copy by hand.
 4. Paste it into any AI assistant (ChatGPT, Gemini, Claude, Google AI Studio, and so on). It should reply with only JSON.
 5. Copy that JSON, then select **Import JSON** (also linked from the confirmation message), paste it, and select **Import session**. The usual import validation applies, so a malformed reply shows an error instead of creating a session. If it fails, paste the error message back into the AI and ask it to fix the JSON.

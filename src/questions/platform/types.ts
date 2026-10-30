@@ -45,6 +45,10 @@ export type QuestionRecord = {
   showRanking?: boolean;
   /** Word clouds: maximum contributions one participant can submit. */
   maxSubmissions?: number;
+  /** Match questions: the second list; `matchOptions[i]` is the correct partner of `options[i]`. */
+  matchOptions?: string[];
+  /** Match questions, in a running room: the list-B item (by pair index) shown at each position. */
+  matchShuffle?: number[];
   /** Name of the player who wrote this question (player-made sessions only). */
   author?: string;
   /** The participant-specific name assigned for a peer praise question. */
@@ -152,6 +156,8 @@ export type QuestionDefinition<K extends string = string> = {
   ): TypeFields;
   /** The type's own fields in an export. */
   serialize?(question: QuestionRecord): Record<string, unknown>;
+  /** The fields to replace before the answer is revealed, so a player's copy gives nothing away. */
+  conceal?(question: QuestionRecord): TypeFields;
   answer: DefinitionAnswer;
   results: {
     aggregate(

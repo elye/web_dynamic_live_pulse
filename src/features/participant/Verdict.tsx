@@ -1,6 +1,7 @@
 import { Check, X } from "lucide-react";
 import { type Answer } from "../../live";
 import { type Question } from "../../model";
+import { scoreShare } from "../../questions";
 
 /** Tells a player how they did on a revealed question that has a correct answer. */
 export function Verdict({
@@ -39,12 +40,19 @@ export function Verdict({
           ? `You found ${right} of ${corrects.length}, but picked ${wrong} wrong ${wrong === 1 ? "option" : "options"}, so no points this time.`
           : "None of your picks were correct.";
     }
-  } else if (answer === question.correct) {
-    tone = "right";
-    title = "You got it right!";
   } else {
-    tone = "wrong";
-    title = "Not quite";
+    const share = scoreShare(question, answer);
+    if (share >= 1) {
+      tone = "right";
+      title = "You got it right!";
+    } else if (share > 0) {
+      tone = "partial";
+      title = "Partly right!";
+      detail = `You earned ${Math.round(share * 100)}% of the points.`;
+    } else {
+      tone = "wrong";
+      title = "Not quite";
+    }
   }
   return (
     <div className={`verdict verdict-${tone}`} role="status">

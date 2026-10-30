@@ -13,6 +13,7 @@ import { slider } from "./types/slider/definition.ts";
 import { text } from "./types/text/definition.ts";
 import { truefalse } from "./types/truefalse/definition.ts";
 import { twotruths } from "./types/twotruths/definition.ts";
+import { match } from "./types/match/definition.ts";
 
 /**
  * Every question type, in the order they are offered. Adding a type to the app means
@@ -33,6 +34,7 @@ const registered = [
   quiz,
   truefalse,
   twotruths,
+  match,
 ] as const;
 
 type Registered = (typeof registered)[number];

@@ -14,6 +14,7 @@ import { meta as text } from "../types/text/ui";
 import { meta as quiz } from "../types/quiz/ui";
 import { meta as truefalse } from "../types/truefalse/ui";
 import { meta as twotruths } from "../types/twotruths/ui";
+import { meta as match } from "../types/match/ui";
 
 /** Typed against `Kind`, so a new question type does not compile until it has its look. */
 const metas: Record<Kind, QuestionMeta> = {
@@ -31,6 +32,7 @@ const metas: Record<Kind, QuestionMeta> = {
   quiz,
   truefalse,
   twotruths,
+  match,
 };
 
 export const metaOf = (kind: Kind): QuestionMeta => metas[kind];

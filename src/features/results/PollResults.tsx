@@ -17,6 +17,7 @@ export function PollResults({
   display,
   answerLabel = "Correct",
   splitColumns = true,
+  markAnswers = true,
 }: {
   question: Question;
   results: { text: string; count: number }[];
@@ -30,6 +31,8 @@ export function PollResults({
   answerLabel?: string;
   /** Lay four or more options out in two columns. */
   splitColumns?: boolean;
+  /** Highlight the right option and dim the others after reveal (scored questions). */
+  markAnswers?: boolean;
 }) {
   const displayMode = hideCounts ? "list" : (display ?? "list");
   const box = useRef<HTMLDivElement>(null);
@@ -204,11 +207,12 @@ export function PollResults({
       {results.map((item, index) => {
         const isAnswer =
           reveal &&
+          markAnswers &&
           canCompete(question.type) &&
           (question.corrects?.length
             ? question.corrects.includes(index)
             : question.correct === index);
-        const hasAnswer = reveal && canCompete(question.type);
+        const hasAnswer = reveal && markAnswers && canCompete(question.type);
         return (
           <div
             className={`poll-row ${isAnswer ? "is-answer" : hasAnswer ? "not-answer" : ""}`}

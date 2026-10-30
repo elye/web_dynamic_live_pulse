@@ -14,6 +14,7 @@ import { editor as text } from "../types/text/editor";
 import { editor as quiz } from "../types/quiz/editor";
 import { editor as truefalse } from "../types/truefalse/editor";
 import { editor as twotruths } from "../types/twotruths/editor";
+import { editor as match } from "../types/match/editor";
 
 /** Typed against `Kind`, so a new question type does not compile until it has its editor. */
 const editors: Record<Kind, QuestionEditor> = {
@@ -31,6 +32,7 @@ const editors: Record<Kind, QuestionEditor> = {
   quiz,
   truefalse,
   twotruths,
+  match,
 };
 
 export const editorOf = (kind: Kind): QuestionEditor => editors[kind];

@@ -14,6 +14,7 @@ import { author as text } from "../types/text/author";
 import { author as quiz } from "../types/quiz/author";
 import { author as truefalse } from "../types/truefalse/author";
 import { author as twotruths } from "../types/twotruths/author";
+import { author as match } from "../types/match/author";
 
 /** Typed against `Kind`, so a new question type does not compile until it says how players write it. */
 const authors: Record<Kind, QuestionAuthor> = {
@@ -31,6 +32,7 @@ const authors: Record<Kind, QuestionAuthor> = {
   quiz,
   truefalse,
   twotruths,
+  match,
 };
 
 export const authorOf = (kind: Kind): QuestionAuthor => authors[kind];

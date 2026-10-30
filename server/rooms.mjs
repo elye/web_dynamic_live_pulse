@@ -3,6 +3,7 @@ import {
   aggregateResults,
   authoredQuestion,
   canCompete,
+  concealedFields,
   hasRevealMode,
   holdsSeveralSubmissions,
   kinds,
@@ -677,13 +678,13 @@ export function snapshot(room, host = false, token) {
               room.peerPraiseTargets.get(question.id)?.get(token),
             )?.name
           : undefined;
+      const unveiled =
+        host || (room.revealed && (index === room.active || room.ended));
       return {
         ...question,
+        ...(unveiled ? {} : concealedFields(question)),
         ...(assignedTo ? { assignedTo } : {}),
-        correct:
-          host || (room.revealed && (index === room.active || room.ended))
-            ? question.correct
-            : null,
+        correct: unveiled ? question.correct : null,
         ...(question.corrects
           ? {
               corrects:

@@ -109,7 +109,7 @@ ${types}
 
 SURVEY vs QUIZ (decide from the user's request, and freely combine them in one session)
 - SURVEY questions have NO correct answer and collect opinions, feelings or ideas: ${list(survey)}. Always set "correct": null.
-- QUIZ questions have ONE correct answer and are scored on a leaderboard: ${list(quiz)}. Always set a valid "correct" index.
+- QUIZ questions have a correct answer and are scored on a leaderboard: ${list(quiz)}. Follow each type's exact "correct" rule; some types have no single correct option and define the right answer in their own fields.
 - "slide" is neutral and can be used in either kind of session.
 - Examples: "How did this sprint feel?" is a survey. "Which planet has the most moons?" is a quiz. "Run a team retro" => surveys only. "Make a trivia night" => quizzes only. "Onboarding with a knowledge check" => a mix.
 - If the user is vague, default to surveys, and add a short quiz only when they mention testing, learning, trivia, knowledge, scoring or competition.
@@ -119,7 +119,7 @@ GENERAL GUIDANCE
 - Start with a "slide" welcome slide and end with an open-ended question when it suits the request.
 - Set top-level "nameless": true when participants should receive generated names instead of being asked for names. A participant can replace their generated name once while the session is active.
 - Write concise, friendly, audience-ready text. Keep every string within its limit.
-- For scored types (${list(quiz)}) make sure "correct" really points at the right option.
+- For scored types (${list(quiz)}), make sure "correct" and any type-specific fields follow that type's rules and identify the right answer(s).
 
 EXAMPLE containing one question of every type (replace the content, follow the structure):
 ${example}`;

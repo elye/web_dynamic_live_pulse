@@ -14,6 +14,7 @@ import { input as text } from "../types/text/input";
 import { input as quiz } from "../types/quiz/input";
 import { input as truefalse } from "../types/truefalse/input";
 import { input as twotruths } from "../types/twotruths/input";
+import { input as match } from "../types/match/input";
 
 /** Typed against `Kind`, so a new question type does not compile until a player can answer it. */
 const inputs: Record<Kind, QuestionInput> = {
@@ -31,6 +32,7 @@ const inputs: Record<Kind, QuestionInput> = {
   quiz,
   truefalse,
   twotruths,
+  match,
 };
 
 export const inputOf = (kind: Kind): QuestionInput => inputs[kind];

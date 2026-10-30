@@ -22,6 +22,8 @@ type InputBase = {
   listsAnswers?: boolean;
   /** Said before the correct answer when the results are shown. */
   correctAnswerLabel?: string;
+  /** Custom correct-answer display for scored types whose answer is not one option. */
+  CorrectAnswer?: ComponentType<{ question: Question }>;
   /** Extra lines under the title on the player's screen. */
   Header?: ComponentType;
 };

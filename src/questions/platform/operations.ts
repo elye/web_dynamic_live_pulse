@@ -155,6 +155,11 @@ export function serializeQuestion(question: QuestionRecord): RawQuestion {
   };
 }
 
+/** The fields a player's copy of the question must not carry before the reveal. */
+export function concealedFields(question: QuestionRecord) {
+  return definitionOf(question.type)?.conceal?.(question) ?? {};
+}
+
 /** A fresh question of `kind` with its example content. */
 export function createQuestion(kind: Kind, newId: () => string): Question {
   const definition = definitionOf(kind);

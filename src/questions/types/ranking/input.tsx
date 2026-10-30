@@ -1,6 +1,6 @@
-import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
-import { IconButton } from "../../../components/IconButton";
+import { GripVertical } from "lucide-react";
 import { useParticipant } from "../../../features/participant/ParticipantContext";
+import { useSwapDrag } from "../../../hooks/useSwapDrag";
 import { type Question } from "../../registry";
 import { type AnswerValue, type QuestionInput } from "../../ui/input";
 
@@ -10,55 +10,36 @@ const rankingOrder = (question: Question, touched: AnswerValue) =>
 function RankingInput() {
   const { question, currentAnswer, setAnswer, setAnswerQuestion, room } =
     useParticipant();
-  if (!room || !question) return null;
-  const order = rankingOrder(question, currentAnswer);
-  const moveRankItem = (from: number, to: number) => {
+  const order = question ? rankingOrder(question, currentAnswer) : [];
+  const swap = (first: number, second: number) => {
+    if (!question) return;
     const next = [...order];
-    const [moved] = next.splice(from, 1);
-    next.splice(to, 0, moved);
+    [next[first], next[second]] = [next[second], next[first]];
     setAnswer(next);
     setAnswerQuestion(question.id);
   };
+  const { item } = useSwapDrag(swap);
+  if (!room || !question) return null;
   return (
     <div
       className="rank-list"
-      aria-label="Drag to reorder, most important first"
+      aria-label="Drag an item onto another to swap them, most important first"
     >
-      {order.map((optionIndex, position) => (
-        <div
-          className="rank-item"
-          key={optionIndex}
-          draggable
-          onDragStart={(event) => {
-            event.dataTransfer.effectAllowed = "move";
-            event.dataTransfer.setData("text/plain", String(position));
-          }}
-          onDragOver={(event) => event.preventDefault()}
-          onDrop={(event) => {
-            event.preventDefault();
-            const from = Number(event.dataTransfer.getData("text/plain"));
-            moveRankItem(from, position);
-          }}
-        >
-          <GripVertical size={16} />
-          <span className="rank-position">{position + 1}</span>
-          <span>{question.options[optionIndex]}</span>
-          <div className="rank-move-buttons">
-            <IconButton
-              icon={ArrowUp}
-              label={`Move ${question.options[optionIndex]} up`}
-              disabled={position === 0}
-              onClick={() => moveRankItem(position, position - 1)}
-            />
-            <IconButton
-              icon={ArrowDown}
-              label={`Move ${question.options[optionIndex]} down`}
-              disabled={position === order.length - 1}
-              onClick={() => moveRankItem(position, position + 1)}
-            />
+      {order.map((optionIndex, position) => {
+        const { className, ...props } = item(position);
+        return (
+          <div
+            className={`rank-item swap-tone-${optionIndex % 8} ${className}`}
+            key={optionIndex}
+            aria-label={`${position + 1}. ${question.options[optionIndex]}`}
+            {...props}
+          >
+            <GripVertical size={16} />
+            <span className="rank-position">{position + 1}</span>
+            <span>{question.options[optionIndex]}</span>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

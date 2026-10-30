@@ -14,6 +14,7 @@ import { results as text } from "../types/text/results";
 import { results as quiz } from "../types/quiz/results";
 import { results as truefalse } from "../types/truefalse/results";
 import { results as twotruths } from "../types/twotruths/results";
+import { results as match } from "../types/match/results";
 
 /** Typed against `Kind`, so a new question type does not compile until it can show its responses. */
 const all: Record<Kind, QuestionResults> = {
@@ -31,6 +32,7 @@ const all: Record<Kind, QuestionResults> = {
   quiz,
   truefalse,
   twotruths,
+  match,
 };
 
 export const resultsOf = (kind: Kind): QuestionResults => all[kind];

@@ -38,7 +38,7 @@ export function QuestionRail() {
           label="Add question"
           disabled={isLive || questionList.length >= 30}
           onClick={() => {
-            setInsertIndex(null);
+            setInsertIndex(0);
             setModal("add");
           }}
         />

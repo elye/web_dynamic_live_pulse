@@ -1,7 +1,18 @@
-import { Copy, GripVertical, Plus, Settings2, Trash2 } from "lucide-react";
+import {
+  Check,
+  Copy,
+  GripVertical,
+  ListChecks,
+  Plus,
+  Settings2,
+  Trash2,
+  X,
+} from "lucide-react";
+import { useState } from "react";
 import { IconButton } from "../../../components/IconButton";
+import { Modal } from "../../../components/Modal";
 import { icons } from "../../../constants/kinds";
-import { createId, labels } from "../../../model";
+import { createId, labels, newQuestion } from "../../../model";
 import { metaOf } from "../../../questions/ui/metaRegistry";
 import { useHost } from "../HostContext";
 
@@ -27,36 +38,107 @@ export function QuestionRail() {
   } = useHost();
   const isLive = !!room && !room.ended;
   const inLobby = isLive && !room.started;
+  const [selecting, setSelecting] = useState(false);
+  const [checked, setChecked] = useState<string[]>([]);
+  const [confirming, setConfirming] = useState(false);
+  const selectMode = selecting && !isLive;
+  const checkedIds = questionList
+    .filter((item) => checked.includes(item.id))
+    .map((item) => item.id);
+  const allChecked =
+    questionList.length > 0 && checkedIds.length === questionList.length;
+  function stopSelecting() {
+    setSelecting(false);
+    setChecked([]);
+    setConfirming(false);
+  }
+  function deleteChecked() {
+    const remaining = session.questions.filter(
+      (item) => !checkedIds.includes(item.id),
+    );
+    // A session always keeps at least one question, so deleting everything starts afresh.
+    updateSession({
+      questions: remaining.length ? remaining : [newQuestion("cloud")],
+    });
+    setSelected(0);
+    setNotice(
+      checkedIds.length === 1
+        ? "1 question deleted"
+        : `${checkedIds.length} questions deleted`,
+    );
+    stopSelecting();
+  }
   return (
     <aside className="question-rail">
       <div className="rail-heading">
         <span>
           Questions <b>{String(questionList.length).padStart(2, "0")}</b>
         </span>
-        <IconButton
-          icon={Plus}
-          label="Add question"
-          disabled={isLive || questionList.length >= 30}
-          onClick={() => {
-            setInsertIndex(0);
-            setModal("add");
-          }}
-        />
+        <span className="rail-heading-actions">
+          <IconButton
+            icon={selectMode ? X : ListChecks}
+            label={selectMode ? "Cancel selection" : "Select questions"}
+            disabled={isLive || busy}
+            onClick={() => (selectMode ? stopSelecting() : setSelecting(true))}
+          />
+          <IconButton
+            icon={Plus}
+            label="Add question"
+            disabled={isLive || selectMode || questionList.length >= 30}
+            onClick={() => {
+              setInsertIndex(0);
+              setModal("add");
+            }}
+          />
+        </span>
       </div>
+      {selectMode && (
+        <div className="rail-selection">
+          <label>
+            <input
+              type="checkbox"
+              checked={allChecked}
+              onChange={() =>
+                setChecked(allChecked ? [] : questionList.map((i) => i.id))
+              }
+            />
+            Select all
+          </label>
+          <button
+            type="button"
+            className="rail-delete-selected"
+            disabled={!checkedIds.length}
+            onClick={() => setConfirming(true)}
+          >
+            <Trash2 size={12} />
+            Delete{checkedIds.length ? ` (${checkedIds.length})` : ""}
+          </button>
+        </div>
+      )}
       <div className="question-list">
         {questionList.map((item, index) => {
           const Icon = icons[item.type];
           const { Thumbnail } = metaOf(item.type);
-          const draggable = !isLive && questionList.length > 1;
+          const draggable = !isLive && !selectMode && questionList.length > 1;
+          const isChecked = checkedIds.includes(item.id);
           return (
             <div className="question-item" key={item.id}>
               <button
                 type="button"
-                className={`question-thumbnail ${!inLobby && index === currentIndex ? "selected" : ""} ${dragIndex === index ? "dragging" : ""} ${dragOverIndex === index && dragIndex !== null && dragIndex !== index ? "drag-over" : ""}`}
+                aria-pressed={selectMode ? isChecked : undefined}
+                className={`question-thumbnail ${!inLobby && !selectMode && index === currentIndex ? "selected" : ""} ${isChecked ? "checked" : ""} ${dragIndex === index ? "dragging" : ""} ${dragOverIndex === index && dragIndex !== null && dragIndex !== index ? "drag-over" : ""}`}
                 draggable={draggable}
                 aria-grabbed={dragIndex === index}
                 onClick={() =>
-                  isLive ? void control("select", index) : setSelected(index)
+                  selectMode
+                    ? setChecked((current) =>
+                        isChecked
+                          ? current.filter((id) => id !== item.id)
+                          : [...current, item.id],
+                      )
+                    : isLive
+                      ? void control("select", index)
+                      : setSelected(index)
                 }
                 onDragStart={(event) => {
                   if (!draggable) return;
@@ -84,6 +166,11 @@ export function QuestionRail() {
                 }}
                 disabled={busy || inLobby}
               >
+                {selectMode && (
+                  <span className="thumbnail-check" aria-hidden="true">
+                    {isChecked && <Check size={11} strokeWidth={3} />}
+                  </span>
+                )}
                 {draggable && (
                   <span className="thumbnail-drag-handle" aria-hidden="true">
                     <GripVertical size={13} />
@@ -101,53 +188,58 @@ export function QuestionRail() {
                 </span>
                 <span className="thumbnail-title">{item.title}</span>
               </button>
-              <div
-                className="question-item-actions"
-                aria-label={`Actions for question ${index + 1}`}
-              >
-                <IconButton
-                  icon={Plus}
-                  label={`Add question after question ${index + 1}`}
-                  disabled={
-                    isLive || inLobby || busy || questionList.length >= 30
-                  }
-                  onClick={() => {
-                    setInsertIndex(index + 1);
-                    setModal("add");
-                  }}
-                />
-                <IconButton
-                  icon={Settings2}
-                  label={`Customize question ${index + 1}`}
-                  disabled={isLive || inLobby || busy}
-                  onClick={() => setEditing(item)}
-                />
-                <IconButton
-                  icon={Copy}
-                  label={`Duplicate question ${index + 1}`}
-                  disabled={
-                    isLive || inLobby || busy || questionList.length >= 30
-                  }
-                  onClick={() => {
-                    const questions = [...session.questions];
-                    questions.splice(index + 1, 0, { ...item, id: createId() });
-                    updateSession({ questions });
-                    setSelected(index + 1);
-                    setNotice("Question duplicated");
-                  }}
-                />
-                <IconButton
-                  icon={Trash2}
-                  label={`Delete question ${index + 1}`}
-                  disabled={
-                    isLive || inLobby || busy || questionList.length <= 1
-                  }
-                  onClick={() => {
-                    setSelected(index);
-                    setModal("delete");
-                  }}
-                />
-              </div>
+              {!selectMode && (
+                <div
+                  className="question-item-actions"
+                  aria-label={`Actions for question ${index + 1}`}
+                >
+                  <IconButton
+                    icon={Plus}
+                    label={`Add question after question ${index + 1}`}
+                    disabled={
+                      isLive || inLobby || busy || questionList.length >= 30
+                    }
+                    onClick={() => {
+                      setInsertIndex(index + 1);
+                      setModal("add");
+                    }}
+                  />
+                  <IconButton
+                    icon={Settings2}
+                    label={`Customize question ${index + 1}`}
+                    disabled={isLive || inLobby || busy}
+                    onClick={() => setEditing(item)}
+                  />
+                  <IconButton
+                    icon={Copy}
+                    label={`Duplicate question ${index + 1}`}
+                    disabled={
+                      isLive || inLobby || busy || questionList.length >= 30
+                    }
+                    onClick={() => {
+                      const questions = [...session.questions];
+                      questions.splice(index + 1, 0, {
+                        ...item,
+                        id: createId(),
+                      });
+                      updateSession({ questions });
+                      setSelected(index + 1);
+                      setNotice("Question duplicated");
+                    }}
+                  />
+                  <IconButton
+                    icon={Trash2}
+                    label={`Delete question ${index + 1}`}
+                    disabled={
+                      isLive || inLobby || busy || questionList.length <= 1
+                    }
+                    onClick={() => {
+                      setSelected(index);
+                      setModal("delete");
+                    }}
+                  />
+                </div>
+              )}
             </div>
           );
         })}
@@ -155,7 +247,7 @@ export function QuestionRail() {
       <button
         className="add-question"
         aria-label="Add question"
-        disabled={isLive || questionList.length >= 30}
+        disabled={isLive || selectMode || questionList.length >= 30}
         onClick={() => {
           setInsertIndex(null);
           setModal("add");
@@ -169,6 +261,30 @@ export function QuestionRail() {
           ? "Questions are locked while live"
           : `${questionList.length} of 30 questions`}
       </span>
+      {confirming && (
+        <Modal
+          title={`Delete ${checkedIds.length} ${checkedIds.length === 1 ? "question" : "questions"}?`}
+          onClose={() => setConfirming(false)}
+        >
+          <p className="muted">
+            {allChecked
+              ? "Every question will be removed and replaced with one blank question."
+              : `The selected ${checkedIds.length === 1 ? "question" : "questions"} will be removed from this session.`}
+          </p>
+          <div className="modal-actions">
+            <button
+              className="button secondary"
+              onClick={() => setConfirming(false)}
+            >
+              Cancel
+            </button>
+            <button className="button danger" onClick={deleteChecked}>
+              <Trash2 size={16} />
+              Delete {checkedIds.length === 1 ? "question" : "questions"}
+            </button>
+          </div>
+        </Modal>
+      )}
     </aside>
   );
 }

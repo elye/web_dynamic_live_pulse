@@ -1,4 +1,7 @@
-import { ManyOptionsEditor } from "../../../features/editor/sections/ManyOptionsEditor";
+import {
+  ManyOptionsEditor,
+  ManyOptionsSettings,
+} from "../../../features/editor/sections/ManyOptionsEditor";
 import {
   isVoteColorsValid,
   manyOptionLength,
@@ -8,6 +11,7 @@ import type { QuestionEditor } from "../../ui/editor";
 
 /** 2–30 non-blank options of at most 30 characters, valid colour steps. */
 export const editor: QuestionEditor = {
+  settings: [ManyOptionsSettings],
   fields: [ManyOptionsEditor],
   isValid: (draft) =>
     draft.options.length >= 2 &&

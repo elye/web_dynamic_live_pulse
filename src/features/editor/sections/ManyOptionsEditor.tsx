@@ -10,8 +10,66 @@ import {
 } from "../../../model";
 import type { EditorSectionProps } from "../../../questions/ui/editor";
 
-/** Many options: the option boxes, the "Others" box, selection mode and vote colours. */
+/** Many options: the option boxes. */
 export function ManyOptionsEditor({ draft, setDraft }: EditorSectionProps) {
+  return (
+    <fieldset>
+      <legend>
+        Options{" "}
+        <span>
+          · {draft.options.length} of {manyOptionsMax}, up to {manyOptionLength}{" "}
+          characters each
+        </span>
+      </legend>
+      {draft.options.map((option, index) => (
+        <div className="option-editor" key={index}>
+          <input
+            aria-label={`Option ${index + 1}`}
+            required
+            maxLength={manyOptionLength}
+            value={option}
+            onChange={(event) =>
+              setDraft({
+                ...draft,
+                options: draft.options.map((text, position) =>
+                  position === index ? event.target.value : text,
+                ),
+              })
+            }
+          />
+          <IconButton
+            icon={X}
+            label={`Remove option ${index + 1}`}
+            disabled={draft.options.length <= 2}
+            onClick={() =>
+              setDraft({
+                ...draft,
+                options: draft.options.filter(
+                  (_, position) => position !== index,
+                ),
+              })
+            }
+          />
+        </div>
+      ))}
+      {draft.options.length < manyOptionsMax && (
+        <button
+          type="button"
+          className="text-button"
+          onClick={() =>
+            setDraft({ ...draft, options: [...draft.options, ""] })
+          }
+        >
+          <Plus size={16} />
+          Add option
+        </button>
+      )}
+    </fieldset>
+  );
+}
+
+/** Many options: the "Others" box, selection mode and vote colours. */
+export function ManyOptionsSettings({ draft, setDraft }: EditorSectionProps) {
   const colors = draft.voteColors ?? defaultVoteColors;
   const setColors = (next: VoteColor[]) =>
     setDraft({ ...draft, voteColors: next });
@@ -24,58 +82,6 @@ export function ManyOptionsEditor({ draft, setDraft }: EditorSectionProps) {
 
   return (
     <>
-      <fieldset>
-        <legend>
-          Options{" "}
-          <span>
-            · {draft.options.length} of {manyOptionsMax}, up to{" "}
-            {manyOptionLength} characters each
-          </span>
-        </legend>
-        {draft.options.map((option, index) => (
-          <div className="option-editor" key={index}>
-            <input
-              aria-label={`Option ${index + 1}`}
-              required
-              maxLength={manyOptionLength}
-              value={option}
-              onChange={(event) =>
-                setDraft({
-                  ...draft,
-                  options: draft.options.map((text, position) =>
-                    position === index ? event.target.value : text,
-                  ),
-                })
-              }
-            />
-            <IconButton
-              icon={X}
-              label={`Remove option ${index + 1}`}
-              disabled={draft.options.length <= 2}
-              onClick={() =>
-                setDraft({
-                  ...draft,
-                  options: draft.options.filter(
-                    (_, position) => position !== index,
-                  ),
-                })
-              }
-            />
-          </div>
-        ))}
-        {draft.options.length < manyOptionsMax && (
-          <button
-            type="button"
-            className="text-button"
-            onClick={() =>
-              setDraft({ ...draft, options: [...draft.options, ""] })
-            }
-          >
-            <Plus size={16} />
-            Add option
-          </button>
-        )}
-      </fieldset>
       <label className="competitive-toggle">
         <input
           type="checkbox"

@@ -13,9 +13,9 @@ export type EditorSection = ComponentType<EditorSectionProps>;
 export type QuestionEditor = {
   /** Replaces the standard title field. */
   Title?: EditorSection;
-  /** Type settings, shown after the shared scoring toggles and before the reveal mode. */
+  /** Optional type settings, shown under "More settings" after the shared scoring toggles and before the reveal mode. */
   settings?: EditorSection[];
-  /** Fields shown after the reveal mode, such as the answer options. */
+  /** Essential fields shown straight after the title, such as the answer options. */
   fields?: EditorSection[];
   /** Whether the draft has everything this type needs (the title is checked for all). */
   isValid(draft: Question): boolean;

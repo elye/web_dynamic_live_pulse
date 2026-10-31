@@ -19,6 +19,9 @@ test("many options: host sets it up, players filter and pick, the stage shows co
     "maxlength",
     "30",
   );
+  await page
+    .getByRole("button", { name: "More settings", exact: true })
+    .click();
   await page.getByLabel("Allow multiple answers").check();
   await page
     .getByRole("button", { name: "Save question", exact: true })

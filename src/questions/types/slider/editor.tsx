@@ -5,6 +5,6 @@ import {
 import type { QuestionEditor } from "../../ui/editor";
 
 export const editor: QuestionEditor = {
-  settings: [SliderRangeEditor],
+  fields: [SliderRangeEditor],
   isValid: isSliderRangeValid,
 };

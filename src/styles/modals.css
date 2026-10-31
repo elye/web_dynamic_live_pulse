@@ -414,3 +414,21 @@ textarea {
   gap: 14px;
   flex-wrap: wrap;
 }
+
+.more-settings-toggle {
+  align-self: flex-start;
+}
+
+.more-settings-toggle svg {
+  transition: transform 0.15s;
+}
+
+.more-settings-toggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.editor-more-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}

@@ -26,3 +26,30 @@ test("selected questions can be deleted in bulk", async ({ page }) => {
     .click();
   await expect(thumbnails).toHaveCount(1);
 });
+
+test("selected questions can switch between hide first and show live", async ({
+  page,
+}) => {
+  await gotoStudio(page);
+  const thumbnails = page.locator(".question-thumbnail");
+  await page.getByRole("button", { name: "Select questions" }).click();
+  await page.getByLabel("Select all").check();
+
+  await page.getByRole("button", { name: "Show live", exact: true }).click();
+  await expect(
+    page.getByRole("img", { name: "Responses hidden first" }),
+  ).toHaveCount(0);
+  const live = await page
+    .getByRole("img", { name: "Responses show live" })
+    .count();
+  expect(live).toBeGreaterThan(0);
+
+  await page.getByRole("button", { name: "Hide first", exact: true }).click();
+  await expect(
+    page.getByRole("img", { name: "Responses show live" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("img", { name: "Responses hidden first" }),
+  ).toHaveCount(live);
+  await expect(thumbnails.first()).toBeVisible();
+});

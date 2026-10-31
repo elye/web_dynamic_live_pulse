@@ -1,6 +1,8 @@
 import {
   Check,
   Copy,
+  Eye,
+  EyeOff,
   GripVertical,
   ListChecks,
   Plus,
@@ -12,7 +14,13 @@ import { useState } from "react";
 import { IconButton } from "../../../components/IconButton";
 import { Modal } from "../../../components/Modal";
 import { icons } from "../../../constants/kinds";
-import { createId, labels, newQuestion } from "../../../model";
+import {
+  createId,
+  hasRevealMode,
+  labels,
+  newQuestion,
+  type RevealMode,
+} from "../../../model";
 import { metaOf } from "../../../questions/ui/metaRegistry";
 import { useHost } from "../HostContext";
 
@@ -51,6 +59,19 @@ export function QuestionRail() {
     setSelecting(false);
     setChecked([]);
     setConfirming(false);
+  }
+  const revealCheckedIds = session.questions
+    .filter((item) => checkedIds.includes(item.id) && hasRevealMode(item.type))
+    .map((item) => item.id);
+  function setCheckedRevealMode(revealMode: RevealMode) {
+    updateSession({
+      questions: session.questions.map((item) =>
+        revealCheckedIds.includes(item.id) ? { ...item, revealMode } : item,
+      ),
+    });
+    setNotice(
+      `${revealCheckedIds.length} ${revealCheckedIds.length === 1 ? "question" : "questions"} set to ${revealMode === "live" ? "show live" : "hide first"}`,
+    );
   }
   function deleteChecked() {
     const remaining = session.questions.filter(
@@ -104,15 +125,37 @@ export function QuestionRail() {
             />
             Select all
           </label>
-          <button
-            type="button"
-            className="rail-delete-selected"
-            disabled={!checkedIds.length}
-            onClick={() => setConfirming(true)}
-          >
-            <Trash2 size={12} />
-            Delete{checkedIds.length ? ` (${checkedIds.length})` : ""}
-          </button>
+          <span className="rail-selection-actions">
+            <button
+              type="button"
+              className="rail-reveal-selected live"
+              title="Responses appear live as people answer"
+              disabled={!revealCheckedIds.length}
+              onClick={() => setCheckedRevealMode("live")}
+            >
+              <Eye size={12} />
+              Show live
+            </button>
+            <button
+              type="button"
+              className="rail-reveal-selected hidden"
+              title="Hide responses until you reveal them"
+              disabled={!revealCheckedIds.length}
+              onClick={() => setCheckedRevealMode("onDone")}
+            >
+              <EyeOff size={12} />
+              Hide first
+            </button>
+            <button
+              type="button"
+              className="rail-delete-selected"
+              disabled={!checkedIds.length}
+              onClick={() => setConfirming(true)}
+            >
+              <Trash2 size={12} />
+              Delete{checkedIds.length ? ` (${checkedIds.length})` : ""}
+            </button>
+          </span>
         </div>
       )}
       <div className="question-list">
@@ -121,6 +164,8 @@ export function QuestionRail() {
           const { Thumbnail } = metaOf(item.type);
           const draggable = !isLive && !selectMode && questionList.length > 1;
           const isChecked = checkedIds.includes(item.id);
+          const revealable = hasRevealMode(item.type);
+          const showsLive = item.revealMode === "live";
           return (
             <div className="question-item" key={item.id}>
               <button
@@ -185,6 +230,24 @@ export function QuestionRail() {
                 <span className="thumbnail-caption">
                   <Icon size={13} />
                   {labels[item.type]}
+                  {revealable && (
+                    <span
+                      className={`thumbnail-reveal ${showsLive ? "live" : "hidden"}`}
+                      role="img"
+                      aria-label={
+                        showsLive
+                          ? "Responses show live"
+                          : "Responses hidden first"
+                      }
+                      title={
+                        showsLive
+                          ? "Responses show live"
+                          : "Responses hidden until revealed"
+                      }
+                    >
+                      {showsLive ? <Eye size={12} /> : <EyeOff size={12} />}
+                    </span>
+                  )}
                 </span>
                 <span className="thumbnail-title">{item.title}</span>
               </button>

@@ -10,6 +10,7 @@ import {
   type Session,
 } from "../../model";
 import { useFullscreen } from "../../hooks/useFullscreen";
+import { useSessionMusic } from "./useSessionMusic";
 
 export function useHostController() {
   const [sessions, setSessions] = useState<Session[]>(() => {
@@ -86,6 +87,11 @@ export function useHostController() {
   const isLive = !!room && !room.ended;
   const inLobby = isLive && !room.started;
   const questionList = isLive ? room.questions : session.questions;
+  const music = useSessionMusic({
+    sessionId: session.id,
+    isLive,
+    notify: setNotice,
+  });
   useEffect(() => {
     store("pulse:sessions", sessions);
     store("pulse:selected", sessions.length ? session.id : "");
@@ -368,6 +374,7 @@ export function useHostController() {
     void fullscreen.enter();
   }
   return {
+    music,
     backgrounds,
     setBackground,
     washes,

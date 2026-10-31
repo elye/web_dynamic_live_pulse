@@ -3,6 +3,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ImagePlus,
+  Music,
   Users,
   X,
 } from "lucide-react";
@@ -10,6 +11,7 @@ import { useRef } from "react";
 import { IconButton } from "../../../components/IconButton";
 import { useHost } from "../HostContext";
 import { DEFAULT_WASH } from "./background";
+import { MusicVolume } from "./MusicVolume";
 
 export function CanvasFooter() {
   const {
@@ -24,8 +26,10 @@ export function CanvasFooter() {
     setBackground,
     washes,
     setWash,
+    music,
   } = useHost();
   const fileInput = useRef<HTMLInputElement>(null);
+  const musicInput = useRef<HTMLInputElement>(null);
   const hasBackground = !!backgrounds[session.id];
   const isLive = !!room && !room.ended;
   const inLobby = isLive && !room.started;
@@ -93,6 +97,44 @@ export function CanvasFooter() {
               />
             </label>
           )}
+          <button
+            type="button"
+            className="bg-image-button"
+            title="Choose music to play during the session (kept until you reload)"
+            onClick={() => musicInput.current?.click()}
+          >
+            <Music size={13} />
+            {music.track ? "Change music" : "Music"}
+          </button>
+          {music.track && (
+            <>
+              <span className="music-name" title={music.track.name}>
+                {music.track.name}
+              </span>
+              <button
+                type="button"
+                className="bg-image-button"
+                aria-label="Remove music"
+                title="Remove music"
+                onClick={() => music.setTrack(null)}
+              >
+                <X size={13} />
+              </button>
+              <MusicVolume />
+            </>
+          )}
+          <input
+            ref={musicInput}
+            type="file"
+            accept="audio/*"
+            hidden
+            aria-label="Session music"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) music.setTrack(file);
+              event.target.value = "";
+            }}
+          />
           <input
             ref={fileInput}
             type="file"

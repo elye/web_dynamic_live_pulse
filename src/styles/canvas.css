@@ -366,6 +366,15 @@
 }
 
 @media (max-width: 760px) {
+  .canvas-footer {
+    height: auto;
+    min-height: 53px;
+    padding: 4px 0;
+  }
+  .theme-picker {
+    flex-wrap: wrap;
+    min-width: 0;
+  }
   .question-stage {
     min-height: 430px;
   }
@@ -470,4 +479,30 @@
     width: 22px;
     height: 22px;
   }
+}
+
+.music-name {
+  max-width: 110px;
+  margin-left: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 9px;
+  color: #8d998a;
+}
+
+.music-volume {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+}
+
+.music-volume input {
+  width: 90px;
+  accent-color: #66815e;
+}
+
+.music-volume .icon-button {
+  width: 30px;
 }

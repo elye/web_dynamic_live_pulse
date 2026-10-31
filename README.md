@@ -32,6 +32,7 @@ Use the studio toolbar above the slide preview and the footer under it to style 
 - **Slide mood:** pick one of the colored swatches in the footer.
 - **Background image:** select **Image** in the footer and choose a picture. The image replaces the mood color on the question slides and on the welcome lobby, so people see it while they join. Select **Change image** to swap it, or the **x** button to remove it. The image is kept only until you reload the page and is not included in JSON exports, so the wash level is not saved either.
 - **Wash:** once an image is set, the **Wash** slider (0 to 100) controls how strongly a light or dark veil covers it. Raise it if text is hard to read; lower it to show more of the picture.
+- **Music:** select **Music** in the footer and choose an audio file. It loops while the session is live: it fades in from silence to the set volume over 2 seconds when you present live, and fades out over 2 seconds when you end the session. Use the volume slider (and mute button) beside the file name to set the level; during a session the same control is in the top bar, and in full screen it is in the bottom panel that appears when you move the mouse. The file is kept only until you reload the page and is not included in JSON exports; the volume is remembered in this browser.
 
 ### Full screen
 

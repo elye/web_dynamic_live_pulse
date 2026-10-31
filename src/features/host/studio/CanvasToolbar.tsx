@@ -13,6 +13,7 @@ import {
 import { IconButton } from "../../../components/IconButton";
 import { metaOf } from "../../../questions/ui/metaRegistry";
 import { useHost } from "../HostContext";
+import { MusicVolume } from "./MusicVolume";
 
 export function CanvasToolbar() {
   const {
@@ -38,6 +39,7 @@ export function CanvasToolbar() {
         </span>
       </div>
       <div className="canvas-tools">
+        {isLive && <MusicVolume />}
         {!isLive && simulator && (
           <IconButton
             icon={FlaskConical}

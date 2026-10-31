@@ -8,6 +8,7 @@ import {
 import { Logo } from "../../../components/Logo";
 import { IconButton } from "../../../components/IconButton";
 import { useHost } from "../HostContext";
+import { MusicVolume } from "../studio/MusicVolume";
 
 export function TopBar() {
   const {
@@ -49,6 +50,7 @@ export function TopBar() {
           <span />
           {connected ? "All systems ready" : "Reconnecting..."}
         </span>
+        {presenting && room && !room.ended && <MusicVolume />}
         {presenting && fullscreen.supported && (
           <IconButton
             icon={fullscreen.fullscreen ? Minimize : Maximize}

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { IconButton } from "../../../components/IconButton";
 import { useHost } from "../HostContext";
 import { LiveControls } from "./LiveControls";
+import { MusicVolume } from "./MusicVolume";
 import { useAdvance } from "./useAdvance";
 
 const IDLE_MS = 2500;
@@ -94,6 +95,7 @@ export function FullscreenBar() {
         </div>
       )}
       {isLive && !inLobby && <LiveControls />}
+      <MusicVolume />
       <IconButton
         icon={Minimize}
         label="Exit full screen (Esc)"

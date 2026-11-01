@@ -2,6 +2,7 @@ import {
   ArrowRight,
   Eye,
   EyeOff,
+  Image,
   Pause,
   Play,
   RotateCcw,
@@ -83,6 +84,11 @@ export function LiveControls() {
           <>
             <Trophy size={17} />
             Show podium
+          </>
+        ) : step === "closing" ? (
+          <>
+            <Image size={17} />
+            Show closing image
           </>
         ) : (
           <>

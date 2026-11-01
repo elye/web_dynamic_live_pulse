@@ -1,15 +1,16 @@
 import { canCompete, hasRevealMode } from "../../../model";
 import { useHost } from "../HostContext";
 
-export type AdvanceStep = "results" | "ranking" | "podium" | "next" | "finish";
+export type AdvanceStep =
+  "results" | "ranking" | "podium" | "closing" | "next" | "finish";
 
 /**
  * The host's "forward" action. Each call does one step: show results, then the
  * top 10 ranking (answered questions, not the last one), then the next
  * question. After the last question a session with answered questions ends on
- * the podium before it is finished. Questions already showing results on the
- * fly skip the first step, except answered ones, whose correct answer still
- * needs a reveal.
+ * the podium before it is finished. An optional closing image comes last.
+ * Questions already showing results on the fly skip the first step, except
+ * answered ones, whose correct answer still needs a reveal.
  */
 export function useAdvance() {
   const {
@@ -21,6 +22,9 @@ export function useAdvance() {
     questionList,
     control,
     move,
+    closingEnabled,
+    closingCover,
+    showClosing,
   } = useHost();
   const last = currentIndex === questionList.length - 1;
   const live = !!room && !room.ended;
@@ -38,13 +42,22 @@ export function useAdvance() {
       !room.ranking;
     const showPodium =
       !showFirst && last && room.scored && !room.podium && !room.suspense;
-    step = showFirst
-      ? "results"
-      : showRanking
-        ? "ranking"
-        : showPodium
-          ? "podium"
-          : step;
+    const showImage =
+      !showFirst &&
+      last &&
+      !showPodium &&
+      closingEnabled &&
+      !closingCover &&
+      !(room.suspense && !room.podium);
+    step = showImage
+      ? "closing"
+      : showFirst
+        ? "results"
+        : showRanking
+          ? "ranking"
+          : showPodium
+            ? "podium"
+            : step;
   }
   const blocked = busy || (!!room && room.suspense && !room.podium);
 
@@ -53,6 +66,7 @@ export function useAdvance() {
     if (step === "results") void control("reveal");
     else if (step === "ranking") void control("ranking");
     else if (step === "podium") void control("suspense");
+    else if (step === "closing") showClosing();
     else if (step === "finish") {
       if (live) setModal("end");
     } else move(1);

@@ -26,6 +26,8 @@ export function CanvasFooter() {
     setBackground,
     washes,
     setWash,
+    cover,
+    setCoverOption,
     music,
   } = useHost();
   const fileInput = useRef<HTMLInputElement>(null);
@@ -96,6 +98,30 @@ export function CanvasFooter() {
                 onChange={(event) => setWash(Number(event.target.value))}
               />
             </label>
+          )}
+          {hasBackground && (
+            <>
+              <button
+                type="button"
+                className="bg-image-button"
+                aria-pressed={!!cover.opening}
+                title="Show the image on its own, without the wash, before people join. Click Next to fade into the welcome lobby."
+                onClick={() => setCoverOption("opening", !cover.opening)}
+              >
+                {cover.opening && <Check size={13} />}
+                First screen
+              </button>
+              <button
+                type="button"
+                className="bg-image-button"
+                aria-pressed={!!cover.closing}
+                title="Fade to the image on its own, without the wash, after the podium."
+                onClick={() => setCoverOption("closing", !cover.closing)}
+              >
+                {cover.closing && <Check size={13} />}
+                Last screen
+              </button>
+            </>
           )}
           <button
             type="button"

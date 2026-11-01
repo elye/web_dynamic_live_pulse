@@ -506,3 +506,55 @@
 .music-volume .icon-button {
   width: 30px;
 }
+
+/* Opening and closing screens: the host's image on its own, faded over the stage. */
+.stage-stack {
+  display: grid;
+}
+
+.stage-stack > * {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
+.stage-cover {
+  position: relative;
+  z-index: 5;
+  border-radius: 7px;
+  background-image: var(--stage-image);
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.8s ease,
+    visibility 0s linear 0.8s;
+}
+
+.stage-cover[data-visible] {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.8s ease;
+}
+
+.cover-next {
+  position: absolute;
+  right: 18px;
+  bottom: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 12px;
+  color: #fff;
+  background: #0f161399;
+  border: 1px solid #ffffff55;
+  border-radius: 999px;
+  opacity: 0.55;
+  transition: opacity 0.2s ease;
+}
+
+.cover-next:hover,
+.cover-next:focus-visible {
+  opacity: 1;
+}

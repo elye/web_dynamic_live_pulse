@@ -10,6 +10,7 @@ import {
   type Session,
 } from "../../model";
 import { useFullscreen } from "../../hooks/useFullscreen";
+import type { CoverOptions } from "./studio/background";
 import { useSessionMusic } from "./useSessionMusic";
 
 export function useHostController() {
@@ -65,6 +66,11 @@ export function useHostController() {
   const [backgrounds, setBackgrounds] = useState<Record<string, string>>({});
   // White wash opacity (0-100) over each session's background image.
   const [washes, setWashes] = useState<Record<string, number>>({});
+  // Per session: show the unwashed image as the first and/or last screen.
+  const [covers, setCovers] = useState<Record<string, CoverOptions>>({});
+  // Room codes whose opening image was dismissed, and whose closing image is showing.
+  const [openingDismissed, setOpeningDismissed] = useState<string | null>(null);
+  const [closingShown, setClosingShown] = useState<string | null>(null);
   // Position the next added question is inserted at; null appends to the end.
   const [insertIndex, setInsertIndex] = useState<number | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -87,6 +93,16 @@ export function useHostController() {
   const isLive = !!room && !room.ended;
   const inLobby = isLive && !room.started;
   const questionList = isLive ? room.questions : session.questions;
+  const cover = covers[session.id] ?? {};
+  const hasCoverImage = !!backgrounds[session.id];
+  const openingCover =
+    isLive &&
+    !room.started &&
+    hasCoverImage &&
+    !!cover.opening &&
+    openingDismissed !== room.code;
+  const closingEnabled = hasCoverImage && !!cover.closing;
+  const closingCover = isLive && closingEnabled && closingShown === room.code;
   const music = useSessionMusic({
     sessionId: session.id,
     isLive,
@@ -306,6 +322,7 @@ export function useHostController() {
         index,
       });
       live.setRoom(reply.state!);
+      if (action !== "end") setClosingShown(null);
       if (action === "end") {
         setPresenting(false);
         setPage("results");
@@ -320,6 +337,7 @@ export function useHostController() {
   function move(direction: number) {
     const destination = currentIndex + direction;
     if (destination < 0 || destination >= questionList.length) return;
+    setClosingShown(null);
     if (isLive) void control("select", destination);
     else setSelected(destination);
   }
@@ -364,6 +382,18 @@ export function useHostController() {
   function setWash(value: number) {
     setWashes((current) => ({ ...current, [session.id]: value }));
   }
+  function setCoverOption(key: keyof CoverOptions, value: boolean) {
+    setCovers((current) => ({
+      ...current,
+      [session.id]: { ...current[session.id], [key]: value },
+    }));
+  }
+  function dismissOpening() {
+    if (room) setOpeningDismissed(room.code);
+  }
+  function showClosing() {
+    if (room) setClosingShown(room.code);
+  }
   /** Enter the presentation view and the browser's fullscreen, or leave both. */
   function presentFullscreen() {
     if (fullscreen.fullscreen) {
@@ -379,6 +409,13 @@ export function useHostController() {
     setBackground,
     washes,
     setWash,
+    cover,
+    setCoverOption,
+    openingCover,
+    closingEnabled,
+    closingCover,
+    dismissOpening,
+    showClosing,
     sessions,
     setSessions,
     sessionId,

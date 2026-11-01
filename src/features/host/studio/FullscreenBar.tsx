@@ -10,8 +10,17 @@ const IDLE_MS = 2500;
 
 /** Host controls for full screen mode; shown only while the pointer moves, so they never cover the slide. */
 export function FullscreenBar() {
-  const { busy, room, currentIndex, questionList, move, fullscreen, modal } =
-    useHost();
+  const {
+    busy,
+    room,
+    currentIndex,
+    questionList,
+    move,
+    fullscreen,
+    modal,
+    openingCover,
+    dismissOpening,
+  } = useHost();
   const { advance } = useAdvance();
   const [visible, setVisible] = useState(false);
   const bar = useRef<HTMLDivElement>(null);
@@ -45,6 +54,11 @@ export function FullscreenBar() {
   useEffect(() => {
     keys.current = (event) => {
       const target = event.target as HTMLElement | null;
+      if (openingCover && !modal && !event.metaKey && !event.ctrlKey) {
+        if (event.key === "ArrowRight" || event.key === "PageDown")
+          dismissOpening();
+        return;
+      }
       if (
         modal ||
         inLobby ||

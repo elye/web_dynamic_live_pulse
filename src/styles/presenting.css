@@ -283,7 +283,8 @@
   transform-origin: top left;
 }
 
-.slide-fit-inner > .stage-bg > * {
+.slide-fit-inner > .stage-bg > *,
+.slide-fit-inner > .stage-bg > .stage-stack > * {
   flex: 1;
   width: 100%;
   min-height: 0;
@@ -292,6 +293,14 @@
   border: 0;
   border-radius: 0;
   box-shadow: none;
+}
+
+.slide-fit-inner > .stage-bg > .stage-stack {
+  display: grid;
+}
+
+.slide-fit-inner > .stage-bg > .stage-stack > .stage-cover {
+  border-radius: 0;
 }
 
 .slide-only .heart-layer {

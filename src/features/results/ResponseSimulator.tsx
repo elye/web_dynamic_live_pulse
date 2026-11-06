@@ -44,10 +44,12 @@ const questions = [
 export function ResponseSimulator({
   question,
   theme,
+  dark,
   onClose,
 }: {
   question: Question;
   theme: string;
+  dark: boolean;
   onClose: () => void;
 }) {
   const [count, setCount] = useState(10);
@@ -86,28 +88,30 @@ export function ResponseSimulator({
             onClick={() => setGeneration((current) => current + 1)}
           />
         </div>
-        <section
-          className={`simulation-stage theme-${theme}`}
-          aria-label={isQna ? "Simulated Q&A" : "Simulated open responses"}
-        >
-          <span className="eyebrow">SIMULATED RESPONSES</span>
-          <h3>{question.title}</h3>
-          <ResultsVisual question={simulatedQuestion} />
-          <div className="simulation-summary">
-            <span>
-              {isQna ? (
-                <MessageCircleQuestion size={15} />
-              ) : (
-                <MessageCircle size={15} />
-              )}
-              {count} {isQna ? "questions" : "responses"}
-            </span>
-            <span>
-              <Users size={15} />
-              {count} sample players
-            </span>
-          </div>
-        </section>
+        <div data-stage-dark={dark ? "" : undefined}>
+          <section
+            className={`simulation-stage theme-${theme}`}
+            aria-label={isQna ? "Simulated Q&A" : "Simulated open responses"}
+          >
+            <span className="eyebrow">SIMULATED RESPONSES</span>
+            <h3>{question.title}</h3>
+            <ResultsVisual question={simulatedQuestion} />
+            <div className="simulation-summary">
+              <span>
+                {isQna ? (
+                  <MessageCircleQuestion size={15} />
+                ) : (
+                  <MessageCircle size={15} />
+                )}
+                {count} {isQna ? "questions" : "responses"}
+              </span>
+              <span>
+                <Users size={15} />
+                {count} sample players
+              </span>
+            </div>
+          </section>
+        </div>
       </div>
     </Modal>
   );

@@ -8,10 +8,12 @@ import { ResultsVisual } from "./ResultsVisual";
 export function SliderSimulator({
   question,
   theme,
+  dark,
   onClose,
 }: {
   question: Question;
   theme: string;
+  dark: boolean;
   onClose: () => void;
 }) {
   const [participants, setParticipants] = useState(100);
@@ -21,7 +23,8 @@ export function SliderSimulator({
   const step = question.sliderStep ?? 1;
   const stepCount = Math.max(1, Math.floor((max - min) / step));
   const randomAt = (index: number) => {
-    const value = Math.sin((generation + 1) * 1000 + index * 12.9898) * 43758.5453;
+    const value =
+      Math.sin((generation + 1) * 1000 + index * 12.9898) * 43758.5453;
     return value - Math.floor(value);
   };
   const distribution = new Map<number, number>();
@@ -71,24 +74,26 @@ export function SliderSimulator({
             onClick={() => setGeneration((current) => current + 1)}
           />
         </div>
-        <section
-          className={`simulation-stage theme-${theme}`}
-          aria-label="Simulated slider results"
-        >
-          <span className="eyebrow">SIMULATED RESPONSES</span>
-          <h3>{question.title}</h3>
-          <ResultsVisual question={simulatedQuestion} />
-          <div className="simulation-summary">
-            <span>
-              <SlidersHorizontal size={15} />
-              Average {average.toFixed(1)}
-            </span>
-            <span>
-              <Users size={15} />
-              {participants} sample participants
-            </span>
-          </div>
-        </section>
+        <div data-stage-dark={dark ? "" : undefined}>
+          <section
+            className={`simulation-stage theme-${theme}`}
+            aria-label="Simulated slider results"
+          >
+            <span className="eyebrow">SIMULATED RESPONSES</span>
+            <h3>{question.title}</h3>
+            <ResultsVisual question={simulatedQuestion} />
+            <div className="simulation-summary">
+              <span>
+                <SlidersHorizontal size={15} />
+                Average {average.toFixed(1)}
+              </span>
+              <span>
+                <Users size={15} />
+                {participants} sample participants
+              </span>
+            </div>
+          </section>
+        </div>
       </div>
     </Modal>
   );

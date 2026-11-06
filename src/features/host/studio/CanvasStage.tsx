@@ -79,37 +79,40 @@ export function CanvasStage() {
       />
     );
   return (
-    <div
-      className="stage-bg"
-      data-stage-bg={background ? "" : undefined}
-      data-stage-dark={session.dark ? "" : undefined}
-      style={
-        background
-          ? ({
-              "--stage-image": `url("${background}")`,
-              "--stage-wash": `${wash}%`,
-            } as CSSProperties)
-          : undefined
-      }
-    >
+    <>
       {modal === "simulate" && simulator && (
         <simulator.Simulator
           question={question}
           theme={session.theme}
+          dark={!!session.dark}
           onClose={() => setModal(null)}
         />
       )}
-      {hasCover ? (
-        <div className="stage-stack">
-          {screen}
-          <StageCover
-            kind={closingCover ? "closing" : openingCover ? "opening" : null}
-            onNext={dismissOpening}
-          />
-        </div>
-      ) : (
-        screen
-      )}
-    </div>
+      <div
+        className="stage-bg"
+        data-stage-bg={background ? "" : undefined}
+        data-stage-dark={session.dark ? "" : undefined}
+        style={
+          background
+            ? ({
+                "--stage-image": `url("${background}")`,
+                "--stage-wash": `${wash}%`,
+              } as CSSProperties)
+            : undefined
+        }
+      >
+        {hasCover ? (
+          <div className="stage-stack">
+            {screen}
+            <StageCover
+              kind={closingCover ? "closing" : openingCover ? "opening" : null}
+              onNext={dismissOpening}
+            />
+          </div>
+        ) : (
+          screen
+        )}
+      </div>
+    </>
   );
 }

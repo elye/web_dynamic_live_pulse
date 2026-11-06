@@ -9,10 +9,12 @@ import { SAMPLE_LIMIT, sampleEmoji, sampleWords } from "./cloudSamples";
 export function CloudSimulator({
   question,
   theme,
+  dark,
   onClose,
 }: {
   question: Question;
   theme: string;
+  dark: boolean;
   onClose: () => void;
 }) {
   const [count, setCount] = useState(60);
@@ -121,25 +123,27 @@ export function CloudSimulator({
             onClick={() => setGeneration((current) => current + 1)}
           />
         </div>
-        <section
-          className={`simulation-stage theme-${theme}`}
-          aria-label="Simulated word cloud"
-        >
-          <span className="eyebrow">SIMULATED RESPONSES</span>
-          <h3>{question.title}</h3>
-          <WordCloud results={results} limit={SAMPLE_LIMIT} />
-          <div className="simulation-summary">
-            <span>
-              <Cloud size={15} />
-              {results.length} distinct{" "}
-              {results.length === 1 ? "word" : "words"}
-            </span>
-            <span>
-              <Users size={15} />
-              {responses.toLocaleString()} sample participants
-            </span>
-          </div>
-        </section>
+        <div data-stage-dark={dark ? "" : undefined}>
+          <section
+            className={`simulation-stage theme-${theme}`}
+            aria-label="Simulated word cloud"
+          >
+            <span className="eyebrow">SIMULATED RESPONSES</span>
+            <h3>{question.title}</h3>
+            <WordCloud results={results} limit={SAMPLE_LIMIT} />
+            <div className="simulation-summary">
+              <span>
+                <Cloud size={15} />
+                {results.length} distinct{" "}
+                {results.length === 1 ? "word" : "words"}
+              </span>
+              <span>
+                <Users size={15} />
+                {responses.toLocaleString()} sample participants
+              </span>
+            </div>
+          </section>
+        </div>
       </div>
     </Modal>
   );

@@ -8,10 +8,12 @@ import { ResultsVisual } from "./ResultsVisual";
 export function PollSimulator({
   question,
   theme,
+  dark,
   onClose,
 }: {
   question: Question;
   theme: string;
+  dark: boolean;
   onClose: () => void;
 }) {
   const [responses, setResponses] = useState(100);
@@ -88,15 +90,32 @@ export function PollSimulator({
             onClick={() => setGeneration((current) => current + 1)}
           />
         </div>
-        <section className={`simulation-stage theme-${theme}`} aria-label="Simulated multiple choice results">
-          <span className="eyebrow">SIMULATED RESPONSES</span>
-          <h3>{question.title}</h3>
-          <ResultsVisual question={simulatedQuestion} />
-          <div className="simulation-summary">
-            <span><BarChart3 size={15} />{display === "list" ? "Response list" : display === "pie" ? "Pie chart" : display === "stacked" ? "Stacked horizontal bar" : "Vertical bars"}</span>
-            <span><Users size={15} />{responses} sample players</span>
-          </div>
-        </section>
+        <div data-stage-dark={dark ? "" : undefined}>
+          <section
+            className={`simulation-stage theme-${theme}`}
+            aria-label="Simulated multiple choice results"
+          >
+            <span className="eyebrow">SIMULATED RESPONSES</span>
+            <h3>{question.title}</h3>
+            <ResultsVisual question={simulatedQuestion} />
+            <div className="simulation-summary">
+              <span>
+                <BarChart3 size={15} />
+                {display === "list"
+                  ? "Response list"
+                  : display === "pie"
+                    ? "Pie chart"
+                    : display === "stacked"
+                      ? "Stacked horizontal bar"
+                      : "Vertical bars"}
+              </span>
+              <span>
+                <Users size={15} />
+                {responses} sample players
+              </span>
+            </div>
+          </section>
+        </div>
       </div>
     </Modal>
   );

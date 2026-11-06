@@ -5,6 +5,7 @@ import { type Question } from "../registry";
 export type SimulatorProps = {
   question: Question;
   theme: string;
+  dark: boolean;
   onClose: () => void;
 };
 

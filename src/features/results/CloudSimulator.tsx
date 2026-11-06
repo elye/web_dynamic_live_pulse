@@ -1,6 +1,6 @@
 import { Cloud, Shuffle, Users } from "lucide-react";
 import { useState } from "react";
-import WordCloud from "../../WordCloud";
+import WordCloud from "../../components/WordCloud";
 import { IconButton } from "../../components/IconButton";
 import { Modal } from "../../components/Modal";
 import { type Question } from "../../model";

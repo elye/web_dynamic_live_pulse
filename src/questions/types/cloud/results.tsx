@@ -1,4 +1,4 @@
-import WordCloud from "../../../WordCloud";
+import WordCloud from "../../../components/WordCloud";
 import { type QuestionResults } from "../../ui/results";
 
 const samples = [

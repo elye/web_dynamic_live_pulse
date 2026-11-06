@@ -1,4 +1,5 @@
 import { FileText } from "lucide-react";
+import { Markdown } from "../../../components/Markdown";
 import { useParticipant } from "../ParticipantContext";
 
 export function SlideView() {
@@ -7,7 +8,9 @@ export function SlideView() {
   return (
     <div className="participant-slide">
       <FileText size={38} />
-      <p>{question.description}</p>
+      <Markdown className="participant-slide-text">
+        {question.description ?? ""}
+      </Markdown>
       <p className="waiting-note">
         Sit back for a moment. Your host will continue shortly.
       </p>

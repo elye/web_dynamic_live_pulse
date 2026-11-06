@@ -7,19 +7,19 @@ const SlideTitle: EditorSection = (props) => {
     <>
       <TitleFields {...props} label="Title" />
       <label>
-        Description
+        Description (Markdown supported)
         <textarea
           required
-          maxLength={280}
+          maxLength={2000}
           value={draft.description || ""}
           onChange={(event) =>
             setDraft({ ...draft, description: event.target.value })
           }
           rows={5}
-          placeholder="Add the details you'd like everyone to see..."
+          placeholder="Add the details you'd like everyone to see. Markdown is supported."
         />
         <small className="character-count">
-          {(draft.description || "").length} / 280
+          {(draft.description || "").length} / 2000
         </small>
       </label>
     </>

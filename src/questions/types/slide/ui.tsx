@@ -1,4 +1,5 @@
 import { FileText } from "lucide-react";
+import { Markdown } from "../../../components/Markdown";
 import { type QuestionMeta } from "../../ui/meta";
 
 export const meta: QuestionMeta = {
@@ -12,6 +13,8 @@ export const meta: QuestionMeta = {
   ),
   eyebrow: "A MOMENT TOGETHER",
   subtitle: (question) => (
-    <p className="stage-slide-description">{question.description}</p>
+    <Markdown className="stage-slide-description">
+      {question.description ?? ""}
+    </Markdown>
   ),
 };

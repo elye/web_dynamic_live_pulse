@@ -75,3 +75,27 @@ test("title-and-description slides show no input to participants or reveal contr
     page.getByRole("button", { name: "Finish session", exact: true }),
   ).toBeVisible();
 });
+
+test("slide descriptions render Markdown", async ({ page }) => {
+  await gotoStudio(page);
+  await page
+    .getByRole("button", { name: "Add question", exact: true })
+    .last()
+    .click();
+  await page.getByRole("button", { name: /Title & description/ }).click();
+  await page
+    .getByRole("textbox", { name: /Description/ })
+    .fill(
+      "- **Introduction** --- the cycle ([37:04](https://example.com/watch?t=1)).\n- Second point\n\n<script>alert(1)</script>",
+    );
+  await page
+    .getByRole("button", { name: "Save question", exact: true })
+    .click();
+  const description = page.locator(".stage-slide-description");
+  await expect(description.locator("ul > li")).toHaveCount(2);
+  await expect(description.locator("strong")).toHaveText("Introduction");
+  await expect(
+    description.getByRole("link", { name: "37:04" }),
+  ).toHaveAttribute("href", "https://example.com/watch?t=1");
+  await expect(description.locator("script")).toHaveCount(0);
+});

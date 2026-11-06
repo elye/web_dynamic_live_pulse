@@ -22,9 +22,9 @@ export const slide = defineQuestion({
     if (
       typeof description !== "string" ||
       !description.trim() ||
-      description.length > 280
+      description.length > 2000
     )
-      throw new Error("Add a description with 1 to 280 characters.");
+      throw new Error("Add a description with 1 to 2000 characters.");
     return { description: description.trim() };
   },
   serialize: ({ description }) => ({ description }),
@@ -38,8 +38,8 @@ export const slide = defineQuestion({
   results: { aggregate: () => [] },
   prompt: {
     purpose:
-      "Display-only title and description slide. Participants answer nothing. Use it for intros, section breaks and instructions.",
+      "Display-only title and description slide. Participants answer nothing. Use it for intros, section breaks, instructions and short summaries or agendas.",
     rules:
-      'options: []. correct: null. "description" is REQUIRED (1-280 characters). No revealMode.',
+      'options: []. correct: null. "description" is REQUIRED (1-2000 characters) and is rendered as Markdown: **bold**, *italic*, "- " bullet lists, "1. " numbered lists, [links](https://...). Write line breaks as \\n inside the JSON string. Raw HTML is not rendered. Keep it short enough to read on a screen. No revealMode.',
   },
 });

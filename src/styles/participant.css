@@ -1043,6 +1043,32 @@
   overflow-wrap: anywhere;
 }
 
+.participant-slide-text {
+  color: #2f4a35;
+  font-size: 21px;
+  font-weight: 550;
+  line-height: 1.75;
+  max-width: 540px;
+  overflow-wrap: anywhere;
+}
+
+.participant-slide-text > * {
+  margin: 0 0 0.6em;
+  font-size: inherit;
+  white-space: normal;
+}
+
+.participant-slide-text ul,
+.participant-slide-text ol {
+  text-align: left;
+  padding-left: 1.4em;
+}
+
+.participant-slide-text a {
+  color: inherit;
+  text-decoration: underline;
+}
+
 .participant-slide .waiting-note {
   color: #97a58a;
   font-size: 11px;
@@ -1160,7 +1186,8 @@
   .participant-slide {
     min-height: 260px;
   }
-  .participant-slide p {
+  .participant-slide p,
+  .participant-slide-text {
     font-size: 17px;
     line-height: 1.65;
   }

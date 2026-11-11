@@ -7,6 +7,11 @@ const sliderValue = (question: Question, touched: AnswerValue) =>
     ? touched
     : Math.round(((question.sliderMin ?? 0) + (question.sliderMax ?? 10)) / 2);
 
+const sliderAnswer = (question: Question, touched: AnswerValue) =>
+  typeof touched === "string" && question.sliderChoices?.includes(touched)
+    ? touched
+    : sliderValue(question, touched);
+
 function SliderInput() {
   const { setAnswer, setAnswerQuestion, question, currentAnswer, room } =
     useParticipant();
@@ -30,12 +35,32 @@ function SliderInput() {
         <span>{question.sliderMin ?? 0}</span>
         <span>{question.sliderMax ?? 10}</span>
       </div>
+      {!!question.sliderChoices?.length && (
+        <fieldset className="slider-alternatives">
+          <legend>Or choose an alternative answer</legend>
+          {question.sliderChoices.map((choice) => (
+            <label key={choice}>
+              <input
+                type="radio"
+                name={`slider-choice-${question.id}`}
+                value={choice}
+                checked={currentAnswer === choice}
+                onChange={() => {
+                  setAnswer(choice);
+                  setAnswerQuestion(question.id);
+                }}
+              />
+              {choice}
+            </label>
+          ))}
+        </fieldset>
+      )}
     </div>
   );
 }
 
 export const input: QuestionInput = {
-  resolve: sliderValue,
+  resolve: sliderAnswer,
   isReady: () => true,
   Input: SliderInput,
 };

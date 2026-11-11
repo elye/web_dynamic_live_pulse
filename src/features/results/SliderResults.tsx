@@ -6,12 +6,14 @@ export function SliderResults({
   max,
   summary,
   values,
+  alternatives = [],
   average,
 }: {
   min: number;
   max: number;
   summary: string;
   values: { value: number; count: number }[];
+  alternatives?: { text: string; count: number }[];
   average: number | null;
 }) {
   const span = max - min || 1;
@@ -25,6 +27,16 @@ export function SliderResults({
         <SlidersHorizontal size={20} />
         <strong>{summary}</strong>
       </div>
+      {alternatives.length > 0 && (
+        <ul className="slider-alternative-results">
+          {alternatives.map((item) => (
+            <li key={item.text}>
+              <span>{item.text}</span>
+              <strong>{item.count}</strong>
+            </li>
+          ))}
+        </ul>
+      )}
       <div className="slider-visual">
         <div className="slider-dots">
           {values.map((item) =>

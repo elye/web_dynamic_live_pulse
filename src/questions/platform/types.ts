@@ -29,6 +29,7 @@ export type QuestionRecord = {
   sliderMin?: number;
   sliderMax?: number;
   sliderStep?: number;
+  sliderChoices?: string[];
   revealMode?: RevealMode;
   competitive?: boolean;
   /** Multiple choice polls, quizzes and many options: participants may pick more than one option. */

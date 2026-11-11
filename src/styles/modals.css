@@ -121,6 +121,25 @@ textarea {
   min-width: 90px;
 }
 
+.slider-alternative-editor {
+  flex-basis: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.slider-alternative-editor > label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.slider-alternative-editor > label input[type="text"] {
+  flex: 1;
+  min-width: 0;
+}
+
 .cloud-submission-editor {
   padding: 0;
   border: 0;

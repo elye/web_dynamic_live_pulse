@@ -3,7 +3,7 @@ import { type QuestionResults } from "../../ui/results";
 
 export const results: QuestionResults = {
   Results: ({ question, results }) => {
-    const [summary, ...distribution] = results;
+    const [summary, ...rows] = results;
     const average = Number(summary?.text.replace("Average: ", ""));
     return (
       <SliderResults
@@ -14,9 +14,13 @@ export const results: QuestionResults = {
             ? summary.text
             : `${question.sliderMin ?? 0} to ${question.sliderMax ?? 10}`
         }
-        values={distribution
+        values={rows
+          .filter((item) => !item.id?.startsWith("slider-choice-"))
           .map((item) => ({ value: Number(item.text), count: item.count }))
           .filter((item) => Number.isFinite(item.value))}
+        alternatives={rows
+          .filter((item) => item.id?.startsWith("slider-choice-"))
+          .map(({ text, count }) => ({ text, count }))}
         average={summary?.count && Number.isFinite(average) ? average : null}
       />
     );

@@ -129,6 +129,47 @@ for (const kind of kinds) {
   });
 }
 
+test("slider alternatives are optional, validated, and tallied separately", () => {
+  const sliderQuestion = createQuestion("slider", newId);
+  const exported = serializeQuestion(sliderQuestion);
+  assert.equal(Object.hasOwn(exported, "sliderChoices"), false);
+
+  const configured = parseQuestion(
+    { ...exported, sliderChoices: ["I don't know", "More than 10"] },
+    { newId },
+  );
+  assert.deepEqual(configured.sliderChoices, ["I don't know", "More than 10"]);
+  assert.equal(parseAnswer(configured, "I don't know"), "I don't know");
+  assert.equal(parseAnswer(configured, 5), 5);
+  assert.throws(() => parseAnswer(configured, "Not an answer"));
+  assert.throws(() =>
+    parseQuestion(
+      { ...exported, sliderChoices: ["I don't know", "i don't know"] },
+      { newId },
+    ),
+  );
+
+  assert.deepEqual(
+    aggregateResults(
+      configured,
+      [
+        ["one", 2],
+        ["two", "I don't know"],
+        ["three", 10],
+        ["four", "More than 10"],
+      ],
+      env,
+    ),
+    [
+      { text: "Average: 6", count: 2 },
+      { text: "2", count: 1 },
+      { text: "10", count: 1 },
+      { id: "slider-choice-0", text: "I don't know", count: 1 },
+      { id: "slider-choice-1", text: "More than 10", count: 1 },
+    ],
+  );
+});
+
 test("the AI prompt's example holds one valid question of every type", () => {
   const prompt = buildSystemPrompt();
   const marker = "follow the structure):\n";

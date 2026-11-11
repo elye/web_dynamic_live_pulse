@@ -11,6 +11,7 @@ export type Authored = {
   sliderMin?: number;
   sliderMax?: number;
   sliderStep?: number;
+  sliderChoices?: string[];
 };
 
 export type AuthorFieldsProps = {

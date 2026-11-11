@@ -7,6 +7,7 @@ export const slider = defineQuestion({
   tagline: "Slide to estimate a number.",
   traits: { frameVisibleWhenHidden: true },
   options: null,
+  settings: ["sliderMin", "sliderMax", "sliderStep", "sliderChoices"],
   create: () => ({
     title: "How many hours a day do you spend in meetings?",
     options: [],
@@ -15,7 +16,7 @@ export const slider = defineQuestion({
     sliderMax: 10,
     sliderStep: 1,
   }),
-  parse({ sliderMin, sliderMax, sliderStep }) {
+  parse({ sliderMin, sliderMax, sliderStep, sliderChoices }) {
     if (
       typeof sliderMin !== "number" ||
       typeof sliderMax !== "number" ||
@@ -28,15 +29,37 @@ export const slider = defineQuestion({
       (sliderMax - sliderMin) / sliderStep > 1000
     )
       throw new Error("Add a valid slider minimum, maximum, and step.");
-    return { sliderMin, sliderMax, sliderStep };
+    if (sliderChoices !== undefined && !Array.isArray(sliderChoices))
+      throw new Error("Add up to 3 valid alternative answers.");
+    const choices = (sliderChoices ?? []).map((choice) =>
+      typeof choice === "string" ? choice.trim() : "",
+    );
+    if (
+      choices.length > 3 ||
+      choices.some((choice) => !choice || choice.length > 80) ||
+      new Set(choices.map((choice) => choice.toLocaleLowerCase())).size !==
+        choices.length
+    )
+      throw new Error(
+        "Add 1 to 3 unique alternative answers, up to 80 characters each.",
+      );
+    return {
+      sliderMin,
+      sliderMax,
+      sliderStep,
+      ...(choices.length ? { sliderChoices: choices } : {}),
+    };
   },
-  serialize: ({ sliderMin, sliderMax, sliderStep }) => ({
+  serialize: ({ sliderMin, sliderMax, sliderStep, sliderChoices }) => ({
     sliderMin,
     sliderMax,
     sliderStep,
+    ...(sliderChoices?.length ? { sliderChoices } : {}),
   }),
   answer: {
     parse(question, value) {
+      if (typeof value === "string" && question.sliderChoices?.includes(value))
+        return value;
       const { sliderMin: min, sliderMax: max, sliderStep: step } = question;
       if (
         typeof value !== "number" ||
@@ -46,7 +69,9 @@ export const slider = defineQuestion({
         Math.abs(Math.round((value - min!) / step!) * step! + min! - value) >
           1e-9
       )
-        throw new Error("Choose a value on the slider.");
+        throw new Error(
+          "Choose a value on the slider or an alternative answer.",
+        );
       return value;
     },
     describe: (_question, answer) => String(answer),
@@ -58,14 +83,17 @@ export const slider = defineQuestion({
     },
   },
   results: {
-    aggregate(_question, values) {
-      const numbers = values as number[];
+    aggregate(question, values) {
+      const numbers = values.filter(
+        (value): value is number => typeof value === "number",
+      );
       const average = numbers.length
         ? numbers.reduce((sum, value) => sum + value, 0) / numbers.length
         : 0;
       const distribution = new Map<number, number>();
       for (const value of numbers)
         distribution.set(value, (distribution.get(value) || 0) + 1);
+      const choices = question.sliderChoices ?? [];
       return [
         {
           text: `Average: ${Math.round(average * 100) / 100}`,
@@ -74,6 +102,11 @@ export const slider = defineQuestion({
         ...[...distribution]
           .map(([value, count]) => ({ text: String(value), count }))
           .sort((first, second) => Number(first.text) - Number(second.text)),
+        ...choices.map((text, index) => ({
+          id: `slider-choice-${index}`,
+          text,
+          count: values.filter((value) => value === text).length,
+        })),
       ];
     },
   },
@@ -82,12 +115,13 @@ export const slider = defineQuestion({
       sliderMin: input.sliderMin,
       sliderMax: input.sliderMax,
       sliderStep: input.sliderStep,
+      sliderChoices: input.sliderChoices,
     }),
   },
   prompt: {
     purpose:
-      "Participants choose a number on a slider; results show the distribution and average.",
+      "Participants choose a number on a slider or an optional alternative answer; results show the distribution and average of numeric answers plus alternative-answer counts.",
     rules:
-      "options: []. correct: null. sliderMin, sliderMax, sliderStep are REQUIRED numbers: sliderMax > sliderMin, sliderStep > 0, and (sliderMax - sliderMin) / sliderStep <= 1000.",
+      "options: []. correct: null. sliderMin, sliderMax, sliderStep are REQUIRED numbers: sliderMax > sliderMin, sliderStep > 0, and (sliderMax - sliderMin) / sliderStep <= 1000. sliderChoices is an OPTIONAL array of 1 to 3 unique alternative answer labels, each 1 to 80 characters; omit it when unused.",
   },
 });

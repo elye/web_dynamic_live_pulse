@@ -252,6 +252,25 @@
   font-size: 20px;
 }
 
+.slider-alternative-results {
+  width: min(100%, 420px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.slider-alternative-results li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #eef4ef;
+  color: #355b43;
+}
+
 .slider-visual {
   width: 100%;
   padding: 0 14px;

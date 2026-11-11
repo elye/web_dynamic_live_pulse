@@ -40,6 +40,7 @@ export type AuthoredQuestion = {
   sliderMin?: number;
   sliderMax?: number;
   sliderStep?: number;
+  sliderChoices?: string[];
 };
 
 export async function request(event: string, payload: object): Promise<Reply> {

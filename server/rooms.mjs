@@ -370,6 +370,7 @@ export function authoredDraft(room, token) {
     sliderMin: question.sliderMin,
     sliderMax: question.sliderMax,
     sliderStep: question.sliderStep,
+    sliderChoices: question.sliderChoices,
   };
 }
 

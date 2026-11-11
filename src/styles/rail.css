@@ -1,11 +1,17 @@
 /* Host studio question rail and thumbnails. */
 
 .question-rail {
+  position: sticky;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 32px);
   border: 1px solid var(--line);
   background: #fff;
   border-radius: 7px;
   padding: 0 12px 13px;
   min-width: 0;
+  overflow: hidden;
 }
 
 .rail-heading {
@@ -153,6 +159,10 @@
   display: flex;
   flex-direction: column;
   gap: 11px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
 
 .question-item {
@@ -446,6 +456,8 @@
 
 @media (max-width: 760px) {
   .question-rail {
+    position: static;
+    max-height: none;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -460,6 +472,9 @@
     flex-direction: row;
     gap: 10px;
     flex: 1;
+    min-height: auto;
+    overflow: visible;
+    overscroll-behavior: auto;
   }
   .question-thumbnail {
     width: 100px;

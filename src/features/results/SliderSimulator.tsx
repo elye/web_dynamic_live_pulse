@@ -49,6 +49,11 @@ export function SliderSimulator({
       ...[...distribution]
         .sort(([first], [second]) => first - second)
         .map(([value, count]) => ({ text: String(value), count })),
+      ...(question.sliderChoices ?? []).map((text, index) => ({
+        id: `slider-choice-${index}`,
+        text,
+        count: 0,
+      })),
     ],
   };
 

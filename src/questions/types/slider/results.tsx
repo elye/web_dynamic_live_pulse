@@ -40,5 +40,10 @@ export const results: QuestionResults = {
     { text: "4", count: 2 },
     { text: "7", count: 1 },
     { text: String(question.sliderMax ?? 10), count: 1 },
+    ...(question.sliderChoices ?? []).map((text, index) => ({
+      id: `slider-choice-${index}`,
+      text,
+      count: 1,
+    })),
   ],
 };

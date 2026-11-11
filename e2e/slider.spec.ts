@@ -27,6 +27,9 @@ test("participants can submit an alternative slider answer", async ({
   await page
     .getByRole("button", { name: "Save question", exact: true })
     .click();
+  await expect(page.locator(".slider-alternative-results")).toContainText(
+    "I don't know",
+  );
   await page.getByRole("button", { name: "Present live", exact: true }).click();
   await page
     .getByRole("button", { name: "Invite audience", exact: true })
@@ -57,7 +60,19 @@ test("participants can submit an alternative slider answer", async ({
         exact: true,
       }),
     ).toBeVisible();
-    await audience.getByRole("radio", { name: "I don't know" }).check();
+    const slider = audience.locator('.slider-input input[type="range"]');
+    const sliderAnswer = audience.getByRole("radio", {
+      name: "Use slider answer",
+    });
+    const alternative = audience.getByRole("radio", { name: "I don't know" });
+    await expect(sliderAnswer).toBeChecked();
+    await alternative.check();
+    await expect(slider).toBeDisabled();
+    await expect(audience.locator(".slider-control-muted")).toBeVisible();
+    await audience.getByRole("radio", { name: "Use slider answer" }).check();
+    await expect(slider).toBeEnabled();
+    await expect(alternative).not.toBeChecked();
+    await alternative.check();
     await audience
       .getByRole("button", { name: "Send response", exact: true })
       .click();

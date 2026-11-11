@@ -17,27 +17,48 @@ function SliderInput() {
     useParticipant();
   if (!room || !question) return null;
   const value = sliderValue(question, currentAnswer);
+  const hasSelectedAlternative =
+    typeof currentAnswer === "string" &&
+    question.sliderChoices?.includes(currentAnswer);
   return (
     <div className="slider-input">
-      <output>{value}</output>
-      <input
-        type="range"
-        min={question.sliderMin ?? 0}
-        max={question.sliderMax ?? 10}
-        step={question.sliderStep ?? 1}
-        value={value}
-        onChange={(event) => {
-          setAnswer(Number(event.target.value));
-          setAnswerQuestion(question.id);
-        }}
-      />
-      <div className="slider-bounds">
-        <span>{question.sliderMin ?? 0}</span>
-        <span>{question.sliderMax ?? 10}</span>
+      <div
+        className={`slider-control${hasSelectedAlternative ? " slider-control-muted" : ""}`}
+      >
+        <output>{value}</output>
+        <input
+          type="range"
+          min={question.sliderMin ?? 0}
+          max={question.sliderMax ?? 10}
+          step={question.sliderStep ?? 1}
+          value={value}
+          disabled={hasSelectedAlternative}
+          onChange={(event) => {
+            setAnswer(Number(event.target.value));
+            setAnswerQuestion(question.id);
+          }}
+        />
+        <div className="slider-bounds">
+          <span>{question.sliderMin ?? 0}</span>
+          <span>{question.sliderMax ?? 10}</span>
+        </div>
       </div>
       {!!question.sliderChoices?.length && (
-        <fieldset className="slider-alternatives">
-          <legend>Or choose an alternative answer</legend>
+        <fieldset className="slider-answer-options">
+          <legend>Choose your answer</legend>
+          <label>
+            <input
+              type="radio"
+              name={`slider-choice-${question.id}`}
+              value="slider"
+              checked={!hasSelectedAlternative}
+              onChange={() => {
+                setAnswer(value);
+                setAnswerQuestion(question.id);
+              }}
+            />
+            Use slider answer
+          </label>
           {question.sliderChoices.map((choice) => (
             <label key={choice}>
               <input
